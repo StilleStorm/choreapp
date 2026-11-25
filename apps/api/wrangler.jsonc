@@ -4,6 +4,8 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-11-01",
   "observability": { "enabled": true },
+  "workers_dev": true,
+  "preview_urls": false,
   // Built-in sticker/avatar/frame images (packages/seed). Served directly by
   // Cloudflare as static assets: free and not counted as Worker requests.
   "assets": { "directory": "./public" },
@@ -12,7 +14,7 @@
       "binding": "DB",
       "database_name": "choreapp",
       // Replace with the id printed by `wrangler d1 create choreapp` before deploying.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "aa2444fe-a595-4a12-8912-c5347958645e",
       "migrations_dir": "migrations"
     }
   ],

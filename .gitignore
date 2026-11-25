@@ -14,3 +14,4 @@ secrets/
 *.jks
 packages/seed/.cache/
 apps/mobile/.env.production
+/choreapp-*.apk
