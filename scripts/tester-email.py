@@ -3,7 +3,8 @@
 Usage:
   python3 -I scripts/tester-email.py <version> <notes.txt> <to> [bcc ...]
 
-notes.txt: one "what's new" item per line. Sent from hello@stillestormstudio.com
+notes.txt: one "what's new" item per line. Adults test only through Google Play
+(the 12-tester requirement); the APK link is offered for children's phones only. Sent from hello@stillestormstudio.com
 via Cloudflare Email Sending (wrangler, run from apps/api). Put the testers in
 BCC and hello@ in <to>, so nobody sees the others' addresses. Send only after
 Google has approved the version.
@@ -31,7 +32,7 @@ def button(href, label, primary):
 
 
 PENDING = os.environ.get("PENDING_REVIEW") == "1"
-PENDING_TEXT = "Google jeszcze sprawdza tę wersję. Do testów możecie dołączyć już teraz, a jeśli Google Play pokaże, że aplikacja jest niedostępna, zajrzyjcie za kilka godzin. Do tego czasu możecie korzystać z wersji z linku dla dziecka poniżej, działa na każdym telefonie z Androidem."
+PENDING_TEXT = "Google jeszcze sprawdza tę wersję. Do testów możecie dołączyć już teraz, a jeśli Google Play pokaże, że aplikacja jest niedostępna, zajrzyjcie za kilka godzin."
 PENDING_HTML = (f'<p style="margin:-8px 0 18px;font-size:13px;color:#7A5A40;">{PENDING_TEXT}</p>' if PENDING else "")
 items = "".join(f'<li style="margin:0 0 6px">{html.escape(n)}</li>' for n in notes)
 body_html = f"""<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:{CREAM};-webkit-text-size-adjust:100%;text-size-adjust:100%;">
