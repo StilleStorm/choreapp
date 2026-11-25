@@ -248,12 +248,13 @@ export const account = new Hono<AppBindings>()
     const b = await body(c, registerDeviceBody);
     const { memberId, sessionId } = c.get('auth');
     const now = Date.now();
-    // A token moves with the phone: re-registering re-assigns it.
+    // One row per phone and member: a child's phone in two families gets
+    // notifications from both. Re-registering refreshes the session link.
     await run(
       c.env.DB,
       `INSERT INTO device (id, member_id, session_id, push_token, app_version, created_at, last_seen_at)
        VALUES (?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(push_token) DO UPDATE SET member_id = excluded.member_id, session_id = excluded.session_id,
+       ON CONFLICT(push_token, member_id) DO UPDATE SET session_id = excluded.session_id,
          app_version = excluded.app_version, last_seen_at = excluded.last_seen_at`,
       newId(),
       memberId,

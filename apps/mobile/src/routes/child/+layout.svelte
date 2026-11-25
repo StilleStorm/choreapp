@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import Icon from '#lib/components/Icon.svelte';
   import RevealSheet from '#lib/components/RevealSheet.svelte';
   import TabBar, { type Tab } from '#lib/components/TabBar.svelte';
   import { doneLabel } from '#lib/doneLabel.svelte.js';
@@ -49,8 +50,29 @@
 
 {#if session.me && !session.isParent}
   <div class="child-app">
+    {#if session.activeFamilyName}
+      <!-- Several homes on this phone: always show which one is open. -->
+      <a class="home-line" href="/child/profile"><Icon name="home" size={16} /> {session.activeFamilyName}</a>
+    {/if}
     {@render children()}
     <TabBar {tabs} />
     <RevealSheet bind:this={reveal} />
   </div>
 {/if}
+
+<style>
+  .home-line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: calc(var(--safe-top) + 8px) 16px 0;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .home-line + :global(.screen) {
+    padding-top: 8px;
+  }
+</style>

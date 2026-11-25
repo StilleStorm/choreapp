@@ -19,6 +19,8 @@
   let avatar = $state<Blob | null>(null);
   let error = $state('');
   let busy = $state(false);
+  /** A child already logged in is adding another home (mum's, dad's, grandparents'). */
+  const addingHome = !!session.me && !session.isParent;
 
   $effect(() => {
     const t = page.url.searchParams.get('t');
@@ -106,10 +108,14 @@
 </script>
 
 <main class="screen no-tabs">
-  <BackHeader title={info ? (info.kind === 'reset' ? 'Nowe hasło' : 'Witaj!') : 'Dołącz do rodziny'} back="/welcome" />
+  <BackHeader title={info ? (info.kind === 'reset' ? 'Nowe hasło' : 'Witaj!') : addingHome ? 'Dodaj kolejny dom' : 'Dołącz do rodziny'} back={addingHome ? '/child/profile' : '/welcome'} />
 
   {#if !info}
-    <p class="muted">Rodzic pokazuje kod QR i 6 cyfr w swojej aplikacji: Ustawienia → Dodaj dziecko.</p>
+    {#if addingHome}
+      <p class="muted">Dodajesz kolejny dom. Poproś dorosłego z tamtego domu o kod: Ustawienia → Dodaj dziecko. Twój obecny dom zostaje na telefonie.</p>
+    {:else}
+      <p class="muted">Rodzic pokazuje kod QR i 6 cyfr w swojej aplikacji: Ustawienia → Dodaj dziecko.</p>
+    {/if}
     {#if isNative}
       <button class="btn primary block big" onclick={scan} disabled={busy}>
         <Icon name="qr" size={28} /> Zeskanuj kod QR

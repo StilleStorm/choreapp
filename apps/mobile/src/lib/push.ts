@@ -2,9 +2,11 @@
  * Push notifications via FCM (Capacitor push plugin). The phone registers its
  * token with the API after login; tapping a notification opens the matching
  * screen; a notification arriving while the app is open shows a banner.
+ * A child's phone in several homes registers the token with each of them, so
+ * notifications come from every home (tapping one opens the active home).
  */
 import { goto } from '$app/navigation';
-import { api } from './api.js';
+import { request } from './api.js';
 import { isNative, appVersion } from './native.js';
 import { notices } from './notices.svelte.js';
 import { session } from './session.svelte.js';
@@ -38,11 +40,13 @@ export async function setupPush(): Promise<void> {
       visibility: 1,
     }).catch(() => {});
     await PushNotifications.addListener('registration', async ({ value }) => {
-      try {
-        const v = await appVersion();
-        await api.post('/v1/devices', { pushToken: value, appVersion: v.name });
-      } catch {
-        /* retried on next start */
+      const v = await appVersion().catch(() => null);
+      for (const home of session.homes.list) {
+        try {
+          await request('POST', '/v1/devices', { token: home.token, json: { pushToken: value, appVersion: v?.name } });
+        } catch {
+          /* retried on next start; a 401 drops that home */
+        }
       }
     });
     await PushNotifications.addListener('registrationError', (e) => console.warn('push registration failed', e));

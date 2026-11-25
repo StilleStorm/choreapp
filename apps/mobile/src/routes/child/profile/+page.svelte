@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { CollectionDto, ItemDto } from '@choreapp/shared';
+  import { goto } from '$app/navigation';
+  import type { Home } from '#lib/homes.js';
   import { api } from '#lib/api.js';
   import Avatar from '#lib/components/Avatar.svelte';
   import AvatarPicker from '#lib/components/AvatarPicker.svelte';
@@ -67,6 +69,36 @@
       error = errorMessage(e);
     }
   }
+  // Homes ("domy"): a phone can belong to mum's home, dad's home, grandparents'…
+  let homeError = $state('');
+  let switching = $state('');
+  let leaving = $state<Home | null>(null);
+  let leaveOpen = $state(false);
+  $effect(() => {
+    if (session.homes.list.length > 1) void session.checkHomes();
+  });
+  async function switchTo(h: Home) {
+    homeError = '';
+    switching = h.token;
+    try {
+      await session.switchTo(h.token);
+      await goto('/child/today', { replaceState: true });
+    } catch (e) {
+      homeError = errorMessage(e);
+    } finally {
+      switching = '';
+    }
+  }
+  function askLeave(h: Home) {
+    leaving = h;
+    leaveOpen = true;
+  }
+  async function leave() {
+    const h = leaving;
+    leaveOpen = false;
+    if (h) await session.leaveHome(h.token);
+  }
+
   function isWorn(i: ItemDto): boolean {
     return i.kind === 'avatar' ? me.avatarItemId === i.id : me.frameItemId === i.id;
   }
@@ -112,6 +144,31 @@
     {/if}
   </section>
 
+  <section class="section">
+    <h2 class="section-title">Domy</h2>
+    <div class="card homes">
+      {#each session.homes.list as h (h.token)}
+        {@const active = h.token === session.homes.active}
+        <div class="home-row">
+          <button class="home-pick" aria-current={active} disabled={active || !!switching} onclick={() => switchTo(h)}>
+            <Icon name="home" size={22} />
+            <span class="home-text">
+              <strong>{h.familyName || session.family?.name}</strong>
+              <span class="muted small">
+                {active ? 'Teraz tutaj' : switching === h.token ? 'Przełączanie…' : 'Dotknij, aby przełączyć'} · {h.memberName || me.name}
+              </span>
+            </span>
+            {#if active}<Icon name="check" size={20} />{/if}
+          </button>
+          <button class="icon-btn" aria-label="Usuń ten dom z telefonu" onclick={() => askLeave(h)}><Icon name="trash" size={20} /></button>
+        </div>
+      {/each}
+    </div>
+    {#if homeError}<div class="error-box">{homeError}</div>{/if}
+    <a class="btn block" href="/join"><Icon name="plus" size={18} /> Dodaj kolejny dom</a>
+    <p class="muted small">Np. dom taty albo dziadków. Poproś dorosłego z tamtego domu o kod QR albo 6 cyfr.</p>
+  </section>
+
   <a class="btn ghost small" href="/licenses">Licencje grafik</a>
 </main>
 
@@ -124,6 +181,17 @@
   </label>
   {#if editError}<div class="error-box">{editError}</div>{/if}
   <button class="btn primary block" onclick={saveEdit} disabled={busy}>{busy ? 'Zapisywanie…' : 'Zapisz'}</button>
+</Sheet>
+
+<Sheet bind:open={leaveOpen} title="Usuń ten dom z telefonu">
+  {#if leaving}
+    <p>Ten telefon przestanie pokazywać dom <strong>{leaving.familyName || session.family?.name}</strong>.</p>
+    <p class="muted small">Punkty i naklejki w tym domu zostają. Aby wrócić, potrzebny będzie nowy kod od dorosłego z tego domu.</p>
+    <div class="inline">
+      <button class="btn grow" onclick={() => (leaveOpen = false)}>Anuluj</button>
+      <button class="btn danger grow" onclick={leave}>Usuń</button>
+    </div>
+  {/if}
 </Sheet>
 
 <Sheet bind:open={lookOpen} title="Awatar i ramka">
@@ -174,6 +242,46 @@
   }
   .grow {
     flex: 1;
+  }
+  .homes {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px;
+  }
+  .home-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .home-pick {
+    appearance: none;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 56px;
+    padding: 8px 10px;
+    border: 2px solid transparent;
+    border-radius: 14px;
+    background: none;
+    font: inherit;
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+  }
+  .home-pick[aria-current='true'] {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    cursor: default;
+  }
+  .home-pick:disabled:not([aria-current='true']) {
+    opacity: 0.6;
+  }
+  .home-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
   }
   .albums {
     display: grid;

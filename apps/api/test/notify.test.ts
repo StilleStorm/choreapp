@@ -125,6 +125,25 @@ describe('push delivery', () => {
     expect(d.n).toBe(0);
   });
 
+  it('one phone in two families gets pushes from both', async () => {
+    const mum = await registerFamily('Dom mamy');
+    const dad = await registerFamily('Dom taty');
+    await noQuiet(mum.parentToken);
+    await noQuiet(dad.parentToken);
+    const atMum = await addChild(mum, 'Ola');
+    const atDad = await addChild(dad, 'Ola');
+    await call('POST', '/v1/devices', { token: atMum.token, json: { pushToken: 'ola-two-homes-token' } });
+    await call('POST', '/v1/devices', { token: atDad.token, json: { pushToken: 'ola-two-homes-token' } });
+    await callFcm('POST', '/v1/tasks', mum.parentToken, { title: 'U mamy', icon: 'books', assignees: [atMum.id], startDate: today(), recurrence: { kind: 'once' } });
+    await callFcm('POST', '/v1/tasks', dad.parentToken, { title: 'U taty', icon: 'books', assignees: [atDad.id], startDate: today(), recurrence: { kind: 'once' } });
+    expect(sent.map((m) => m.body)).toEqual(['U mamy', 'U taty']);
+    expect(sent.every((m) => m.token === 'ola-two-homes-token')).toBe(true);
+    // Leaving one home keeps the other one's notifications.
+    await call('POST', '/v1/auth/logout', { token: atMum.token });
+    const d = await env.DB.prepare('SELECT member_id FROM device WHERE push_token = ?').bind('ola-two-homes-token').all<any>();
+    expect(d.results.map((r: any) => r.member_id)).toEqual([atDad.id]);
+  });
+
   it('logging out stops pushes to that phone', async () => {
     const fam = await registerFamily();
     await noQuiet(fam.parentToken);

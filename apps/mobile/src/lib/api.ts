@@ -1,9 +1,5 @@
 /** HTTP client for the Worker API. */
-import { Preferences } from '@capacitor/preferences';
-
 export const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? 'http://localhost:8787';
-
-const TOKEN_KEY = 'session_token';
 
 export class ApiFailure extends Error {
   constructor(
@@ -15,25 +11,20 @@ export class ApiFailure extends Error {
   }
 }
 
+/** Token of the active home; the session keeps the list of homes. */
 let token: string | null = null;
-let onUnauthorized: (() => void) | null = null;
+let onUnauthorized: ((token: string) => void) | null = null;
 
-export async function loadToken(): Promise<string | null> {
-  token = (await Preferences.get({ key: TOKEN_KEY })).value;
-  return token;
-}
-
-export async function saveToken(t: string | null): Promise<void> {
+export function setToken(t: string | null): void {
   token = t;
-  if (t) await Preferences.set({ key: TOKEN_KEY, value: t });
-  else await Preferences.remove({ key: TOKEN_KEY });
 }
 
 export function hasToken(): boolean {
   return !!token;
 }
 
-export function setUnauthorizedHandler(fn: () => void): void {
+/** Called with the token that got a 401 (logged out by the server, child removed). */
+export function setUnauthorizedHandler(fn: (token: string) => void): void {
   onUnauthorized = fn;
 }
 
@@ -43,11 +34,14 @@ interface RequestOptions {
   contentType?: string;
   /** Don't trigger a logout on 401 (login form, invite redemption). */
   public?: boolean;
+  /** Use this session instead of the active one (other homes on a child's phone). */
+  token?: string;
 }
 
 export async function request<T>(method: string, path: string, opts: RequestOptions = {}): Promise<T> {
   const headers: Record<string, string> = {};
-  if (token && !opts.public) headers.Authorization = `Bearer ${token}`;
+  const auth = opts.public ? null : (opts.token ?? token);
+  if (auth) headers.Authorization = `Bearer ${auth}`;
   let body: BodyInit | undefined;
   if (opts.json !== undefined) {
     headers['Content-Type'] = 'application/json';
@@ -71,7 +65,7 @@ export async function request<T>(method: string, path: string, opts: RequestOpti
   }
   if (!res.ok) {
     const err = (data ?? {}) as { error?: string; message?: string };
-    if (res.status === 401 && !opts.public) onUnauthorized?.();
+    if (res.status === 401 && auth) onUnauthorized?.(auth);
     throw new ApiFailure(res.status, err.error ?? `http_${res.status}`, err.message);
   }
   return data as T;
