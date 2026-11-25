@@ -154,8 +154,8 @@
   let deletePassword = $state('');
   let deleteError = $state('');
   let deleteBusy = $state(false);
-  function openDelete() {
-    deleteMode = session.isAdmin && otherAdults.length === 0 ? 'family' : 'me';
+  function openDelete(mode?: 'me' | 'family') {
+    deleteMode = mode ?? (session.isAdmin && otherAdults.length === 0 ? 'family' : 'me');
     deleteTarget = otherAdults[0]?.id ?? '';
     deletePassword = '';
     deleteError = '';
@@ -296,6 +296,12 @@
         <button class="btn primary" disabled={saving}>{saving ? 'Zapisywanie…' : saved ? 'Zapisano ✓' : 'Zapisz'}</button>
       </div>
     </form>
+    <div class="card">
+      <button type="button" class="row member danger-text" onclick={() => openDelete('family')}>
+        <Icon name="trash" />
+        <span class="grow title">Usuń rodzinę</span>
+      </button>
+    </div>
   {/if}
 
   <section class="section">
@@ -338,7 +344,7 @@
         <Icon name="logout" />
         <span class="grow title">Wyloguj się</span>
       </button>
-      <button class="row member danger-text" onclick={openDelete}>
+      <button class="row member danger-text" onclick={() => openDelete()}>
         <Icon name="trash" />
         <span class="grow title">{!session.isAdmin ? 'Usuń konto' : otherAdults.length > 0 ? 'Usuń konto lub rodzinę' : 'Usuń całą rodzinę'}</span>
       </button>
