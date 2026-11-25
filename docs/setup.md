@@ -1,0 +1,75 @@
+# Uruchomienie i wdrożenie
+
+Wszystko mieści się w darmowym planie Cloudflare (Workers Free, D1, R2, statyczne assety).
+
+## Wymagania
+
+- Node 24+ i pnpm (`npm i -g pnpm`), potem `pnpm install` w katalogu głównym.
+- Konto Cloudflare: `pnpm --filter @choreapp/api exec wrangler login`.
+- Projekt Firebase (tylko do powiadomień push).
+- Android SDK (`ANDROID_HOME`) i JDK 21 do zbudowania APK.
+
+## 1. Backend (Cloudflare)
+
+```bash
+cd apps/api
+pnpm exec wrangler d1 create choreapp          # wpisz zwrócone database_id do wrangler.jsonc
+pnpm exec wrangler r2 bucket create choreapp-files
+pnpm run db:migrate:remote
+pnpm run db:seed:remote                        # wbudowane paczki: 397 naklejek, 60 awatarów, 25 ramek
+pnpm exec wrangler secret put FILE_SIGNING_KEY # dowolny długi losowy ciąg
+pnpm exec wrangler secret put FCM_SERVICE_ACCOUNT   # JSON konta serwisowego Firebase w jednej linii
+pnpm run deploy
+```
+
+Adres Workera (np. `https://choreapp-api.<subdomena>.workers.dev`) wpisz do `apps/mobile/.env.production`:
+
+```
+VITE_API_URL=https://choreapp-api.<subdomena>.workers.dev
+```
+
+## 2. Firebase (push)
+
+1. W konsoli Firebase utwórz projekt i dodaj aplikację Android o identyfikatorze `app.choreapp.family`.
+2. Pobierz `google-services.json` do `apps/mobile/android/app/` (plik jest w `.gitignore`).
+3. Ustawienia projektu → Konta usługi → „Wygeneruj nowy klucz prywatny”. Zawartość pliku zapisz jako sekret `FCM_SERVICE_ACCOUNT`.
+
+Bez Firebase aplikacja działa normalnie, tylko bez powiadomień.
+
+## 3. APK
+
+Jednorazowo utwórz klucz do podpisywania (trzymaj go poza repo i zrób kopię, bez niego nie zaktualizujesz aplikacji na telefonach):
+
+```bash
+keytool -genkeypair -v -keystore ~/choreapp-release.jks -alias choreapp -keyalg RSA -keysize 4096 -validity 10000
+```
+
+`apps/mobile/android/keystore.properties`:
+
+```
+storeFile=/home/<ty>/choreapp-release.jks
+storePassword=...
+keyAlias=choreapp
+keyPassword=...
+```
+
+Wydanie (podbij najpierw `versionCode` i `versionName` w `apps/mobile/android/app/build.gradle`):
+
+```bash
+scripts/release-apk.sh "Co nowego"
+```
+
+Skrypt buduje podpisany APK, wysyła go do R2 i rejestruje wersję. Telefony w rodzinie pokażą „Nowa wersja aplikacji”. Plik APK ląduje też w katalogu głównym, żeby zainstalować go pierwszy raz (przesłać na telefon, otworzyć, zezwolić na instalację z tego źródła).
+
+## Praca lokalna
+
+```bash
+cd apps/api && cp .dev.vars.example .dev.vars && pnpm run db:migrate:local && pnpm run db:seed:local && pnpm run dev
+cd apps/mobile && pnpm run dev       # http://localhost:5173, API z VITE_API_URL (domyślnie http://localhost:8787)
+pnpm test                            # wszystkie testy
+```
+
+## Odtwarzanie danych
+
+- Paczki wbudowane: `pnpm --filter @choreapp/seed build` (pobiera Fluent Emoji z GitHuba, generuje awatary DiceBear i ramki), potem `db:seed:*`.
+- Motywy i fonty: `node apps/mobile/scripts/gen-themes.mjs` (z `packages/seed/themes.json`, czyli tokenów odczytanych z mockupów).

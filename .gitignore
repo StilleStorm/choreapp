@@ -1,0 +1,16 @@
+node_modules/
+.svelte-kit/
+build/
+dist/
+.wrangler/
+.dev.vars
+*.local
+.env
+.env.*
+!.env.example
+apps/mobile/android/app/google-services.json
+secrets/
+*.keystore
+*.jks
+packages/seed/.cache/
+apps/mobile/.env.production

@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "choreapp-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "observability": { "enabled": true },
+  // Built-in sticker/avatar/frame images (packages/seed). Served directly by
+  // Cloudflare as static assets: free and not counted as Worker requests.
+  "assets": { "directory": "./public" },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "choreapp",
+      // Replace with the id printed by `wrangler d1 create choreapp` before deploying.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [{ "binding": "FILES", "bucket_name": "choreapp-files" }],
+  // One trigger (Free plan allows 5): occurrences, reminders, quiet-hours digest, cleanup.
+  "triggers": { "crons": ["*/5 * * * *"] }
+  // Secrets (wrangler secret put): FILE_SIGNING_KEY, FCM_SERVICE_ACCOUNT
+}

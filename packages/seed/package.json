@@ -1,0 +1,19 @@
+{
+  "name": "@choreapp/seed",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Builds the built-in sticker, avatar and frame packs (served as Worker static assets) and their D1 seed SQL.",
+  "scripts": {
+    "build": "node build-packs.mjs"
+  },
+  "devDependencies": {
+    "@dicebear/core": "9.4.2",
+    "@dicebear/lorelei": "9.4.2",
+    "@dicebear/notionists": "9.4.2",
+    "@dicebear/open-peeps": "9.4.2",
+    "@dicebear/pixel-art": "9.4.2",
+    "@dicebear/thumbs": "9.4.2",
+    "svgo": "^4.0.0"
+  }
+}

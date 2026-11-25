@@ -1,0 +1,56 @@
+<script lang="ts">
+  import { goto } from '$app/navigation';
+  import RevealSheet from '#lib/components/RevealSheet.svelte';
+  import TabBar, { type Tab } from '#lib/components/TabBar.svelte';
+  import { doneLabel } from '#lib/doneLabel.svelte.js';
+  import { offline } from '#lib/offline.svelte.js';
+  import { session } from '#lib/session.svelte.js';
+  import type { LayoutProps } from './$types';
+
+  let { children }: LayoutProps = $props();
+
+  $effect(() => {
+    if (!session.me) void goto('/welcome', { replaceState: true });
+    else if (session.isParent) void goto('/parent', { replaceState: true });
+  });
+
+  let reveal: RevealSheet | undefined = $state();
+
+  // The whole page (body, sheets, tab bar) follows the child's theme.
+  $effect(() => {
+    const theme = session.me?.theme;
+    if (!theme) return;
+    document.documentElement.dataset.theme = theme;
+    return () => delete document.documentElement.dataset.theme;
+  });
+
+  $effect(() => {
+    void offline.init();
+    void doneLabel.load();
+  });
+
+  // New stickers (approved tasks, streak packs) are revealed when the app is opened.
+  $effect(() => {
+    if (!reveal) return;
+    void reveal.check();
+    const onVisible = () => document.visibilityState === 'visible' && void reveal?.check();
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  });
+
+  const tabs: Tab[] = [
+    { href: '/child/today', label: 'Dziś', icon: 'today' },
+    { href: '/child/week', label: 'Tydzień', icon: 'week' },
+    { href: '/child/points', label: 'Punkty', icon: 'star' },
+    { href: '/child/shop', label: 'Sklep', icon: 'shop' },
+    { href: '/child/profile', label: 'Profil', icon: 'user' },
+  ];
+</script>
+
+{#if session.me && !session.isParent}
+  <div class="child-app">
+    {@render children()}
+    <TabBar {tabs} />
+    <RevealSheet bind:this={reveal} />
+  </div>
+{/if}

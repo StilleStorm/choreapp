@@ -1,0 +1,33 @@
+Fonts bundled from Google Fonts (https://fonts.google.com), all licensed under the SIL Open Font License 1.1
+(https://openfontlicense.org). Families:
+Alegreya
+Alegreya Sans
+Anton
+Baloo 2
+Barlow
+Barlow Condensed
+Chakra Petch
+Cinzel
+Comfortaa
+Cormorant Garamond
+Courier Prime
+Exo 2
+Fredoka
+Grandstander
+Inter
+Kaushan Script
+Lilita One
+M PLUS Rounded 1c
+Nunito
+Nunito Sans
+Oswald
+Outfit
+Patrick Hand
+Pixelify Sans
+Poppins
+Quicksand
+Righteous
+Rubik
+Saira Condensed
+Titan One
+Varela Round
