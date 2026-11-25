@@ -10,7 +10,8 @@ const config: CapacitorConfig = {
   },
   plugins: {
     PushNotifications: {
-      presentationOptions: ['badge', 'sound', 'alert'],
+      // The app shows its own banner while open; a system heads-up on top of it would be a duplicate.
+      presentationOptions: [],
     },
   },
 };

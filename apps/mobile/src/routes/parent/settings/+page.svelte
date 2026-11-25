@@ -251,9 +251,9 @@
         <span class="grow title">Wersja aplikacji</span>
         <Icon name="chevron" size={20} />
       </a>
-      <a class="row member" href="/licenses">
+      <a class="row member" href="/about">
         <Icon name="info" />
-        <span class="grow title">Licencje grafik</span>
+        <span class="grow title">O aplikacji</span>
         <Icon name="chevron" size={20} />
       </a>
       <button class="row member" onclick={() => session.signOut()}>

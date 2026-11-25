@@ -171,7 +171,7 @@
     <p class="muted small">Np. dom taty albo dziadków. Poproś dorosłego z tamtego domu o kod QR albo 6 cyfr.</p>
   </section>
 
-  <a class="btn ghost small" href="/licenses">Licencje grafik</a>
+  <a class="btn ghost small" href="/about">O aplikacji</a>
 </main>
 
 <Sheet bind:open={editOpen} title="Nazwa i zdjęcie">

@@ -3,7 +3,6 @@
   import { api } from '#lib/api.js';
   import BackHeader from '#lib/components/BackHeader.svelte';
   import { errorMessage } from '#lib/messages.js';
-  import { session } from '#lib/session.svelte.js';
 
   let list = $state<LicenseDto[]>([]);
   let error = $state('');
@@ -16,7 +15,7 @@
 </script>
 
 <main class="screen no-tabs">
-  <BackHeader title="Licencje grafik" back={session.isParent ? '/parent/settings' : '/child/profile'} />
+  <BackHeader title="Licencje grafik" back="/about" />
   <p class="muted small">Wszystkie grafiki w aplikacji pochodzą ze źródeł, które pozwalają ich używać. Oto skąd są:</p>
   {#if error}<div class="error-box">{error}</div>{/if}
   <div class="list">
