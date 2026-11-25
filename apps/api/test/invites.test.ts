@@ -111,7 +111,7 @@ describe('second parent and password reset', () => {
       json: { token: inv.body.token, name: 'Tata', email, password: 'haslo-taty-1' },
     });
     expect(r.status).toBe(201);
-    expect(r.body.me.role).toBe('parent');
+    expect(r.body.me).toMatchObject({ role: 'parent', theme: 'neutral' });
     const login = await call('POST', '/v1/auth/login', { json: { email, password: 'haslo-taty-1' } });
     expect(login.status).toBe(200);
     const child = await call('POST', '/v1/invites', { token: login.body.token, json: { role: 'child' } });

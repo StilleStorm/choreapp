@@ -16,14 +16,34 @@ const skipFonts = process.argv.includes('--skip-fonts');
 // Accessibility fixes over the mockup values (contrast notes from extraction):
 // colours used as text on light cards inside dark themes, and fills that
 // were just below WCAG AA for white text.
+// Also for the adults' screens (lists, forms, sheets): --surface-2 fills plain
+// buttons, inputs' neighbours and badges behind --text, so it must stay light
+// where cards are light (the mockups' dark strip colour keeps the icon tiles),
+// and --accent is used as text for links and badges.
 const FIXES = {
+  manga: { theme: { surface2: '#EDEDED', iconBg: '#111111' } },
   guild: { card: { muted: '#5A3D22', points: '#8A5A12', warning: '#7A4B12', success: '#2F5A2B' } },
-  lanterns: { card: { muted: '#4A5676', points: '#9C4A12', warning: '#8A5A00', success: '#2F6A3B' }, theme: { heroBg: '#C62F3B' } },
-  detective: { card: { muted: '#3F3A2A', points: '#7A5C00', warning: '#7A5C00', success: '#2F5A2B' } },
+  lanterns: {
+    card: { muted: '#4A5676', points: '#9C4A12', warning: '#8A5A00', success: '#2F6A3B', 'surface-2': '#F0E2C4' },
+    theme: { heroBg: '#C62F3B' },
+  },
+  detective: {
+    card: {
+      muted: '#3F3A2A',
+      points: '#7A5C00',
+      warning: '#7A5C00',
+      success: '#2F5A2B',
+      'surface-2': '#DDCDA4',
+      accent: '#18202E',
+      'accent-text': '#FFD43B',
+      'accent-soft': '#DDCDA4',
+    },
+  },
   retro90: { theme: { success: '#6FE0E8' } },
-  sport: { theme: { points: '#C2410C' } },
+  sport: { theme: { points: '#C2410C', accent: '#C2410C', accentText: '#FFFFFF', surface2: '#E6EAF2', iconBg: '#0B152B' } },
   monsters: { theme: { btnBg: '#237A46', accent: '#237A46' } },
-  comic: { theme: { btnBg: '#C81E15' } },
+  ducks: { theme: { accent: '#A64F00', accentText: '#FFFFFF' } },
+  comic: { theme: { btnBg: '#C81E15', accent: '#C81E15', surface2: '#E3E9FA', iconBg: '#1A3FB5' } },
 };
 
 const fontFamilies = new Map(); // family -> Set of weight specs
@@ -85,6 +105,7 @@ if (!skipFonts) {
 // ---------------------------------------------------------------------------
 // Theme CSS
 // ---------------------------------------------------------------------------
+// Light tints keep the coloured badge and button text near WCAG AA.
 const soft = (c, pct = 16) => `color-mix(in srgb, ${c} ${pct}%, var(--surface))`;
 const blocks = [];
 const list = [];
@@ -100,13 +121,13 @@ for (const raw of themes) {
     border: t.border,
     accent: t.accent,
     'accent-text': t.accentText,
-    'accent-soft': soft(t.accent, t.dark ? 28 : 18),
+    'accent-soft': soft(t.accent, t.dark ? 18 : 12),
     success: t.success,
-    'success-soft': soft(t.success, t.dark ? 30 : 18),
+    'success-soft': soft(t.success, t.dark ? 18 : 12),
     warning: t.warning,
-    'warning-soft': soft(t.warning, t.dark ? 30 : 18),
+    'warning-soft': soft(t.warning, t.dark ? 18 : 12),
     danger: t.danger,
-    'danger-soft': soft(t.danger, t.dark ? 30 : 16),
+    'danger-soft': soft(t.danger, t.dark ? 18 : 10),
     points: t.points,
     'card-bg': t.cardBg,
     'card-text': t.cardText,

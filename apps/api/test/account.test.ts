@@ -108,6 +108,23 @@ describe('me and family settings', () => {
     const r = await call('PATCH', '/v1/me', { token: kid.token, json: { theme: 'pixel', name: 'Oleńka' } });
     expect(r.body).toMatchObject({ theme: 'pixel', name: 'Oleńka' });
     expect((await call('PATCH', '/v1/me', { token: kid.token, json: { theme: 'nope' } })).status).toBe(400);
+    // The neutral style is for adults only.
+    expect((await call('PATCH', '/v1/me', { token: kid.token, json: { theme: 'neutral' } })).status).toBe(400);
+    expect((await call('GET', '/v1/me', { token: kid.token })).body.me.theme).toBe('pixel');
+  });
+
+  it('lets an adult pick a theme or go back to the neutral style', async () => {
+    const fam = await registerFamily();
+    const me = async () => (await call('GET', '/v1/me', { token: fam.parentToken })).body.me.theme;
+    expect(await me()).toBe('neutral');
+    const r = await call('PATCH', '/v1/me', { token: fam.parentToken, json: { theme: 'forest' } });
+    expect(r.status).toBe(200);
+    expect(r.body.theme).toBe('forest');
+    expect(await me()).toBe('forest');
+    expect((await call('PATCH', '/v1/me', { token: fam.parentToken, json: { theme: 'nope' } })).status).toBe(400);
+    expect(await me()).toBe('forest');
+    expect((await call('PATCH', '/v1/me', { token: fam.parentToken, json: { theme: 'neutral' } })).status).toBe(200);
+    expect(await me()).toBe('neutral');
   });
 
   it('uploads an avatar and serves it through a signed URL', async () => {

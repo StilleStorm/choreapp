@@ -81,6 +81,7 @@ async function backfillDays(taskId: string, memberId: string, reviewerId: string
 describe('points', () => {
   it('balance is the sum of the ledger, with labels', async () => {
     const { fam, ola } = await setup();
+    rewardRng.rng = () => 0.99; // only the guaranteed first-of-day drop
     await createTask(fam, [ola.id], { title: 'Pościel łóżko', points: 5 });
     await createTask(fam, [ola.id], { title: 'Lekcje', points: 20 });
     const items = (await call('GET', '/v1/agenda', { token: ola.token })).body.items;

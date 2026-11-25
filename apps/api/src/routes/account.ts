@@ -5,6 +5,7 @@ import {
   changeEmailBody,
   changePasswordBody,
   loginBody,
+  NEUTRAL_THEME,
   registerBody,
   registerDeviceBody,
   updateFamilyBody,
@@ -67,8 +68,8 @@ export const publicAccount = new Hono<AppBindings>()
           now,
         ),
         c.env.DB.prepare(
-          "INSERT INTO member (id, family_id, role, name, theme, created_at) VALUES (?, ?, 'parent', ?, 'minimal', ?)",
-        ).bind(memberId, familyId, b.parentName, now),
+          "INSERT INTO member (id, family_id, role, name, theme, created_at) VALUES (?, ?, 'parent', ?, ?, ?)",
+        ).bind(memberId, familyId, b.parentName, NEUTRAL_THEME, now),
         c.env.DB.prepare(
           'INSERT INTO parent_login (member_id, email, password_hash, password_salt, password_iterations) VALUES (?, ?, ?, ?, ?)',
         ).bind(memberId, b.email, pw.hash, pw.salt, pw.iterations),
@@ -155,7 +156,9 @@ export const account = new Hono<AppBindings>()
 
   .patch('/me', async (c) => {
     const b = await body(c, updateMeBody);
-    const { memberId } = c.get('auth');
+    const { memberId, role } = c.get('auth');
+    // The neutral style is the adults' default; children pick one of the 25 themes.
+    if (b.theme === NEUTRAL_THEME && role !== 'parent') throw badRequest('invalid_input');
     if (b.name !== undefined) await run(c.env.DB, 'UPDATE member SET name = ? WHERE id = ?', b.name, memberId);
     if (b.theme !== undefined) await run(c.env.DB, 'UPDATE member SET theme = ? WHERE id = ?', b.theme, memberId);
     return c.json(await memberDto(c.env, new URL(c.req.url).origin, (await loadMember(c.env, memberId))!, true));

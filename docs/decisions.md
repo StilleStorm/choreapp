@@ -49,6 +49,7 @@ Specyfikacja: https://claude.ai/artifact/SK3JoeQcavgGKoMuXnsXkS. Poniżej to, cz
 
 ## Wygląd
 
-- 25 motywów z mockupów, dziecko wybiera w Profil → Wygląd aplikacji. Rodzic ma jeden neutralny styl.
+- 25 motywów z mockupów, dziecko wybiera w Profil → Wygląd aplikacji. Dorosły wybiera w Ustawienia → Konto → Wygląd aplikacji: domyślnie „Neutralny” (id `neutral`, tylko dla dorosłych) albo jeden z 25 poza guild, lanterns i detective (ciemna strona z jasnymi kartami: pola formularzy, przyciski i tytuły arkuszy poza kartami są tam nieczytelne; lista `ADULT_HIDDEN_THEMES`). Motyw jest zapisany na serwerze (member.theme), więc działa na każdym telefonie.
+- Po sprawdzeniu ekranów dorosłych (listy, formularze, arkusze) poprawione tokeny: jasne `--surface-2` w manga, sport, comic oraz w kartach i arkuszach lanterns i detective, ciemniejszy kolor akcentu w sport, ducks, comic i na kartach w detective, jaśniejsze tła etykiet (`*-soft`).
 - Poprawki kontrastu względem mockupów (guild, lanterns, detective, retro90, sport, monsters, comic): ciemniejsze kolory tekstu na jasnych kartach i nieco ciemniejsze tła przycisków, żeby spełnić WCAG AA.
 - Napis na przycisku pochodzi z motywu. „Zrobiłem/Zrobiłam” dziecko wybiera samo.

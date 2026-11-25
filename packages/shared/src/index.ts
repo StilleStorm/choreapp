@@ -46,6 +46,9 @@ export const THEMES = [
   'minimal',
 ] as const;
 export type ThemeId = (typeof THEMES)[number];
+/** Adults may also keep the plain neutral style (the app's base tokens); it is their default. */
+export const NEUTRAL_THEME = 'neutral';
+export const ADULT_THEMES = [NEUTRAL_THEME, ...THEMES] as const;
 
 // ---------------------------------------------------------------------------
 // Auth, family, members, invites
@@ -63,7 +66,7 @@ export const loginBody = z.object({ email, password: z.string().min(1).max(200) 
 
 export const updateMeBody = z.object({
   name: name.optional(),
-  theme: z.enum(THEMES).optional(),
+  theme: z.enum(ADULT_THEMES).optional(),
 });
 
 /** An adult changes their own login; both need the current password. */

@@ -4,6 +4,7 @@
   import { api } from '#lib/api.js';
   import { pendingCounts } from '#lib/badges.svelte.js';
   import { session } from '#lib/session.svelte.js';
+  import { dataThemeFor } from '#lib/themes/pickable.js';
   import type { LayoutProps } from './$types';
 
   let { children }: LayoutProps = $props();
@@ -29,6 +30,14 @@
     refresh();
     const timer = setInterval(refresh, 60_000);
     return () => clearInterval(timer);
+  });
+
+  // Adults keep the neutral base style unless they picked a theme.
+  $effect(() => {
+    const theme = dataThemeFor(session.me?.theme);
+    if (!theme) return;
+    document.documentElement.dataset.theme = theme;
+    return () => delete document.documentElement.dataset.theme;
   });
 
   const tabs: Tab[] = $derived([

@@ -7,7 +7,7 @@
  *  role parent, no member  -> another parent joins: name, e-mail, password
  *  role parent, member     -> password reset for that parent
  */
-import { createInviteBody, inviteRef, redeemInviteBody, type InviteDto, type InviteInfoDto, type InviteSummaryDto } from '@choreapp/shared';
+import { NEUTRAL_THEME, createInviteBody, inviteRef, redeemInviteBody, type InviteDto, type InviteInfoDto, type InviteSummaryDto } from '@choreapp/shared';
 import { Hono } from 'hono';
 import type { AppBindings, Env } from '../env.js';
 import { assertFamilyAdmin, clientIp, createSession, requireParent, revokeMemberSessions } from '../lib/auth.js';
@@ -98,7 +98,7 @@ export const publicInvites = new Hono<AppBindings>()
           i.family_id,
           i.role,
           b.name!,
-          i.role === 'child' ? 'kawaii' : 'minimal',
+          i.role === 'child' ? 'kawaii' : NEUTRAL_THEME,
           now,
         ),
       ];

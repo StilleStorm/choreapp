@@ -8,6 +8,7 @@
   import Sheet from '#lib/components/Sheet.svelte';
   import { errorMessage } from '#lib/messages.js';
   import { session } from '#lib/session.svelte.js';
+  import { ADULT_THEMES, NEUTRAL } from '#lib/themes/pickable.js';
 
   // Invite sheet
   let inviteOpen = $state(false);
@@ -232,6 +233,14 @@
         <span class="grow title">Zmień hasło</span>
         <Icon name="chevron" size={20} />
       </button>
+      <a class="row member" href="/parent/settings/theme">
+        <Icon name="palette" />
+        <span class="grow">
+          <span class="title">Wygląd aplikacji</span>
+          <span class="meta">{ADULT_THEMES.find((t) => t.id === session.me?.theme)?.title ?? NEUTRAL.title}</span>
+        </span>
+        <Icon name="chevron" size={20} />
+      </a>
       <a class="row member" href="/update">
         <Icon name="download" />
         <span class="grow title">Wersja aplikacji</span>
@@ -335,6 +344,7 @@
     text-align: left;
     font: inherit;
     color: inherit;
+    text-decoration: none;
     cursor: pointer;
   }
   .member .grow {
