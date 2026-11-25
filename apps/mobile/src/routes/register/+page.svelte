@@ -42,7 +42,7 @@
   }
 </script>
 
-<main class="screen no-tabs">
+<main class="screen no-tabs auth">
   <BackHeader title="Nowa rodzina" back="/welcome" />
   <p class="muted">Zakładasz rodzinę jako pierwszy rodzic. Drugiego rodzica i dzieci zaprosisz kodem QR.</p>
   <form class="stack" onsubmit={submit}>

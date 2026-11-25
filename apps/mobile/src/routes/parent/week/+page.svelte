@@ -184,7 +184,7 @@
     color: var(--text);
   }
   .grid th.today .dn {
-    color: var(--accent);
+    color: var(--accent-ink, var(--accent));
     font-weight: 800;
   }
   .cell {

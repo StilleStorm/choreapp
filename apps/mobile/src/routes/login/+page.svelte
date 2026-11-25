@@ -30,7 +30,7 @@
   }
 </script>
 
-<main class="screen no-tabs">
+<main class="screen no-tabs auth">
   <BackHeader title="Logowanie rodzica" back="/welcome" />
   <form class="stack" onsubmit={submit}>
     <label class="field">

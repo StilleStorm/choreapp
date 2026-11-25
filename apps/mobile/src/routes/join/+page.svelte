@@ -108,7 +108,7 @@
   }
 </script>
 
-<main class="screen no-tabs">
+<main class="screen no-tabs auth">
   <BackHeader title={info ? (info.kind === 'reset' ? 'Nowe hasło' : 'Witaj!') : addingHome ? 'Dodaj kolejny dom' : 'Dołącz do rodziny'} back={addingHome ? '/child/profile' : '/welcome'} />
 
   {#if !info}
