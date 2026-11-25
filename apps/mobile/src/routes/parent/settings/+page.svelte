@@ -36,6 +36,8 @@
     memberOpen = true;
   }
   const isMe = $derived(selected?.id === session.me?.id);
+  /** Children are everyone's; other adults are managed by the family administrator. */
+  const canEdit = $derived(isMe || selected?.role === 'child' || session.isAdmin);
 
   async function saveMember() {
     if (!selected) return;
@@ -132,7 +134,7 @@
           <Avatar name={m.name} url={m.avatarUrl} />
           <span class="grow">
             <span class="title">{m.name}{m.id === session.me?.id ? ' (Ty)' : ''}</span>
-            <span class="meta">{m.email ?? ''}</span>
+            <span class="meta">{m.id === session.family?.adminMemberId ? 'Administrator' : ''}{m.id === session.family?.adminMemberId && m.email ? ' · ' : ''}{m.email ?? ''}</span>
           </span>
           <Icon name="chevron" size={20} />
         </button>
@@ -141,33 +143,35 @@
     <button class="btn block" onclick={() => openInvite('parent')}><Icon name="plus" /> Dodaj rodzica lub opiekuna</button>
   </section>
 
-  <form class="section" onsubmit={saveSettings}>
-    <h2 class="section-title">Rodzina i powiadomienia</h2>
-    <div class="card stack">
-      <label class="field">
-        <span>Nazwa rodziny</span>
-        <input type="text" bind:value={familyName} maxlength="40" required />
-      </label>
-      <label class="field">
-        <span>Codzienne przypomnienie o zadaniach</span>
-        <input type="time" bind:value={reminderTime} required />
-        <span class="hint">Dzieci z niezrobionymi zadaniami dostaną jedno przypomnienie dziennie.</span>
-      </label>
-      <label class="inline">
-        <input type="checkbox" bind:checked={quietEnabled} />
-        <span>Godziny ciszy</span>
-      </label>
-      {#if quietEnabled}
-        <div class="inline times">
-          <label class="field"><span>Od</span><input type="time" bind:value={quietFrom} required /></label>
-          <label class="field"><span>Do</span><input type="time" bind:value={quietTo} required /></label>
-        </div>
-        <span class="hint muted small">W tych godzinach nikt nie dostaje powiadomień. Wstrzymane przyjdą rano jako jedno zbiorcze.</span>
-      {/if}
-      {#if settingsError}<div class="error-box">{settingsError}</div>{/if}
-      <button class="btn primary" disabled={saving}>{saving ? 'Zapisywanie…' : saved ? 'Zapisano ✓' : 'Zapisz'}</button>
-    </div>
-  </form>
+  {#if session.isAdmin}
+    <form class="section" onsubmit={saveSettings}>
+      <h2 class="section-title">Rodzina i powiadomienia</h2>
+      <div class="card stack">
+        <label class="field">
+          <span>Nazwa rodziny</span>
+          <input type="text" bind:value={familyName} maxlength="40" required />
+        </label>
+        <label class="field">
+          <span>Codzienne przypomnienie o zadaniach</span>
+          <input type="time" bind:value={reminderTime} required />
+          <span class="hint">Dzieci z niezrobionymi zadaniami dostaną jedno przypomnienie dziennie.</span>
+        </label>
+        <label class="inline">
+          <input type="checkbox" bind:checked={quietEnabled} />
+          <span>Godziny ciszy</span>
+        </label>
+        {#if quietEnabled}
+          <div class="inline times">
+            <label class="field"><span>Od</span><input type="time" bind:value={quietFrom} required /></label>
+            <label class="field"><span>Do</span><input type="time" bind:value={quietTo} required /></label>
+          </div>
+          <span class="hint muted small">W tych godzinach nikt nie dostaje powiadomień. Wstrzymane przyjdą rano jako jedno zbiorcze.</span>
+        {/if}
+        {#if settingsError}<div class="error-box">{settingsError}</div>{/if}
+        <button class="btn primary" disabled={saving}>{saving ? 'Zapisywanie…' : saved ? 'Zapisano ✓' : 'Zapisz'}</button>
+      </div>
+    </form>
+  {/if}
 
   <section class="section">
     <h2 class="section-title">Konto</h2>
@@ -197,24 +201,28 @@
     {#if isMe}
       <AvatarPicker name={editName || selected.name} currentUrl={selected.avatarUrl} bind:blob={avatarBlob} />
     {/if}
-    <label class="field">
-      <span>Imię</span>
-      <input type="text" bind:value={editName} maxlength="40" />
-    </label>
+    {#if canEdit}
+      <label class="field">
+        <span>Imię</span>
+        <input type="text" bind:value={editName} maxlength="40" />
+      </label>
+      <button class="btn primary block" onclick={saveMember}>Zapisz</button>
+    {:else}
+      <p class="hint muted small">Profile innych dorosłych zmienia administrator rodziny.</p>
+    {/if}
     {#if memberError}<div class="error-box">{memberError}</div>{/if}
-    <button class="btn primary block" onclick={saveMember}>Zapisz</button>
 
     {#if selected.role === 'child'}
       <button class="btn block" onclick={() => openInvite('child', selected)}>
         <Icon name="phone" /> Nowy telefon – kod do tego profilu
       </button>
-    {:else if !isMe}
+    {:else if !isMe && session.isAdmin}
       <button class="btn block" onclick={() => openInvite('parent', selected)}>
         <Icon name="key" /> Kod do zmiany hasła
       </button>
     {/if}
 
-    {#if !isMe}
+    {#if !isMe && session.isAdmin}
       {#if confirmRemove}
         <div class="error-box">
           {selected.name} straci dostęp, a telefon zostanie wylogowany. Historia zadań i punktów zostaje.

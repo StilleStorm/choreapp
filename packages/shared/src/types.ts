@@ -16,6 +16,8 @@ export interface FamilyDto {
   quietTo: LocalTime;
   reminderTime: LocalTime;
   prices: Record<Rarity, number>;
+  /** The adult who registered the family; only they manage settings, adults and removals. */
+  adminMemberId: string | null;
 }
 
 export interface MemberDto {

@@ -7,8 +7,8 @@ Specyfikacja: https://claude.ai/artifact/SK3JoeQcavgGKoMuXnsXkS. Poniżej to, cz
 - Dziecko nie ma e-maila ani hasła. Dołącza kodem QR albo 6 cyframi od rodzica (jednorazowe, ważne 15 minut) i zostaje zalogowane na stałe. Nowy kod do istniejącego profilu wylogowuje stary telefon.
 - Przed zgadywaniem kodów chroni limit 10 błędnych prób z jednego adresu na 15 minut.
 - Hasło rodzica: PBKDF2-SHA256, 50 tys. iteracji (około 6 ms, mieści się w limicie CPU planu Free). Liczba iteracji jest zapisana przy koncie, więc można ją podnieść; hash przelicza się wtedy przy logowaniu.
-- Reset hasła bez e-maili: drugi rodzic generuje kod resetu w Ustawieniach.
-- Nie da się usunąć ostatniego rodzica. Usunięty członek traci dostęp, ale jego historia zostaje.
+- Reset hasła bez e-maili: administrator rodziny generuje kod resetu dla innego dorosłego w Ustawieniach.
+- Administrator rodziny to dorosły, który ją założył (jeden na rodzinę, `family.admin_member_id`). Tylko on zmienia ustawienia rodziny, edytuje profile innych dorosłych, daje im kody resetu hasła i usuwa członków; jego samego nie da się usunąć, więc w rodzinie zawsze zostaje rodzic. Pozostali dorośli mają resztę uprawnień: zadania, akceptacje, nagrody, paczki, sklep, zapraszanie dzieci i dorosłych, edycję dzieci i własnego profilu. Usunięty członek traci dostęp, ale jego historia zostaje.
 
 ## Zadania
 

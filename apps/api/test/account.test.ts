@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addChild, call, env, registerFamily, uniqueEmail } from './helpers.js';
+import { addChild, call, env, registerFamily, uniqueEmail, type Family } from './helpers.js';
 
 describe('registration and login', () => {
   it('registers a family with its first parent', async () => {
@@ -148,11 +148,11 @@ describe('members', () => {
     expect(members.body).toHaveLength(1);
   });
 
-  it('never removes the last parent', async () => {
+  it('never removes the administrator', async () => {
     const fam = await registerFamily();
     const r = await call('DELETE', `/v1/members/${fam.parentId}`, { token: fam.parentToken });
     expect(r.status).toBe(409);
-    expect(r.body.error).toBe('last_parent');
+    expect(r.body.error).toBe('admin_cannot_be_removed');
   });
 
   it('keeps families apart', async () => {
@@ -181,5 +181,65 @@ describe('app releases', () => {
     expect(r.body).toMatchObject({ versionCode: 3, versionName: '1.2.0', notes: 'Poprawki' });
     const url = new URL(r.body.url);
     expect((await call('GET', url.pathname + url.search)).status).toBe(200);
+  });
+});
+
+async function addParent(fam: Family, name = 'Tata'): Promise<{ token: string; id: string }> {
+  const inv = await call('POST', '/v1/invites', { token: fam.parentToken, json: { role: 'parent' } });
+  const r = await call('POST', '/v1/invites/redeem', {
+    json: { token: inv.body.token, name, email: uniqueEmail(), password: 'haslo-drugie-1' },
+  });
+  if (r.status !== 201) throw new Error(`redeem failed: ${JSON.stringify(r.body)}`);
+  return { token: r.body.token, id: r.body.me.id };
+}
+
+describe('family administrator', () => {
+  it('is the parent who registered the family', async () => {
+    const fam = await registerFamily();
+    const dad = await addParent(fam);
+    const me = await call('GET', '/v1/me', { token: dad.token });
+    expect(me.body.family.adminMemberId).toBe(fam.parentId);
+    const row = await env.DB.prepare('SELECT admin_member_id FROM family WHERE id = ?').bind(fam.familyId).first();
+    expect(row?.admin_member_id).toBe(fam.parentId);
+  });
+
+  it('other adults cannot change family settings, reset passwords, edit adults or remove anyone', async () => {
+    const fam = await registerFamily();
+    const dad = await addParent(fam);
+    const kid = await addChild(fam);
+    const forbiddenCalls = [
+      await call('PATCH', '/v1/family', { token: dad.token, json: { reminderTime: '17:00' } }),
+      await call('POST', '/v1/invites', { token: dad.token, json: { role: 'parent', memberId: fam.parentId } }),
+      await call('PATCH', `/v1/members/${fam.parentId}`, { token: dad.token, json: { name: 'X' } }),
+      await call('DELETE', `/v1/members/${kid.id}`, { token: dad.token }),
+      await call('DELETE', `/v1/members/${fam.parentId}`, { token: dad.token }),
+    ];
+    for (const r of forbiddenCalls) {
+      expect(r.status).toBe(403);
+      expect(r.body.error).toBe('admin_only');
+    }
+    expect((await call('GET', '/v1/members', { token: fam.parentToken })).body).toHaveLength(3);
+  });
+
+  it('other adults can still invite children and adults, edit children and themselves', async () => {
+    const fam = await registerFamily();
+    const dad = await addParent(fam);
+    const kid = await addChild(fam);
+    expect((await call('POST', '/v1/invites', { token: dad.token, json: { role: 'child' } })).status).toBe(201);
+    expect((await call('POST', '/v1/invites', { token: dad.token, json: { role: 'child', memberId: kid.id } })).status).toBe(201);
+    expect((await call('POST', '/v1/invites', { token: dad.token, json: { role: 'parent' } })).status).toBe(201);
+    const child = await call('PATCH', `/v1/members/${kid.id}`, { token: dad.token, json: { name: 'Ala' } });
+    expect(child.status).toBe(200);
+    expect(child.body.name).toBe('Ala');
+    expect((await call('PATCH', `/v1/members/${dad.id}`, { token: dad.token, json: { name: 'Tatuś' } })).status).toBe(200);
+    expect((await call('PATCH', '/v1/me', { token: dad.token, json: { name: 'Tata' } })).status).toBe(200);
+  });
+
+  it('the administrator manages other adults and can remove them', async () => {
+    const fam = await registerFamily();
+    const dad = await addParent(fam);
+    expect((await call('PATCH', `/v1/members/${dad.id}`, { token: fam.parentToken, json: { name: 'Tomek' } })).status).toBe(200);
+    expect((await call('DELETE', `/v1/members/${dad.id}`, { token: fam.parentToken })).status).toBe(200);
+    expect((await call('GET', '/v1/me', { token: dad.token })).status).toBe(401);
   });
 });

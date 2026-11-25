@@ -10,7 +10,7 @@
 import { createInviteBody, inviteRef, redeemInviteBody, type InviteDto, type InviteInfoDto, type InviteSummaryDto } from '@choreapp/shared';
 import { Hono } from 'hono';
 import type { AppBindings, Env } from '../env.js';
-import { clientIp, createSession, requireParent, revokeMemberSessions } from '../lib/auth.js';
+import { assertFamilyAdmin, clientIp, createSession, requireParent, revokeMemberSessions } from '../lib/auth.js';
 import { hashPassword, newId, randomToken, sha256Hex, sixDigitCode } from '../lib/crypto.js';
 import { all, first, hit, isLimited, isUniqueViolation, run } from '../lib/db.js';
 import { ApiError, badRequest, body, conflict, notFound } from '../lib/http.js';
@@ -138,7 +138,10 @@ export const publicInvites = new Hono<AppBindings>()
 export const invites = new Hono<AppBindings>()
   .post('/invites', requireParent, async (c) => {
     const b = await body(c, createInviteBody);
-    const { familyId, memberId: createdBy } = c.get('auth');
+    const auth = c.get('auth');
+    const { familyId, memberId: createdBy } = auth;
+    // Every adult can invite children and adults; another adult's password reset is the administrator's.
+    if (b.role === 'parent' && b.memberId && b.memberId !== createdBy) await assertFamilyAdmin(c.env.DB, auth);
     let memberName: string | null = null;
     if (b.memberId) {
       const m = await first<{ role: string; name: string }>(

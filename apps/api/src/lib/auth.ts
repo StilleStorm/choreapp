@@ -55,6 +55,22 @@ export const requireParent: MiddlewareHandler<AppBindings> = async (c, next) => 
   await next();
 };
 
+/** Whether the member is the family's administrator (the adult who registered it). */
+export async function isFamilyAdmin(db: D1Database, auth: { familyId: string; memberId: string }): Promise<boolean> {
+  const f = await first<{ admin_member_id: string | null }>(db, 'SELECT admin_member_id FROM family WHERE id = ?', auth.familyId);
+  return !!f && f.admin_member_id === auth.memberId;
+}
+
+export async function assertFamilyAdmin(db: D1Database, auth: { familyId: string; memberId: string }): Promise<void> {
+  if (!(await isFamilyAdmin(db, auth))) throw new ApiError(403, 'admin_only');
+}
+
+/** Family settings, adults and removals are for the administrator only. */
+export const requireAdmin: MiddlewareHandler<AppBindings> = async (c, next) => {
+  await assertFamilyAdmin(c.env.DB, c.get('auth'));
+  await next();
+};
+
 export const requireChild: MiddlewareHandler<AppBindings> = async (c, next) => {
   if (c.get('auth').role !== 'child') throw new ApiError(403, 'child_only');
   await next();

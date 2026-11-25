@@ -22,6 +22,8 @@ const MESSAGES: Record<string, string> = {
   role_mismatch: 'Nie można utworzyć takiego zaproszenia.',
   member_not_found: 'Nie znaleziono tej osoby.',
   last_parent: 'W rodzinie musi zostać co najmniej jeden rodzic.',
+  admin_only: 'To może zrobić tylko administrator rodziny.',
+  admin_cannot_be_removed: 'Administratora rodziny nie można usunąć.',
   unsupported_image_type: 'Ten format zdjęcia nie jest obsługiwany.',
   empty_image: 'Zdjęcie jest puste.',
   image_too_large: 'Zdjęcie jest za duże.',

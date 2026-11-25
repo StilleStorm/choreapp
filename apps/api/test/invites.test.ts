@@ -101,7 +101,7 @@ describe("child's new phone", () => {
 });
 
 describe('second parent and password reset', () => {
-  it('a second parent joins with e-mail and password and has equal rights', async () => {
+  it('a second parent joins with e-mail and password', async () => {
     const fam = await registerFamily();
     const inv = await call('POST', '/v1/invites', { token: fam.parentToken, json: { role: 'parent' } });
     const email = uniqueEmail();
@@ -114,11 +114,11 @@ describe('second parent and password reset', () => {
     expect(r.body.me.role).toBe('parent');
     const login = await call('POST', '/v1/auth/login', { json: { email, password: 'haslo-taty-1' } });
     expect(login.status).toBe(200);
-    const settings = await call('PATCH', '/v1/family', { token: login.body.token, json: { reminderTime: '17:00' } });
-    expect(settings.status).toBe(200);
+    const child = await call('POST', '/v1/invites', { token: login.body.token, json: { role: 'child' } });
+    expect(child.status).toBe(201);
   });
 
-  it('one parent can reset the other parent’s password', async () => {
+  it('the administrator can reset another parent’s password', async () => {
     const fam = await registerFamily();
     const inv = await call('POST', '/v1/invites', { token: fam.parentToken, json: { role: 'parent' } });
     const email = uniqueEmail();

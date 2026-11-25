@@ -15,6 +15,7 @@ export interface FamilyRow {
   price_common: number;
   price_rare: number;
   price_legendary: number;
+  admin_member_id: string | null;
   created_at: number;
 }
 
@@ -85,6 +86,7 @@ export function familyDto(f: FamilyRow): FamilyDto {
     quietTo: f.quiet_to,
     reminderTime: f.reminder_time,
     prices: { common: f.price_common, rare: f.price_rare, legendary: f.price_legendary },
+    adminMemberId: f.admin_member_id,
   };
 }
 

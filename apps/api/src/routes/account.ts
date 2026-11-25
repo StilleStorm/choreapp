@@ -13,7 +13,7 @@ import {
 } from '@choreapp/shared';
 import { Hono } from 'hono';
 import type { AppBindings, Env } from '../env.js';
-import { clientIp, createSession, requireParent, revokeMemberSessions } from '../lib/auth.js';
+import { assertFamilyAdmin, clientIp, createSession, requireAdmin, requireParent, revokeMemberSessions } from '../lib/auth.js';
 import { PASSWORD_ITERATIONS, hashPassword, newId, verifyPassword } from '../lib/crypto.js';
 import { first, hit, isLimited, isUniqueViolation, run } from '../lib/db.js';
 import { IMAGE_TYPES, MAX_AVATAR_BYTES } from '../lib/files.js';
@@ -52,6 +52,8 @@ export const publicAccount = new Hono<AppBindings>()
         c.env.DB.prepare(
           'INSERT INTO parent_login (member_id, email, password_hash, password_salt, password_iterations) VALUES (?, ?, ?, ?, ?)',
         ).bind(memberId, b.email, pw.hash, pw.salt, pw.iterations),
+        // The founder administers the family (set after the member row exists, for the foreign key).
+        c.env.DB.prepare('UPDATE family SET admin_member_id = ? WHERE id = ?').bind(memberId, familyId),
       ]);
     } catch (e) {
       if (isUniqueViolation(e)) throw conflict('email_taken');
@@ -209,7 +211,7 @@ export const account = new Hono<AppBindings>()
 
   .get('/family', async (c) => c.json(familyDto(await loadFamily(c.env, c.get('auth').familyId))))
 
-  .patch('/family', requireParent, async (c) => {
+  .patch('/family', requireParent, requireAdmin, async (c) => {
     const b = await body(c, updateFamilyBody);
     const { familyId } = c.get('auth');
     const columns: [keyof typeof b, string][] = [
@@ -244,24 +246,21 @@ export const account = new Hono<AppBindings>()
   .patch('/members/:id', requireParent, async (c) => {
     const b = await body(c, updateMemberBody);
     const m = await loadMember(c.env, c.req.param('id'));
-    if (!m || m.family_id !== c.get('auth').familyId || m.removed_at) throw notFound();
+    const auth = c.get('auth');
+    if (!m || m.family_id !== auth.familyId || m.removed_at) throw notFound();
+    // Children are everyone's; another adult's profile is the administrator's.
+    if (m.role === 'parent' && m.id !== auth.memberId) await assertFamilyAdmin(c.env.DB, auth);
     if (b.name !== undefined) await run(c.env.DB, 'UPDATE member SET name = ? WHERE id = ?', b.name, m.id);
     return c.json(await memberDto(c.env, new URL(c.req.url).origin, (await loadMember(c.env, m.id))!, true));
   })
 
   /** Removes a member from the family. History stays; their phones are logged out. */
-  .delete('/members/:id', requireParent, async (c) => {
-    const { familyId } = c.get('auth');
+  .delete('/members/:id', requireParent, requireAdmin, async (c) => {
+    const { familyId, memberId } = c.get('auth');
     const m = await loadMember(c.env, c.req.param('id'));
     if (!m || m.family_id !== familyId || m.removed_at) throw notFound();
-    if (m.role === 'parent') {
-      const parents = await first<{ n: number }>(
-        c.env.DB,
-        "SELECT COUNT(*) AS n FROM member WHERE family_id = ? AND role = 'parent' AND removed_at IS NULL",
-        familyId,
-      );
-      if ((parents?.n ?? 0) <= 1) throw conflict('last_parent');
-    }
+    // Only the administrator gets here, so they always stay and the family keeps a parent.
+    if (m.id === memberId) throw conflict('admin_cannot_be_removed');
     const now = Date.now();
     await revokeMemberSessions(c.env.DB, m.id, now);
     await c.env.DB.batch([

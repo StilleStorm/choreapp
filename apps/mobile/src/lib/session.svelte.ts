@@ -27,6 +27,10 @@ class Session {
   get isParent(): boolean {
     return this.me?.role === 'parent';
   }
+  /** The adult who registered the family: manages settings, adults and removals. */
+  get isAdmin(): boolean {
+    return !!this.me && this.family?.adminMemberId === this.me.id;
+  }
   get today(): string {
     return this.data?.today ?? new Date().toISOString().slice(0, 10);
   }
