@@ -1,7 +1,6 @@
 """Usage: python3 scripts/play-upload.py <aab> "<release name>" "<notes pl>" <screenshots dir>
 Upload AAB to the closed test track and replace phone screenshots via the
-Google Play Developer API. Commits with changesNotSentForReview=true so the
-user approves sending for review in Play Console."""
+Google Play Developer API. Committing the edit sends it for Google review."""
 import json, sys, time, glob, os
 import jwt, requests
 
