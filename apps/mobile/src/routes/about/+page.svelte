@@ -7,7 +7,7 @@
   import { SUPPORT_URL, showSupport } from '#lib/support.js';
 
   const WEBSITE = 'https://stillestormstudio.com/pl';
-  const EMAIL = 'zadania@stillestormstudio.com';
+  const EMAIL = 'hello@stillestormstudio.com';
 
   let version = $state('');
   $effect(() => {

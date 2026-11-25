@@ -1,7 +1,7 @@
 /** Outgoing e-mail (Cloudflare Email Sending). Adults only: children never give an e-mail. */
 
 export const EMAIL_FROM = { email: 'noreply@stillestormstudio.com', name: 'Zadania' } as const;
-export const EMAIL_REPLY_TO = 'zadania@stillestormstudio.com';
+export const EMAIL_REPLY_TO = 'hello@stillestormstudio.com';
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (ch) => `&#${ch.charCodeAt(0)};`);

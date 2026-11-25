@@ -31,7 +31,7 @@ describe('forgotten password by e-mail', () => {
     expect(sentEmails).toHaveLength(1);
     const m = sentEmails[0]!;
     expect(m.from).toEqual({ email: 'noreply@stillestormstudio.com', name: 'Zadania' });
-    expect(m.replyTo).toBe('zadania@stillestormstudio.com');
+    expect(m.replyTo).toBe('hello@stillestormstudio.com');
     expect(m.subject).toBe('[Zadania] Kod do zmiany hasła');
     expect(m.to).toBe(fam.email);
     expect(m.text).toContain('aplikacji Zadania');

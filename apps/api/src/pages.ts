@@ -5,7 +5,7 @@
 import { Hono } from 'hono';
 import type { AppBindings } from './env.js';
 
-const CONTACT = 'zadania@stillestormstudio.com';
+const CONTACT = 'hello@stillestormstudio.com';
 const CONTROLLER = 'Stille Storm Studio';
 const UPDATED = '25 listopada 2026';
 

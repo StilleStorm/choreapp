@@ -184,7 +184,7 @@ describe('public pages', () => {
     const r = await call('GET', '/privacy');
     expect(r.status).toBe(200);
     expect(r.body).toContain('Polityka prywatności');
-    expect(r.body).toContain('zadania@stillestormstudio.com');
+    expect(r.body).toContain('hello@stillestormstudio.com');
     expect(r.body).toContain('25 listopada 2026');
     expect(r.body).not.toMatch(/<(script|link)\b|src="http/);
   });
