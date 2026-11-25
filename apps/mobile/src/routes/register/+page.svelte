@@ -13,6 +13,7 @@
   let parentName = $state('');
   let email = $state('');
   let password = $state('');
+  let password2 = $state('');
   let error = $state('');
   let busy = $state(false);
 
@@ -21,6 +22,10 @@
     error = '';
     if (password.length < 8) {
       error = 'Hasło musi mieć co najmniej 8 znaków.';
+      return;
+    }
+    if (password !== password2) {
+      error = 'Hasła nie są takie same.';
       return;
     }
     busy = true;
@@ -57,6 +62,10 @@
       <span>Hasło</span>
       <input type="password" bind:value={password} required minlength="8" autocomplete="new-password" />
       <span class="hint">Co najmniej 8 znaków.</span>
+    </label>
+    <label class="field">
+      <span>Powtórz hasło</span>
+      <input type="password" bind:value={password2} required minlength="8" autocomplete="new-password" />
     </label>
     {#if error}<div class="error-box" role="alert">{error}</div>{/if}
     <button class="btn primary block" disabled={busy}>{busy ? 'Zakładanie…' : 'Załóż rodzinę'}</button>

@@ -15,6 +15,7 @@
   let name = $state('');
   let email = $state('');
   let password = $state('');
+  let password2 = $state('');
   let error = $state('');
   let busy = $state(false);
   /** A child already logged in is adding another home (mum's, dad's, grandparents'). */
@@ -79,6 +80,10 @@
     error = '';
     if ((info.kind === 'reset' || (info.kind === 'join' && info.role === 'parent')) && password.length < 8) {
       error = 'Hasło musi mieć co najmniej 8 znaków.';
+      return;
+    }
+    if ((info.kind === 'reset' || (info.kind === 'join' && info.role === 'parent')) && password !== password2) {
+      error = 'Hasła nie są takie same.';
       return;
     }
     busy = true;
@@ -166,6 +171,10 @@
           <input type="password" bind:value={password} required minlength="8" autocomplete="new-password" />
           <span class="hint">Co najmniej 8 znaków.</span>
         </label>
+        <label class="field">
+          <span>Powtórz hasło</span>
+          <input type="password" bind:value={password2} required minlength="8" autocomplete="new-password" />
+        </label>
       {:else if info.kind === 'reconnect'}
         <p>Cześć, <strong>{info.memberName}</strong>! Ten telefon zostanie połączony z Twoim profilem. Punkty i naklejki zostają.</p>
         <p class="muted small">Stary telefon zostanie wylogowany.</p>
@@ -174,6 +183,10 @@
         <label class="field">
           <span>Nowe hasło</span>
           <input type="password" bind:value={password} required minlength="8" autocomplete="new-password" />
+        </label>
+        <label class="field">
+          <span>Powtórz nowe hasło</span>
+          <input type="password" bind:value={password2} required minlength="8" autocomplete="new-password" />
         </label>
       {/if}
       {#if error}<div class="error-box" role="alert">{error}</div>{/if}

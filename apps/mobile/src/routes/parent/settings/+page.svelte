@@ -74,6 +74,7 @@
   let currentPassword = $state('');
   let newEmail = $state('');
   let newPassword = $state('');
+  let newPassword2 = $state('');
   let loginError = $state('');
   let loginBusy = $state(false);
   let loginDone = $state('');
@@ -81,6 +82,7 @@
     currentPassword = '';
     newEmail = what === 'email' ? (session.me?.email ?? '') : '';
     newPassword = '';
+    newPassword2 = '';
     loginError = '';
     loginDone = '';
     loginKind = what;
@@ -92,6 +94,10 @@
     loginError = '';
     if (loginKind === 'password' && newPassword.length < 8) {
       loginError = 'Hasło musi mieć co najmniej 8 znaków.';
+      return;
+    }
+    if (loginKind === 'password' && newPassword !== newPassword2) {
+      loginError = 'Hasła nie są takie same.';
       return;
     }
     loginBusy = true;
@@ -409,6 +415,10 @@
           <span>Nowe hasło</span>
           <input type="password" bind:value={newPassword} required minlength="8" autocomplete="new-password" />
           <span class="hint">Co najmniej 8 znaków. Inne telefony zostaną wylogowane.</span>
+        </label>
+        <label class="field">
+          <span>Powtórz nowe hasło</span>
+          <input type="password" bind:value={newPassword2} required minlength="8" autocomplete="new-password" />
         </label>
       {/if}
       <label class="field">
