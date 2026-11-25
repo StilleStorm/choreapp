@@ -19,6 +19,8 @@
     }
   ],
   "r2_buckets": [{ "binding": "FILES", "bucket_name": "choreapp-files" }],
+  // Cloudflare Email Sending (password reset codes). The sender domain must be onboarded.
+  "send_email": [{ "name": "EMAIL" }],
   // One trigger (Free plan allows 5): occurrences, reminders, quiet-hours digest, cleanup.
   "triggers": { "crons": ["*/5 * * * *"] }
   // Secrets (wrangler secret put): FILE_SIGNING_KEY, FCM_SERVICE_ACCOUNT

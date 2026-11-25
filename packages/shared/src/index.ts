@@ -70,6 +70,17 @@ export const updateMeBody = z.object({
 export const changeEmailBody = z.object({ currentPassword: z.string().min(1).max(200), newEmail: email });
 export const changePasswordBody = z.object({ currentPassword: z.string().min(1).max(200), newPassword: password });
 
+/** Forgotten password (adults only): a 6-digit code is e-mailed, then exchanged for a new password. */
+export const forgotPasswordBody = z.object({ email });
+export const resetPasswordBody = z.object({
+  email,
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/),
+  newPassword: password,
+});
+
 export const appearanceBody = z.object({
   /** null = use the uploaded photo (or initials). */
   avatarItemId: id.nullable(),

@@ -7,6 +7,7 @@ import { account, publicAccount } from './routes/account.js';
 import { appRelease } from './routes/app.js';
 import { files } from './routes/files.js';
 import { invites, publicInvites } from './routes/invites.js';
+import { passwordReset } from './routes/passwordReset.js';
 import { points } from './routes/points.js';
 import { reviews } from './routes/reviews.js';
 import { shop } from './routes/shop.js';
@@ -28,6 +29,7 @@ const authed = new Hono<AppBindings>().use(requireAuth).route('/', invites).rout
 const v1 = new Hono<AppBindings>()
   .route('/', files)
   .route('/', publicAccount)
+  .route('/', passwordReset)
   .route('/', publicInvites)
   .route('/', authed);
 

@@ -41,8 +41,9 @@
     {#if error}<div class="error-box" role="alert">{error}</div>{/if}
     <button class="btn primary block" disabled={busy}>{busy ? 'Logowanie…' : 'Zaloguj się'}</button>
   </form>
+  <a class="btn ghost block" href={email ? `/forgot?email=${encodeURIComponent(email)}` : '/forgot'}>Nie pamiętam hasła</a>
   <p class="muted small">
-    Nie pamiętasz hasła? Poproś drugiego rodzica, żeby w Ustawieniach wygenerował dla Ciebie kod resetu, a potem wybierz
+    Kod do zmiany hasła przyjdzie e-mailem. Możesz też poprosić administratora rodziny o kod resetu w Ustawieniach i wybrać
     „Mam kod od rodzica”.
   </p>
 </main>

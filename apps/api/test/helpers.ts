@@ -3,6 +3,18 @@ import { app } from '../src/index.js';
 
 export { env };
 
+/** E-mails "sent" through the fake EMAIL binding; `failEmail` makes the next sends throw. */
+export const sentEmails: EmailMessageBuilder[] = [];
+export const emailControl = { fail: false };
+const fakeEmail = {
+  async send(message: EmailMessageBuilder) {
+    if (emailControl.fail) throw Object.assign(new Error('send failed'), { code: 'E_TEST' });
+    sentEmails.push(message);
+    return { messageId: `test-${sentEmails.length}` };
+  },
+} as unknown as SendEmail;
+const testEnv = Object.assign(Object.create(env), { EMAIL: fakeEmail }) as typeof env;
+
 export interface Res<T = any> {
   status: number;
   body: T;
@@ -21,7 +33,7 @@ export async function call<T = any>(
   const res = await app.request(
     `http://api.test${path}`,
     { method, headers, body: opts.json !== undefined ? JSON.stringify(opts.json) : opts.raw },
-    env,
+    testEnv,
   );
   const text = await res.text();
   let body: any = text;

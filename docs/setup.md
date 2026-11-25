@@ -19,8 +19,11 @@ pnpm run db:migrate:remote
 pnpm run db:seed:remote                        # wbudowane paczki: 397 naklejek, 60 awatarów, 25 ramek
 pnpm exec wrangler secret put FILE_SIGNING_KEY # dowolny długi losowy ciąg
 pnpm exec wrangler secret put FCM_SERVICE_ACCOUNT   # JSON konta serwisowego Firebase w jednej linii
+pnpm exec wrangler email sending enable stillestormstudio.com   # domena nadawcy maili z kodami do zmiany hasła
 pnpm run deploy
 ```
+
+Maile z kodami do zmiany hasła (tylko dorośli) idą przez Cloudflare Email Sending z bindingu `EMAIL`. Domena nadawcy musi mieć włączone Email Sending (`wrangler email sending enable <domena>`, rekordy DKIM/SPF dodaje Cloudflare). Wysyłka do dowolnych adresatów wymaga planu Workers Paid; na planie Free maile dochodzą tylko na zweryfikowane adresy (błąd `recipient_plan_restricted`). Gdy wysyłka się nie uda, API i tak odpowiada 200 (błąd trafia do logów Workera), a zapasową drogą zostaje kod resetu od administratora rodziny.
 
 Adres Workera (np. `https://choreapp-api.<subdomena>.workers.dev`) wpisz do `apps/mobile/.env.production`:
 

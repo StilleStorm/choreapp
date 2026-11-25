@@ -15,6 +15,7 @@ const MESSAGES: Record<string, string> = {
   invalid_credentials: 'Nieprawidłowy e-mail lub hasło.',
   email_taken: 'Ten e-mail jest już używany.',
   wrong_password: 'Obecne hasło jest nieprawidłowe.',
+  reset_code_invalid: 'Kod jest nieprawidłowy, wygasł albo został już użyty. Poproś o nowy kod.',
   invite_invalid: 'Ten kod jest nieprawidłowy, wygasł albo został już użyty. Poproś rodzica o nowy.',
   name_required: 'Wpisz imię lub nazwę.',
   email_password_required: 'Wpisz e-mail i hasło.',

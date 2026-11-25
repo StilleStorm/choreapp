@@ -5,6 +5,7 @@ declare global {
     interface Env {
       DB: D1Database;
       FILES: R2Bucket;
+      EMAIL: SendEmail;
       FILE_SIGNING_KEY: string;
       FCM_SERVICE_ACCOUNT?: string;
       TEST_MIGRATIONS: D1Migration[];

@@ -11,6 +11,7 @@ import type { Env } from '../env.js';
 import { all, run } from '../lib/db.js';
 import type { FamilyRow } from '../lib/rows.js';
 import { cleanupInvites } from '../routes/invites.js';
+import { cleanupPasswordResets } from '../routes/passwordReset.js';
 import { buildAgenda } from './agenda.js';
 import { deliverDue, notifyReminder } from './notify.js';
 import { HORIZON_DAYS, ensureFamilyOccurrences } from './occurrences.js';
@@ -46,6 +47,7 @@ export async function runCron(env: Env, now = Date.now()): Promise<void> {
   await deliverDue(env, now);
   if (new Date(now).getUTCMinutes() < 5) {
     await cleanupInvites(env.DB, now);
+    await cleanupPasswordResets(env.DB, now);
     // Keep the outbox small: delivered notifications older than a month.
     await run(env.DB, 'DELETE FROM notification_outbox WHERE sent_at IS NOT NULL AND sent_at < ?', now - 30 * 86_400_000);
   }

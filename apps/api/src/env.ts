@@ -1,6 +1,8 @@
 export interface Env {
   DB: D1Database;
   FILES: R2Bucket;
+  /** Cloudflare Email Sending: password reset codes for adults. */
+  EMAIL: SendEmail;
   /** HMAC key for signed file URLs. */
   FILE_SIGNING_KEY: string;
   /** Firebase service account JSON (one line). Push is disabled when unset. */
