@@ -16,7 +16,8 @@
     "typecheck": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --threshold error",
     "test": "vitest run",
     "cap:sync": "vite build && cap sync android",
-    "apk": "vite build && cap sync android && cd android && ./gradlew assembleRelease"
+    "apk": "vite build && cap sync android && cd android && ./gradlew assembleRelease",
+    "aab": "VITE_DISTRIBUTION=play vite build && cap sync android && cd android && ./gradlew bundleRelease"
   },
   "dependencies": {
     "@capacitor-mlkit/barcode-scanning": "^8.2.2",

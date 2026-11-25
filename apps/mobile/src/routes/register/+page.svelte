@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { SessionDto } from '@choreapp/shared';
   import { goto } from '$app/navigation';
-  import { api } from '#lib/api.js';
+  import { api, PRIVACY_URL } from '#lib/api.js';
   import BackHeader from '#lib/components/BackHeader.svelte';
   import { errorMessage } from '#lib/messages.js';
   import { session } from '#lib/session.svelte.js';
@@ -60,5 +60,8 @@
     </label>
     {#if error}<div class="error-box" role="alert">{error}</div>{/if}
     <button class="btn primary block" disabled={busy}>{busy ? 'Zakładanie…' : 'Załóż rodzinę'}</button>
+    <p class="muted small">
+      Zakładając rodzinę, potwierdzasz, że znasz <a href={PRIVACY_URL} target="_blank" rel="noopener">politykę prywatności</a>.
+    </p>
   </form>
 </main>

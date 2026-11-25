@@ -4,6 +4,7 @@ import {
   appearanceBody,
   changeEmailBody,
   changePasswordBody,
+  deleteAccountBody,
   loginBody,
   NEUTRAL_THEME,
   registerBody,
@@ -17,12 +18,13 @@ import {
 } from '@choreapp/shared';
 import { Hono } from 'hono';
 import type { AppBindings, Env } from '../env.js';
-import { assertFamilyAdmin, clientIp, createSession, requireAdmin, requireParent, revokeMemberSessions } from '../lib/auth.js';
+import { assertFamilyAdmin, clientIp, createSession, isFamilyAdmin, requireAdmin, requireParent, revokeMemberSessions } from '../lib/auth.js';
 import { PASSWORD_ITERATIONS, hashPassword, newId, verifyPassword } from '../lib/crypto.js';
 import { first, hit, isLimited, isUniqueViolation, run } from '../lib/db.js';
 import { IMAGE_TYPES, MAX_AVATAR_BYTES } from '../lib/files.js';
 import { ApiError, badRequest, body, conflict, forbidden, notFound } from '../lib/http.js';
 import { familyDto, loadFamily, loadMember, loadMembers, memberDto } from '../lib/rows.js';
+import { eraseFamily, eraseMember } from '../services/erase.js';
 import { rescheduleHeld } from '../services/notify.js';
 
 const FAIL_WINDOW = 15 * 60_000;
@@ -323,21 +325,32 @@ export const account = new Hono<AppBindings>()
     return c.json(await memberDto(c.env, new URL(c.req.url).origin, (await loadMember(c.env, m.id))!, true));
   })
 
-  /** Removes a member from the family. History stays; their phones are logged out. */
+  /** Deletes a member and all their data (points, stickers, history, photo); their phones are logged out. */
   .delete('/members/:id', requireParent, requireAdmin, async (c) => {
     const { familyId, memberId } = c.get('auth');
     const m = await loadMember(c.env, c.req.param('id'));
     if (!m || m.family_id !== familyId || m.removed_at) throw notFound();
     // Only the administrator gets here, so they always stay and the family keeps a parent.
     if (m.id === memberId) throw conflict('admin_cannot_be_removed');
-    const now = Date.now();
-    await revokeMemberSessions(c.env.DB, m.id, now);
-    await c.env.DB.batch([
-      c.env.DB.prepare('UPDATE member SET removed_at = ?, avatar_key = NULL WHERE id = ?').bind(now, m.id),
-      // Free the e-mail so the person could be invited again later.
-      c.env.DB.prepare('DELETE FROM parent_login WHERE member_id = ?').bind(m.id),
-    ]);
-    // Their photo stops being served, even through a signed URL handed out earlier.
-    if (m.avatar_key) await c.env.FILES.delete(m.avatar_key);
+    await eraseMember(c.env, m.id);
+    return c.json({ ok: true });
+  })
+
+  /** An adult deletes their own account. The administrator deletes the whole family instead. */
+  .post('/me/delete', requireParent, async (c) => {
+    const b = await body(c, deleteAccountBody);
+    const auth = c.get('auth');
+    await assertCurrentPassword(c.env, auth.memberId, b.currentPassword);
+    if (await isFamilyAdmin(c.env.DB, auth)) throw conflict('admin_must_delete_family');
+    await eraseMember(c.env, auth.memberId);
+    return c.json({ ok: true });
+  })
+
+  /** The administrator deletes the family: every member, task, reward, pack and file. */
+  .post('/family/delete', requireParent, requireAdmin, async (c) => {
+    const b = await body(c, deleteAccountBody);
+    const auth = c.get('auth');
+    await assertCurrentPassword(c.env, auth.memberId, b.currentPassword);
+    await eraseFamily(c.env, auth.familyId);
     return c.json({ ok: true });
   });

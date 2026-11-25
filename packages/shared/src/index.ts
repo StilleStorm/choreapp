@@ -85,6 +85,8 @@ export const updateMeBody = z.object({
 /** An adult changes their own login; both need the current password. */
 export const changeEmailBody = z.object({ currentPassword: z.string().min(1).max(200), newEmail: email });
 export const changePasswordBody = z.object({ currentPassword: z.string().min(1).max(200), newPassword: password });
+/** An adult deletes their own account (or, as administrator, the whole family). */
+export const deleteAccountBody = z.object({ currentPassword: z.string().min(1).max(200) });
 
 /** Forgotten password (adults only): a 6-digit code is e-mailed, then exchanged for a new password. */
 export const forgotPasswordBody = z.object({ email });

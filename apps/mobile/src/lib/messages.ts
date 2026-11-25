@@ -26,6 +26,7 @@ const MESSAGES: Record<string, string> = {
   last_parent: 'W rodzinie musi zostać co najmniej jeden rodzic.',
   admin_only: 'To może zrobić tylko administrator rodziny.',
   admin_cannot_be_removed: 'Administratora rodziny nie można usunąć.',
+  admin_must_delete_family: 'Administrator usuwa konto razem z całą rodziną.',
   unsupported_image_type: 'Ten format zdjęcia nie jest obsługiwany.',
   empty_image: 'Zdjęcie jest puste.',
   image_too_large: 'Zdjęcie jest za duże.',

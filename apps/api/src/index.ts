@@ -3,6 +3,7 @@ import { cors } from 'hono/cors';
 import type { AppBindings, Env } from './env.js';
 import { requireAuth } from './lib/auth.js';
 import { ApiError } from './lib/http.js';
+import { pages } from './pages.js';
 import { account, publicAccount } from './routes/account.js';
 import { appRelease } from './routes/app.js';
 import { files } from './routes/files.js';
@@ -21,6 +22,9 @@ export const app = new Hono<AppBindings>();
 app.use('*', cors({ origin: '*', allowHeaders: ['Authorization', 'Content-Type'], maxAge: 86400 }));
 
 app.get('/', (c) => c.json({ name: 'choreapp-api', ok: true }));
+
+// Privacy policy and account deletion info (linked from Google Play and the app).
+app.route('/', pages);
 
 // Everything mounted on `authed` requires a session. Public routes are
 // registered first so they answer before the auth middleware runs.

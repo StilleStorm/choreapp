@@ -9,6 +9,7 @@
   import { errorMessage } from '#lib/messages.js';
   import { session } from '#lib/session.svelte.js';
   import { ADULT_THEMES, NEUTRAL } from '#lib/themes/pickable.js';
+  import { selfUpdates } from '#lib/update.svelte.js';
 
   // Invite sheet
   let inviteOpen = $state(false);
@@ -107,6 +108,33 @@
       loginError = errorMessage(err);
     } finally {
       loginBusy = false;
+    }
+  }
+
+  // Delete own account (the administrator deletes the whole family)
+  let deleteOpen = $state(false);
+  let deletePassword = $state('');
+  let deleteError = $state('');
+  let deleteBusy = $state(false);
+  function openDelete() {
+    deletePassword = '';
+    deleteError = '';
+    deleteOpen = true;
+  }
+
+  async function deleteAccount(e: SubmitEvent) {
+    e.preventDefault();
+    deleteError = '';
+    deleteBusy = true;
+    try {
+      await api.post(session.isAdmin ? '/v1/family/delete' : '/v1/me/delete', { currentPassword: deletePassword });
+      deleteOpen = false;
+      // The server has already ended every session.
+      await session.signOut(false);
+    } catch (err) {
+      deleteError = errorMessage(err);
+    } finally {
+      deleteBusy = false;
     }
   }
 
@@ -246,11 +274,13 @@
         </span>
         <Icon name="chevron" size={20} />
       </a>
-      <a class="row member" href="/update">
-        <Icon name="download" />
-        <span class="grow title">Wersja aplikacji</span>
-        <Icon name="chevron" size={20} />
-      </a>
+      {#if selfUpdates}
+        <a class="row member" href="/update">
+          <Icon name="download" />
+          <span class="grow title">Wersja aplikacji</span>
+          <Icon name="chevron" size={20} />
+        </a>
+      {/if}
       <a class="row member" href="/about">
         <Icon name="info" />
         <span class="grow title">O aplikacji</span>
@@ -259,6 +289,10 @@
       <button class="row member" onclick={() => session.signOut()}>
         <Icon name="logout" />
         <span class="grow title">Wyloguj się</span>
+      </button>
+      <button class="row member danger-text" onclick={openDelete}>
+        <Icon name="trash" />
+        <span class="grow title">{session.isAdmin ? 'Usuń całą rodzinę' : 'Usuń konto'}</span>
       </button>
     </div>
   </section>
@@ -297,7 +331,11 @@
     {#if !isMe && session.isAdmin}
       {#if confirmRemove}
         <div class="error-box">
-          {selected.name} straci dostęp, a telefon zostanie wylogowany. Historia zadań i punktów zostaje.
+          {#if selected.role === 'child'}
+            Profil {selected.name} zostanie usunięty razem z punktami, naklejkami, historią zadań i zdjęciem. Telefon zostanie wylogowany. Tego nie da się cofnąć.
+          {:else}
+            Konto {selected.name} zostanie usunięte (e-mail, hasło, zdjęcie), a telefon wylogowany. Założone przez tę osobę zadania przejdą na Ciebie.
+          {/if}
         </div>
         <div class="inline">
           <button class="btn grow" onclick={() => (confirmRemove = false)}>Anuluj</button>
@@ -338,6 +376,32 @@
       <button class="btn primary block" disabled={loginBusy}>{loginBusy ? 'Zapisywanie…' : 'Zapisz'}</button>
     </form>
   {/if}
+</Sheet>
+
+<Sheet bind:open={deleteOpen} title={session.isAdmin ? 'Usuń całą rodzinę' : 'Usuń konto'}>
+  <form class="stack" onsubmit={deleteAccount}>
+    <div class="error-box">
+      {#if session.isAdmin}
+        Jesteś administratorem, więc usuniesz rodzinę {session.family?.name} i wszystko, co w niej jest: konta wszystkich dorosłych,
+        profile dzieci, zadania, punkty, naklejki, nagrody, własne paczki i zdjęcia. Wszystkie telefony zostaną wylogowane.
+      {:else}
+        Usuniesz swoje konto: e-mail, hasło, imię i zdjęcie. Rodzina i dzieci zostają, a założone przez Ciebie zadania przejdą na
+        administratora.
+      {/if}
+      <strong>Tego nie da się cofnąć.</strong>
+    </div>
+    <label class="field">
+      <span>Hasło</span>
+      <input type="password" bind:value={deletePassword} required autocomplete="current-password" />
+    </label>
+    {#if deleteError}<div class="error-box" role="alert">{deleteError}</div>{/if}
+    <div class="inline">
+      <button type="button" class="btn grow" onclick={() => (deleteOpen = false)}>Anuluj</button>
+      <button class="btn danger grow" disabled={deleteBusy || !deletePassword}>
+        {deleteBusy ? 'Usuwanie…' : session.isAdmin ? 'Usuń rodzinę' : 'Usuń konto'}
+      </button>
+    </div>
+  </form>
 </Sheet>
 
 <style>

@@ -64,6 +64,14 @@ scripts/release-apk.sh "Co nowego"
 
 Skrypt buduje podpisany APK, wysyła go do R2 i rejestruje wersję. Telefony w rodzinie pokażą „Nowa wersja aplikacji”. Plik APK ląduje też w katalogu głównym, żeby zainstalować go pierwszy raz (przesłać na telefon, otworzyć, zezwolić na instalację z tego źródła).
 
+## 4. Google Play (AAB)
+
+```bash
+cd apps/mobile && pnpm run aab
+```
+
+Buduje wersję bez samodzielnych aktualizacji (`VITE_DISTRIBUTION=play`) i podpisany pakiet `android/app/build/outputs/bundle/release/app-release.aab` (tym samym kluczem z `keystore.properties`; w Play Console można go zarejestrować jako klucz przesyłania). W Play Console podaj politykę prywatności `https://<adres Workera>/privacy` i stronę usuwania konta `https://<adres Workera>/delete-account`.
+
 ## Praca lokalna
 
 ```bash

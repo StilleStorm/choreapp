@@ -1,6 +1,7 @@
 <script lang="ts">
   import BackHeader from '#lib/components/BackHeader.svelte';
   import Icon from '#lib/components/Icon.svelte';
+  import { PRIVACY_URL } from '#lib/api.js';
   import { appVersion } from '#lib/native.js';
   import { session } from '#lib/session.svelte.js';
 
@@ -34,6 +35,11 @@
     <a class="row" href="/licenses">
       <Icon name="info" />
       <span class="grow title">Licencje i autorzy grafik</span>
+      <Icon name="chevron" size={20} />
+    </a>
+    <a class="row" href={PRIVACY_URL} target="_blank" rel="noopener">
+      <Icon name="info" />
+      <span class="grow title">Polityka prywatności</span>
       <Icon name="chevron" size={20} />
     </a>
   </div>
