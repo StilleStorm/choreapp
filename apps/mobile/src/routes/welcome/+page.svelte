@@ -7,10 +7,9 @@
 
 <main class="screen no-tabs welcome">
   <div class="hero">
-    <div class="logo" aria-hidden="true">
-      <Icon name="star" size={44} stroke={2.2} />
-    </div>
-    <h1>Rodzinne zadania</h1>
+    <img class="logo" src="/logo.png" alt="" width="104" height="104" />
+    <h1>Zadania</h1>
+    <p class="tagline">rodzinne misje</p>
     <p class="muted">Zadania dla dzieci, punkty, naklejki i nagrody.</p>
   </div>
 
@@ -36,14 +35,17 @@
     gap: 10px;
   }
   .logo {
-    width: 88px;
-    height: 88px;
+    width: 104px;
+    height: 104px;
     border-radius: 28px;
-    background: var(--accent);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     margin-bottom: 8px;
+  }
+  h1 {
+    margin-bottom: 0;
+  }
+  .tagline {
+    margin: -6px 0 4px;
+    font-weight: 700;
+    color: #f08a1c;
   }
 </style>
