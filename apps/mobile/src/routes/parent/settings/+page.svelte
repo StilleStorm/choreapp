@@ -1,11 +1,12 @@
 <script lang="ts">
-  import type { FamilyDto, MemberDto, Role } from '@choreapp/shared';
+  import type { FamilyDto, ItemDto, MemberDto, Role } from '@choreapp/shared';
   import { api } from '#lib/api.js';
   import Avatar from '#lib/components/Avatar.svelte';
   import AvatarPicker from '#lib/components/AvatarPicker.svelte';
   import Icon from '#lib/components/Icon.svelte';
   import InviteSheet from '#lib/components/InviteSheet.svelte';
   import Sheet from '#lib/components/Sheet.svelte';
+  import ThemeAvatarGrid from '#lib/components/ThemeAvatarGrid.svelte';
   import { errorMessage } from '#lib/messages.js';
   import { session } from '#lib/session.svelte.js';
   import { ADULT_THEMES, NEUTRAL } from '#lib/themes/pickable.js';
@@ -54,6 +55,31 @@
       memberOpen = false;
     } catch (e) {
       memberError = errorMessage(e);
+    }
+  }
+
+  // Theme avatars: adults may wear them too, instead of a photo.
+  let avatarsOpen = $state(false);
+  let themeAvatars = $state<ItemDto[]>([]);
+  let avatarsError = $state('');
+  async function openAvatars() {
+    memberOpen = false;
+    avatarsError = '';
+    avatarsOpen = true;
+    try {
+      if (!themeAvatars.length) themeAvatars = await api.get<ItemDto[]>('/v1/avatars/themes');
+    } catch (e) {
+      avatarsError = errorMessage(e);
+    }
+  }
+  async function wearAvatar(itemId: string | null) {
+    avatarsError = '';
+    try {
+      await api.put('/v1/me/appearance', { avatarItemId: itemId, frameItemId: session.me?.frameItemId ?? null });
+      await session.refresh();
+      avatarsOpen = false;
+    } catch (e) {
+      avatarsError = errorMessage(e);
     }
   }
 
@@ -359,6 +385,7 @@
     {#if isMe && selected.role === 'parent'}
       <!-- Photos are for adults only; children use avatars (Google Play Families policy). -->
       <AvatarPicker name={editName || selected.name} currentUrl={selected.avatarUrl} bind:blob={avatarBlob} />
+      <div class="center"><button type="button" class="btn ghost small" onclick={openAvatars}><Icon name="user" size={18} /> Albo wybierz awatar</button></div>
     {/if}
     {#if canEdit}
       <label class="field">
@@ -402,6 +429,18 @@
         </button>
       {/if}
     {/if}
+  {/if}
+</Sheet>
+
+<Sheet bind:open={avatarsOpen} title="Awatar">
+  {#if avatarsError}<div class="error-box">{avatarsError}</div>{/if}
+  {#if session.me}
+    <ThemeAvatarGrid avatars={themeAvatars} theme={session.me.theme} selectedId={session.me.avatarItemId} onpick={(a) => wearAvatar(a.id)}>
+      {#if session.me.avatarItemId}
+        <button class="btn block" onclick={() => wearAvatar(null)}>Bez awatara (zdjęcie albo inicjały)</button>
+      {/if}
+    </ThemeAvatarGrid>
+    {#if !themeAvatars.length && !avatarsError}<p class="empty">Wczytywanie…</p>{/if}
   {/if}
 </Sheet>
 

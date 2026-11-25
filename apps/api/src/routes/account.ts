@@ -25,6 +25,7 @@ import { first, hit, isLimited, isUniqueViolation, run } from '../lib/db.js';
 import { IMAGE_TYPES, MAX_AVATAR_BYTES } from '../lib/files.js';
 import { ApiError, badRequest, body, conflict, forbidden, notFound } from '../lib/http.js';
 import { familyDto, loadFamily, loadMember, loadMembers, memberDto } from '../lib/rows.js';
+import { ACTIVE_PACKS } from '../services/catalog.js';
 import { eraseFamily, eraseMember } from '../services/erase.js';
 import { rescheduleHeld } from '../services/notify.js';
 
@@ -228,24 +229,30 @@ export const account = new Hono<AppBindings>()
     return c.json(await memberDto(c.env, new URL(c.req.url).origin, (await loadMember(c.env, memberId))!, true));
   })
 
-  /** Pick an owned avatar / frame item (or null to go back to the photo / no frame). */
+  /**
+   * Pick an owned avatar / frame item, or any theme avatar the family has not
+   * switched off (or null to go back to the photo / no frame).
+   */
   .put('/me/appearance', async (c) => {
     const b = await body(c, appearanceBody);
-    const { memberId } = c.get('auth');
+    const { memberId, familyId } = c.get('auth');
     for (const [itemId, kind] of [
       [b.avatarItemId, 'avatar'],
       [b.frameItemId, 'frame'],
     ] as const) {
       if (!itemId) continue;
-      const owned = await first(
+      const allowed = await first(
         c.env.DB,
-        `SELECT 1 FROM member_item mi JOIN item i ON i.id = mi.item_id
-          WHERE mi.member_id = ? AND mi.item_id = ? AND i.kind = ?`,
-        memberId,
+        `SELECT 1 FROM item i
+          WHERE i.id = ?2 AND i.kind = ?3
+            AND (EXISTS (SELECT 1 FROM member_item mi WHERE mi.member_id = ?4 AND mi.item_id = i.id)
+                 OR (i.theme IS NOT NULL AND i.deleted_at IS NULL AND i.pack_id IN (${ACTIVE_PACKS})))`,
+        familyId,
         itemId,
         kind,
+        memberId,
       );
-      if (!owned) throw forbidden('item_not_owned');
+      if (!allowed) throw forbidden('item_not_owned');
     }
     await run(
       c.env.DB,

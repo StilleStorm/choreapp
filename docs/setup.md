@@ -16,7 +16,7 @@ cd apps/api
 pnpm exec wrangler d1 create choreapp          # wpisz zwrócone database_id do wrangler.jsonc
 pnpm exec wrangler r2 bucket create choreapp-files
 pnpm run db:migrate:remote
-pnpm run db:seed:remote                        # wbudowane paczki: 397 naklejek, 60 awatarów, 25 ramek
+pnpm run db:seed:remote                        # wbudowane paczki: 397 naklejek, 60 awatarów, 150 awatarów motywów, 25 ramek
 pnpm exec wrangler secret put FILE_SIGNING_KEY # dowolny długi losowy ciąg
 pnpm exec wrangler secret put FCM_SERVICE_ACCOUNT   # JSON konta serwisowego Firebase w jednej linii
 pnpm exec wrangler email sending enable stillestormstudio.com   # domena nadawcy maili z kodami do zmiany hasła
@@ -87,6 +87,17 @@ pnpm run db:migrate:remote
 
 Jeśli migracja poszła pierwsza: zdjęcia dzieci leżą w R2 pod `families/<rodzina>/avatars/<id dziecka>-*` (lista w panelu Cloudflare → R2).
 
+## Awatary motywów (migracja 0008)
+
+150 ilustrowanych awatarów (6 na każdy z 25 motywów), darmowych dla dzieci i dorosłych. Pliki WebP 256 px (razem ok. 2,9 MB) są statycznymi assetami Workera (`apps/api/public/builtin/theme-avatars/`), tak jak awatary DiceBear, więc nie trafiają do R2 ani do APK. Źródła: `packages/seed/theme-avatars/*.webp` (z oryginałów PNG robi je `python3 -I packages/seed/theme-avatars.py <katalog z PNG> packages/seed/theme-avatars`). Kolejność ma znaczenie, bo seed wpisuje nową kolumnę `item.theme`:
+
+```bash
+cd apps/api
+pnpm run db:migrate:remote   # 0008_theme_avatars.sql: kolumna item.theme
+pnpm run db:seed:remote      # paczka „Awatary motywów” i 150 pozycji
+pnpm run deploy              # wysyła pliki WebP (assety) i nowy kod API
+```
+
 ## Praca lokalna
 
 ```bash
@@ -97,5 +108,5 @@ pnpm test                            # wszystkie testy
 
 ## Odtwarzanie danych
 
-- Paczki wbudowane: `pnpm --filter @choreapp/seed build` (pobiera Fluent Emoji z GitHuba, generuje awatary DiceBear i ramki), potem `db:seed:*`.
+- Paczki wbudowane: `pnpm --filter @choreapp/seed build` (pobiera Fluent Emoji z GitHuba, generuje awatary DiceBear i ramki, kopiuje awatary motywów), potem `db:seed:*`.
 - Motywy i fonty: `node apps/mobile/scripts/gen-themes.mjs` (z `packages/seed/themes.json`, czyli tokenów odczytanych z mockupów).

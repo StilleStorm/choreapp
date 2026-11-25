@@ -102,7 +102,7 @@ export const resetPasswordBody = z.object({
 });
 
 export const appearanceBody = z.object({
-  /** null = use the uploaded photo (or initials). */
+  /** An owned avatar item or any theme avatar; null = use the uploaded photo (or initials). */
   avatarItemId: id.nullable(),
   frameItemId: id.nullable(),
 });

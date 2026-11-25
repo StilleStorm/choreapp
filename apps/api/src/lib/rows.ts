@@ -75,6 +75,8 @@ export interface ItemRow {
   droppable: number;
   sort: number;
   deleted_at: number | null;
+  /** Theme avatars: the app theme they belong to (free to wear). NULL for other items. */
+  theme: string | null;
 }
 
 export function familyDto(f: FamilyRow): FamilyDto {
@@ -141,6 +143,7 @@ export async function itemDto(env: Env, origin: string, item: ItemRow, family: F
     imageUrl: await signedFileUrl(env, origin, item.image_key),
     price: priceOf(item, family),
     droppable: !!item.droppable,
+    ...(item.theme ? { theme: item.theme } : {}),
   };
 }
 

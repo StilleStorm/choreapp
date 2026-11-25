@@ -46,6 +46,7 @@ Specyfikacja: https://claude.ai/artifact/SK3JoeQcavgGKoMuXnsXkS. Poniżej to, cz
 - Seria w widoku liczy też zgłoszenia czekające na sprawdzenie. Paczki za serię są przyznawane tylko z zatwierdzonych dni („tryb ścisły”) i raz na serię. Po przerwaniu serii progi można zdobyć ponownie.
 - „Pierwsze zatwierdzone zadanie dnia” liczy się według dnia zatwierdzenia.
 - Losowane są tylko naklejki. Awatary i ramki są tylko w sklepie.
+- Awatary motywów (150, po 6 na motyw) są darmowe: każdy, dziecko i dorosły, może je założyć bez kupowania (`item.theme` niepuste, `price` NULL, więc nie ma ich w sklepie ani w losowaniu, ani w kolekcji; lista `GET /v1/avatars/themes`). Wybór awatara pokazuje najpierw „Twój motyw”, potem awatary ze sklepu i ramki, potem pozostałe motywy. Rodzina może wyłączyć paczkę „Awatary motywów” jak każdą wbudowaną. Dołączanie dziecka nie ma kroku z awatarem, więc nowe dziecko dalej startuje z inicjałami.
 - Brak rzadkiej albo legendarnej w puli: paczka za serię daje najlepszą dostępną rzadkość, a puste miejsca zamieniają się na 5 pkt.
 - Ceny przedmiotów: `price = NULL` oznacza tylko losowanie, `0` cenę rodziny dla danej rzadkości (domyślnie 30/80/200, zmiana w Nagrodach), `>0` stałą cenę.
 - Nagroda od rodzica: punkty schodzą przy wyborze. Rodzic oznacza ją jako wydaną albo anuluje, a anulowanie zwraca punkty wpisem w księdze. Zakupy są atomowe, saldo nie zejdzie poniżej zera.
@@ -58,6 +59,7 @@ Specyfikacja: https://claude.ai/artifact/SK3JoeQcavgGKoMuXnsXkS. Poniżej to, cz
 - Źródła:
   - Fluent Emoji (Microsoft, MIT) dla naklejek oraz ikonek zadań i nagród,
   - DiceBear Lorelei, Notionists, Open Peeps, Pixel Art i Thumbs (CC0 1.0) dla awatarów,
+  - awatary motywów: ilustracje wygenerowane na zlecenie Stille Storm Studio (OpenAI gpt-image-1.5), © Stille Storm Studio,
   - ramki narysowane w skrypcie („private”),
   - fonty z Google Fonts (OFL 1.1).
   Lista jest w aplikacji: „Licencje grafik”.

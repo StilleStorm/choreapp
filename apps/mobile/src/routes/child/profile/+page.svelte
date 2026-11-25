@@ -8,16 +8,22 @@
   import Icon from '#lib/components/Icon.svelte';
   import ItemImage from '#lib/components/ItemImage.svelte';
   import Sheet from '#lib/components/Sheet.svelte';
+  import ThemeAvatarGrid from '#lib/components/ThemeAvatarGrid.svelte';
   import { errorMessage } from '#lib/messages.js';
   import { session } from '#lib/session.svelte.js';
 
   const me = $derived(session.me!);
   let collection = $state<CollectionDto | null>(null);
+  /** Free avatars of every app theme (the child's own theme is shown first). */
+  let themeAvatars = $state<ItemDto[]>([]);
   let error = $state('');
 
   async function load() {
     try {
-      collection = await api.get<CollectionDto>('/v1/members/me/collection');
+      [collection, themeAvatars] = await Promise.all([
+        api.get<CollectionDto>('/v1/members/me/collection'),
+        api.get<ItemDto[]>('/v1/avatars/themes'),
+      ]);
     } catch (e) {
       error = errorMessage(e);
     }
@@ -192,34 +198,36 @@
 </Sheet>
 
 <Sheet bind:open={lookOpen} title="Awatar i ramka">
-  <h3 class="section-title">Awatar</h3>
-  <div class="pick-grid">
-    <button class="pick" aria-pressed={!me.avatarItemId} onclick={() => wear(null, me.frameItemId)}>
-      <Avatar name={me.name} size={64} />
-      <span>Domyślny</span>
-    </button>
-    {#each ownedAvatars as a (a.id)}
-      <button class="pick" aria-pressed={isWorn(a)} onclick={() => wear(a.id, me.frameItemId)}>
-        <img src={a.imageUrl} alt="" width="64" height="64" />
-        <span>{a.name}</span>
+  <ThemeAvatarGrid avatars={themeAvatars} theme={me.theme} selectedId={me.avatarItemId} onpick={(a) => wear(a.id, me.frameItemId)}>
+    <h3 class="section-title">Moje awatary</h3>
+    <div class="pick-grid">
+      <button class="pick" aria-pressed={!me.avatarItemId} onclick={() => wear(null, me.frameItemId)}>
+        <Avatar name={me.name} size={64} />
+        <span>Domyślny</span>
       </button>
-    {/each}
-  </div>
-  {#if ownedAvatars.length === 0}<p class="muted small">Więcej awatarów kupisz w Sklepie.</p>{/if}
+      {#each ownedAvatars as a (a.id)}
+        <button class="pick" aria-pressed={isWorn(a)} onclick={() => wear(a.id, me.frameItemId)}>
+          <img src={a.imageUrl} alt="" width="64" height="64" />
+          <span>{a.name}</span>
+        </button>
+      {/each}
+    </div>
+    {#if ownedAvatars.length === 0}<p class="muted small">Więcej awatarów kupisz w Sklepie.</p>{/if}
 
-  <h3 class="section-title">Ramka</h3>
-  <div class="pick-grid">
-    <button class="pick" aria-pressed={!me.frameItemId} onclick={() => wear(me.avatarItemId, null)}>
-      <span class="no-frame">bez ramki</span>
-    </button>
-    {#each ownedFrames as f (f.id)}
-      <button class="pick" aria-pressed={isWorn(f)} onclick={() => wear(me.avatarItemId, f.id)}>
-        <ItemImage url={f.imageUrl} name={f.name} rarity={f.rarity} size={64} />
-        <span>{f.name.replace('Ramka: ', '')}</span>
+    <h3 class="section-title">Ramka</h3>
+    <div class="pick-grid">
+      <button class="pick" aria-pressed={!me.frameItemId} onclick={() => wear(me.avatarItemId, null)}>
+        <span class="no-frame">bez ramki</span>
       </button>
-    {/each}
-  </div>
-  {#if ownedFrames.length === 0}<p class="muted small">Ramki kupisz w Sklepie.</p>{/if}
+      {#each ownedFrames as f (f.id)}
+        <button class="pick" aria-pressed={isWorn(f)} onclick={() => wear(me.avatarItemId, f.id)}>
+          <ItemImage url={f.imageUrl} name={f.name} rarity={f.rarity} size={64} />
+          <span>{f.name.replace('Ramka: ', '')}</span>
+        </button>
+      {/each}
+    </div>
+    {#if ownedFrames.length === 0}<p class="muted small">Ramki kupisz w Sklepie.</p>{/if}
+  </ThemeAvatarGrid>
 </Sheet>
 
 <style>

@@ -9,6 +9,7 @@ import {
   rewardInput,
   type AlbumDto,
   type CollectionDto,
+  type ItemDto,
   type LicenseDto,
   type PackDto,
   type RedemptionDto,
@@ -377,9 +378,25 @@ export const shop = new Hono<AppBindings>()
     }
     const dto: CollectionDto = {
       albums: [...albums.values()],
-      avatars: await Promise.all(items.filter((i) => i.kind === 'avatar').map(toDto)),
+      // Theme avatars are free for everyone, so they are not collectibles: GET /avatars/themes lists them.
+      avatars: await Promise.all(items.filter((i) => i.kind === 'avatar' && !i.theme).map(toDto)),
       frames: await Promise.all(items.filter((i) => i.kind === 'frame').map(toDto)),
     };
+    return c.json(dto);
+  })
+
+  /** Built-in theme avatars any member may wear without buying (children and adults), in theme order. */
+  .get('/avatars/themes', async (c) => {
+    const family = await loadFamily(c.env, c.get('auth').familyId);
+    const origin = new URL(c.req.url).origin;
+    const rows = await all<ItemRow>(
+      c.env.DB,
+      `SELECT i.* FROM item i
+        WHERE i.deleted_at IS NULL AND i.kind = 'avatar' AND i.theme IS NOT NULL AND i.pack_id IN (${ACTIVE_PACKS})
+        ORDER BY i.sort, i.id`,
+      family.id,
+    );
+    const dto: ItemDto[] = await Promise.all(rows.map((r) => itemDto(c.env, origin, r, family)));
     return c.json(dto);
   })
 
@@ -569,6 +586,7 @@ export const shop = new Hono<AppBindings>()
       `SELECT DISTINCT p.name, p.source, p.license, p.attribution FROM pack p
         WHERE p.id IN (${ACTIVE_PACKS})
            OR p.id IN (SELECT i.pack_id FROM item i JOIN member_item mi ON mi.item_id = i.id JOIN member m ON m.id = mi.member_id WHERE m.family_id = ?1)
+           OR p.id IN (SELECT i.pack_id FROM item i JOIN member m ON m.avatar_item_id = i.id WHERE m.family_id = ?1)
         ORDER BY p.name`,
       familyId,
     );
