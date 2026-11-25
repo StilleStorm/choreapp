@@ -2,6 +2,8 @@
 import { DEFAULT_TIME_ZONE, localDateAt } from '@choreapp/core';
 import {
   appearanceBody,
+  changeEmailBody,
+  changePasswordBody,
   loginBody,
   registerBody,
   registerDeviceBody,
@@ -26,6 +28,24 @@ export async function sessionResponse(env: Env, origin: string, memberId: string
   const m = (await loadMember(env, memberId))!;
   const f = await loadFamily(env, m.family_id);
   return { token, me: await memberDto(env, origin, m, true), family: familyDto(f) };
+}
+
+/** Checks an adult's current password before they change their own login; limits guessing. */
+async function assertCurrentPassword(env: Env, memberId: string, password: string): Promise<void> {
+  const key = `pw-check:${memberId}`;
+  if (await isLimited(env.DB, key, 10, FAIL_WINDOW)) throw new ApiError(429, 'too_many_attempts');
+  const login = await first<{ password_hash: string; password_salt: string; password_iterations: number }>(
+    env.DB,
+    'SELECT password_hash, password_salt, password_iterations FROM parent_login WHERE member_id = ?',
+    memberId,
+  );
+  const ok =
+    login &&
+    (await verifyPassword(password, { hash: login.password_hash, salt: login.password_salt, iterations: login.password_iterations }));
+  if (!ok) {
+    await hit(env.DB, key, 1000, FAIL_WINDOW);
+    throw forbidden('wrong_password');
+  }
 }
 
 export const publicAccount = new Hono<AppBindings>()
@@ -139,6 +159,40 @@ export const account = new Hono<AppBindings>()
     if (b.name !== undefined) await run(c.env.DB, 'UPDATE member SET name = ? WHERE id = ?', b.name, memberId);
     if (b.theme !== undefined) await run(c.env.DB, 'UPDATE member SET theme = ? WHERE id = ?', b.theme, memberId);
     return c.json(await memberDto(c.env, new URL(c.req.url).origin, (await loadMember(c.env, memberId))!, true));
+  })
+
+  /** An adult changes their own login e-mail. */
+  .post('/me/email', requireParent, async (c) => {
+    const b = await body(c, changeEmailBody);
+    const { memberId } = c.get('auth');
+    await assertCurrentPassword(c.env, memberId, b.currentPassword);
+    const taken = await first(c.env.DB, 'SELECT 1 FROM parent_login WHERE email = ? AND member_id != ?', b.newEmail, memberId);
+    if (taken) throw conflict('email_taken');
+    try {
+      await run(c.env.DB, 'UPDATE parent_login SET email = ? WHERE member_id = ?', b.newEmail, memberId);
+    } catch (e) {
+      if (isUniqueViolation(e)) throw conflict('email_taken');
+      throw e;
+    }
+    return c.json(await memberDto(c.env, new URL(c.req.url).origin, (await loadMember(c.env, memberId))!, true));
+  })
+
+  /** An adult changes their own password; their other phones are logged out. */
+  .post('/me/password', requireParent, async (c) => {
+    const b = await body(c, changePasswordBody);
+    const { memberId, sessionId } = c.get('auth');
+    await assertCurrentPassword(c.env, memberId, b.currentPassword);
+    const pw = await hashPassword(b.newPassword);
+    await run(
+      c.env.DB,
+      'UPDATE parent_login SET password_hash = ?, password_salt = ?, password_iterations = ? WHERE member_id = ?',
+      pw.hash,
+      pw.salt,
+      pw.iterations,
+      memberId,
+    );
+    await revokeMemberSessions(c.env.DB, memberId, Date.now(), sessionId);
+    return c.json({ ok: true });
   })
 
   /** Raw image body; the app resizes to 256 px WebP before upload. */

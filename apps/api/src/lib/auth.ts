@@ -21,11 +21,22 @@ export async function createSession(db: D1Database, memberId: string, now = Date
   return { token, sessionId };
 }
 
-/** Logs out every phone of a member (new phone, password reset, removal). */
-export async function revokeMemberSessions(db: D1Database, memberId: string, now = Date.now()): Promise<void> {
+/**
+ * Logs out every phone of a member (new phone, password reset, removal).
+ * `keepSessionId` spares the phone making the request (own password change).
+ */
+export async function revokeMemberSessions(
+  db: D1Database,
+  memberId: string,
+  now = Date.now(),
+  keepSessionId: string | null = null,
+): Promise<void> {
+  const keep = keepSessionId ?? '';
   await db.batch([
-    db.prepare('UPDATE session SET revoked_at = ? WHERE member_id = ? AND revoked_at IS NULL').bind(now, memberId),
-    db.prepare('DELETE FROM device WHERE member_id = ?').bind(memberId),
+    db.prepare('UPDATE session SET revoked_at = ? WHERE member_id = ? AND revoked_at IS NULL AND id != ?').bind(now, memberId, keep),
+    db
+      .prepare('DELETE FROM device WHERE member_id = ? AND (session_id IS NULL OR session_id != ?)')
+      .bind(memberId, keep),
   ]);
 }
 

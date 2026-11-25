@@ -7,6 +7,9 @@ Specyfikacja: https://claude.ai/artifact/SK3JoeQcavgGKoMuXnsXkS. Poniżej to, cz
 - Dziecko nie ma e-maila ani hasła. Dołącza kodem QR albo 6 cyframi od rodzica (jednorazowe, ważne 15 minut) i zostaje zalogowane na stałe. Nowy kod do istniejącego profilu wylogowuje stary telefon.
 - Przed zgadywaniem kodów chroni limit 10 błędnych prób z jednego adresu na 15 minut.
 - Hasło rodzica: PBKDF2-SHA256, 50 tys. iteracji (około 6 ms, mieści się w limicie CPU planu Free). Liczba iteracji jest zapisana przy koncie, więc można ją podnieść; hash przelicza się wtedy przy logowaniu.
+- Od dzieci nie zbieramy danych osobowych: bez e-maila i hasła, a zamiast imienia dowolna nazwa (może być pseudonim, aplikacja prosi, żeby nie wpisywać nazwiska). Dorośli podają imię.
+- Telefon dziecka zmienia się kodem „Połącz na nowym telefonie” w profilu dziecka: punkty, naklejki i historia zostają, stary telefon zostaje wylogowany.
+- Dorosły sam zmienia swój e-mail i hasło w Ustawieniach → Konto (`POST /v1/me/email`, `POST /v1/me/password`). Obie zmiany wymagają obecnego hasła (limit 10 błędnych prób na 15 minut). Po zmianie hasła pozostałe telefony tej osoby są wylogowane, bieżący zostaje.
 - Reset hasła bez e-maili: administrator rodziny generuje kod resetu dla innego dorosłego w Ustawieniach.
 - Administrator rodziny to dorosły, który ją założył (jeden na rodzinę, `family.admin_member_id`). Tylko on zmienia ustawienia rodziny, edytuje profile innych dorosłych, daje im kody resetu hasła i usuwa członków; jego samego nie da się usunąć, więc w rodzinie zawsze zostaje rodzic. Pozostali dorośli mają resztę uprawnień: zadania, akceptacje, nagrody, paczki, sklep, zapraszanie dzieci i dorosłych, edycję dzieci i własnego profilu. Usunięty członek traci dostęp, ale jego historia zostaje.
 

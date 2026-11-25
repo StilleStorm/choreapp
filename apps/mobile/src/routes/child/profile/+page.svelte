@@ -79,7 +79,7 @@
     </button>
     <h1>{me.name}</h1>
     <div class="inline">
-      <button class="btn small" onclick={openEdit}><Icon name="edit" size={18} /> Imię i zdjęcie</button>
+      <button class="btn small" onclick={openEdit}><Icon name="edit" size={18} /> Nazwa i zdjęcie</button>
       <button class="btn small" onclick={() => (lookOpen = true)}><Icon name="user" size={18} /> Awatar i ramka</button>
     </div>
     <a class="btn small ghost" href="/child/themes"><Icon name="palette" size={18} /> Wygląd aplikacji</a>
@@ -115,11 +115,12 @@
   <a class="btn ghost small" href="/licenses">Licencje grafik</a>
 </main>
 
-<Sheet bind:open={editOpen} title="Imię i zdjęcie">
+<Sheet bind:open={editOpen} title="Nazwa i zdjęcie">
   <AvatarPicker name={name || me.name} currentUrl={me.avatarItemId ? null : me.avatarUrl} bind:blob />
   <label class="field">
-    <span>Imię</span>
-    <input type="text" bind:value={name} maxlength="40" />
+    <span>Twoja nazwa</span>
+    <input type="text" bind:value={name} maxlength="40" autocomplete="off" />
+    <span class="hint muted small">Może być pseudonim. Nie wpisuj nazwiska.</span>
   </label>
   {#if editError}<div class="error-box">{editError}</div>{/if}
   <button class="btn primary block" onclick={saveEdit} disabled={busy}>{busy ? 'Zapisywanie…' : 'Zapisz'}</button>

@@ -138,8 +138,9 @@
     <form class="stack" onsubmit={redeem}>
       {#if info.kind === 'join' && info.role === 'child'}
         <label class="field">
-          <span>Jak masz na imię?</span>
-          <input type="text" bind:value={name} required maxlength="40" autocomplete="given-name" />
+          <span>Jak mam Cię nazywać?</span>
+          <input type="text" bind:value={name} required maxlength="40" autocomplete="off" />
+          <span class="hint muted small">Może być pseudonim. Nie wpisuj nazwiska.</span>
         </label>
         <div class="field">
           <span>Twoje zdjęcie (możesz dodać później)</span>

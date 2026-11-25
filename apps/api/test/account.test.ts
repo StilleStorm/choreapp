@@ -243,3 +243,53 @@ describe('family administrator', () => {
     expect((await call('GET', '/v1/me', { token: dad.token })).status).toBe(401);
   });
 });
+
+describe('own e-mail and password', () => {
+  const pw = 'tajne-haslo-123';
+
+  it('changes the e-mail after checking the current password', async () => {
+    const fam = await registerFamily();
+    const newEmail = uniqueEmail();
+    const bad = await call('POST', '/v1/me/email', { token: fam.parentToken, json: { currentPassword: 'zle', newEmail } });
+    expect(bad.status).toBe(403);
+    expect(bad.body.error).toBe('wrong_password');
+    const ok = await call('POST', '/v1/me/email', { token: fam.parentToken, json: { currentPassword: pw, newEmail: newEmail.toUpperCase() } });
+    expect(ok.status).toBe(200);
+    expect(ok.body.email).toBe(newEmail);
+    expect((await call('POST', '/v1/auth/login', { json: { email: newEmail, password: pw } })).status).toBe(200);
+    expect((await call('POST', '/v1/auth/login', { json: { email: fam.email, password: pw } })).status).toBe(401);
+  });
+
+  it('rejects an e-mail used by another adult', async () => {
+    const fam = await registerFamily();
+    const other = await registerFamily('Nowakowie');
+    const r = await call('POST', '/v1/me/email', { token: fam.parentToken, json: { currentPassword: pw, newEmail: other.email } });
+    expect(r.status).toBe(409);
+    expect(r.body.error).toBe('email_taken');
+  });
+
+  it('changes the password and logs out the other phones only', async () => {
+    const fam = await registerFamily();
+    const second = await call('POST', '/v1/auth/login', { json: { email: fam.email, password: pw } });
+    const bad = await call('POST', '/v1/me/password', { token: fam.parentToken, json: { currentPassword: 'zle', newPassword: 'nowe-haslo-456' } });
+    expect(bad.status).toBe(403);
+    expect(bad.body.error).toBe('wrong_password');
+    const short = await call('POST', '/v1/me/password', { token: fam.parentToken, json: { currentPassword: pw, newPassword: 'krotkie' } });
+    expect(short.status).toBe(400);
+    const ok = await call('POST', '/v1/me/password', { token: fam.parentToken, json: { currentPassword: pw, newPassword: 'nowe-haslo-456' } });
+    expect(ok.status).toBe(200);
+    expect((await call('GET', '/v1/me', { token: fam.parentToken })).status).toBe(200);
+    expect((await call('GET', '/v1/me', { token: second.body.token })).status).toBe(401);
+    expect((await call('POST', '/v1/auth/login', { json: { email: fam.email, password: pw } })).status).toBe(401);
+    expect((await call('POST', '/v1/auth/login', { json: { email: fam.email, password: 'nowe-haslo-456' } })).status).toBe(200);
+  });
+
+  it('is for adults only', async () => {
+    const fam = await registerFamily();
+    const child = await addChild(fam);
+    const e = await call('POST', '/v1/me/email', { token: child.token, json: { currentPassword: pw, newEmail: uniqueEmail() } });
+    expect(e.status).toBe(403);
+    const p = await call('POST', '/v1/me/password', { token: child.token, json: { currentPassword: pw, newPassword: 'nowe-haslo-456' } });
+    expect(p.status).toBe(403);
+  });
+});

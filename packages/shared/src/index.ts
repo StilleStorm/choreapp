@@ -66,6 +66,10 @@ export const updateMeBody = z.object({
   theme: z.enum(THEMES).optional(),
 });
 
+/** An adult changes their own login; both need the current password. */
+export const changeEmailBody = z.object({ currentPassword: z.string().min(1).max(200), newEmail: email });
+export const changePasswordBody = z.object({ currentPassword: z.string().min(1).max(200), newPassword: password });
+
 export const appearanceBody = z.object({
   /** null = use the uploaded photo (or initials). */
   avatarItemId: id.nullable(),

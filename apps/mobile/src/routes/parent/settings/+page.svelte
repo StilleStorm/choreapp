@@ -66,6 +66,49 @@
     }
   }
 
+  // Own login (e-mail, password)
+  let loginOpen = $state(false);
+  let loginKind = $state<'email' | 'password'>('email');
+  let currentPassword = $state('');
+  let newEmail = $state('');
+  let newPassword = $state('');
+  let loginError = $state('');
+  let loginBusy = $state(false);
+  let loginDone = $state('');
+  function openLogin(what: 'email' | 'password') {
+    currentPassword = '';
+    newEmail = what === 'email' ? (session.me?.email ?? '') : '';
+    newPassword = '';
+    loginError = '';
+    loginDone = '';
+    loginKind = what;
+    loginOpen = true;
+  }
+
+  async function saveLogin(e: SubmitEvent) {
+    e.preventDefault();
+    loginError = '';
+    if (loginKind === 'password' && newPassword.length < 8) {
+      loginError = 'Hasło musi mieć co najmniej 8 znaków.';
+      return;
+    }
+    loginBusy = true;
+    try {
+      if (loginKind === 'email') {
+        await api.post('/v1/me/email', { currentPassword, newEmail: newEmail.trim() });
+        await session.refresh();
+        loginDone = 'E-mail został zmieniony.';
+      } else {
+        await api.post('/v1/me/password', { currentPassword, newPassword });
+        loginDone = 'Hasło zostało zmienione. Inne telefony zostały wylogowane.';
+      }
+    } catch (err) {
+      loginError = errorMessage(err);
+    } finally {
+      loginBusy = false;
+    }
+  }
+
   // Family settings
   const f = session.family!;
   let familyName = $state(f.name);
@@ -176,6 +219,19 @@
   <section class="section">
     <h2 class="section-title">Konto</h2>
     <div class="list">
+      <button class="row member" onclick={() => openLogin('email')}>
+        <Icon name="edit" />
+        <span class="grow">
+          <span class="title">Zmień e-mail</span>
+          {#if session.me?.email}<span class="meta">{session.me.email}</span>{/if}
+        </span>
+        <Icon name="chevron" size={20} />
+      </button>
+      <button class="row member" onclick={() => openLogin('password')}>
+        <Icon name="key" />
+        <span class="grow title">Zmień hasło</span>
+        <Icon name="chevron" size={20} />
+      </button>
       <a class="row member" href="/update">
         <Icon name="download" />
         <span class="grow title">Wersja aplikacji</span>
@@ -203,8 +259,9 @@
     {/if}
     {#if canEdit}
       <label class="field">
-        <span>Imię</span>
-        <input type="text" bind:value={editName} maxlength="40" />
+        <span>{selected.role === 'child' ? 'Nazwa' : 'Imię'}</span>
+        <input type="text" bind:value={editName} maxlength="40" autocomplete="off" />
+        {#if selected.role === 'child'}<span class="hint muted small">Może być pseudonim. Nie wpisuj nazwiska.</span>{/if}
       </label>
       <button class="btn primary block" onclick={saveMember}>Zapisz</button>
     {:else}
@@ -214,8 +271,9 @@
 
     {#if selected.role === 'child'}
       <button class="btn block" onclick={() => openInvite('child', selected)}>
-        <Icon name="phone" /> Nowy telefon – kod do tego profilu
+        <Icon name="phone" /> Połącz na nowym telefonie
       </button>
+      <p class="hint muted small">Dziecko zachowa punkty, naklejki i historię. Stary telefon zostanie wylogowany.</p>
     {:else if !isMe && session.isAdmin}
       <button class="btn block" onclick={() => openInvite('parent', selected)}>
         <Icon name="key" /> Kod do zmiany hasła
@@ -237,6 +295,34 @@
         </button>
       {/if}
     {/if}
+  {/if}
+</Sheet>
+
+<Sheet bind:open={loginOpen} title={loginKind === 'email' ? 'Zmień e-mail' : 'Zmień hasło'}>
+  {#if loginDone}
+    <p>{loginDone}</p>
+    <button class="btn primary block" onclick={() => (loginOpen = false)}>Zamknij</button>
+  {:else}
+    <form class="stack" onsubmit={saveLogin}>
+      {#if loginKind === 'email'}
+        <label class="field">
+          <span>Nowy e-mail</span>
+          <input type="email" bind:value={newEmail} required autocomplete="email" />
+        </label>
+      {:else}
+        <label class="field">
+          <span>Nowe hasło</span>
+          <input type="password" bind:value={newPassword} required minlength="8" autocomplete="new-password" />
+          <span class="hint">Co najmniej 8 znaków. Inne telefony zostaną wylogowane.</span>
+        </label>
+      {/if}
+      <label class="field">
+        <span>Obecne hasło</span>
+        <input type="password" bind:value={currentPassword} required autocomplete="current-password" />
+      </label>
+      {#if loginError}<div class="error-box" role="alert">{loginError}</div>{/if}
+      <button class="btn primary block" disabled={loginBusy}>{loginBusy ? 'Zapisywanie…' : 'Zapisz'}</button>
+    </form>
   {/if}
 </Sheet>
 
