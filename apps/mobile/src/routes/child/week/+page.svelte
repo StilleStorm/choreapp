@@ -10,8 +10,10 @@
   let agenda = $state<AgendaDto | null>(null);
   let error = $state('');
 
+  // Only a new day reloads, not every /me refresh.
+  const today = $derived(session.today);
   $effect(() => {
-    const from = addDays(session.today, 1);
+    const from = addDays(today, 1);
     api
       .get<AgendaDto>(`/v1/agenda?from=${from}&to=${addDays(from, 6)}`)
       .then((a) => (agenda = a))

@@ -49,7 +49,7 @@
     try {
       const s = await api.post<SessionDto>('/v1/auth/reset', { email, code: digits, newPassword: password }, { public: true });
       await session.signIn(s);
-      await goto(session.home(), { replaceState: true });
+      await goto(session.home(), { replace: true });
     } catch (err) {
       error = errorMessage(err);
     } finally {

@@ -1,5 +1,17 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { addChild, call, env, registerFamily, uniqueEmail } from './helpers.js';
+
+async function addParent(fam: Awaited<ReturnType<typeof registerFamily>>): Promise<string> {
+  const inv = await call('POST', '/v1/invites', { token: fam.parentToken, json: { role: 'parent' } });
+  const r = await call('POST', '/v1/invites/redeem', {
+    json: { token: inv.body.token, name: 'Tata', email: uniqueEmail(), password: 'haslo-taty-123' },
+  });
+  return r.body.token;
+}
+
+beforeEach(async () => {
+  await env.DB.prepare('DELETE FROM rate_limit').run();
+});
 
 describe('child joins with QR or code', () => {
   it('creates an invite with a 6-digit code and a QR payload', async () => {
@@ -58,6 +70,40 @@ describe('child joins with QR or code', () => {
     await call('POST', '/v1/invites', { token: fam.parentToken, json: { role: 'child' } });
     expect((await call('POST', '/v1/invites/redeem', { json: { code: first.body.code, name: 'A' } })).status).toBe(404);
     expect((await call('GET', '/v1/invites', { token: fam.parentToken })).body).toHaveLength(1);
+  });
+
+  it('two adults inviting at once keep both codes, and each sheet sees only its own result', async () => {
+    const fam = await registerFamily();
+    const dad = await addParent(fam);
+    const mine = await call('POST', '/v1/invites', { token: fam.parentToken, json: { role: 'child' } });
+    const his = await call('POST', '/v1/invites', { token: dad, json: { role: 'child' } });
+    const status = async (id: string) => (await call('GET', `/v1/invites/${id}`, { token: fam.parentToken })).body.status;
+    expect(await status(mine.body.id)).toBe('pending');
+    expect((await call('POST', '/v1/invites/redeem', { json: { code: his.body.code, name: 'B' } })).status).toBe(201);
+    expect(await status(his.body.id)).toBe('used');
+    expect(await status(mine.body.id)).toBe('pending');
+    expect((await call('POST', '/v1/invites/redeem', { json: { code: mine.body.code, name: 'A' } })).status).toBe(201);
+  });
+
+  it('a closed sheet revokes its code; only its creator or the administrator may', async () => {
+    const fam = await registerFamily();
+    const dad = await addParent(fam);
+    const other = await registerFamily('Obcy');
+    const mine = await call('POST', '/v1/invites', { token: fam.parentToken, json: { role: 'child' } });
+    expect((await call('DELETE', `/v1/invites/${mine.body.id}`, { token: other.parentToken })).status).toBe(404);
+    expect((await call('DELETE', `/v1/invites/${mine.body.id}`, { token: dad })).status).toBe(403);
+    expect((await call('DELETE', `/v1/invites/${mine.body.id}`, { token: fam.parentToken })).status).toBe(200);
+    expect((await call('GET', `/v1/invites/${mine.body.id}`, { token: fam.parentToken })).body.status).toBe('gone');
+    expect((await call('POST', '/v1/invites/redeem', { json: { code: mine.body.code, name: 'A' } })).status).toBe(404);
+    // The administrator may revoke another adult's code.
+    const his = await call('POST', '/v1/invites', { token: dad, json: { role: 'child' } });
+    expect((await call('DELETE', `/v1/invites/${his.body.id}`, { token: fam.parentToken })).status).toBe(200);
+  });
+
+  it('tells the phone the server time with the code', async () => {
+    const fam = await registerFamily();
+    const r = await call('POST', '/v1/invites', { token: fam.parentToken, json: { role: 'child' } });
+    expect(r.body.expiresAt - r.body.now).toBe(15 * 60_000);
   });
 
   it('blocks guessing after 10 wrong codes from one address', async () => {

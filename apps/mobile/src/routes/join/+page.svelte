@@ -21,6 +21,12 @@
   let busy = $state(false);
   /** A child already logged in is adding another home (mum's, dad's, grandparents'). */
   const addingHome = !!session.me && !session.isParent;
+  // Logged in and not here on purpose ("Dodaj kolejny dom" or a scanned QR link), e.g. Back from home.
+  if (session.me && !page.url.searchParams.has('add') && !page.url.searchParams.has('t')) {
+    void goto(session.home(), { replace: true });
+  }
+  /** Joining a family this phone is already in makes a second, empty profile there. */
+  const alreadyHere = $derived(info?.kind === 'join' && session.homes.list.some((h) => h.familyName === info!.familyName));
 
   $effect(() => {
     const t = page.url.searchParams.get('t');
@@ -98,7 +104,7 @@
           // Joining worked; the photo can be added later in the profile.
         }
       }
-      await goto(session.home(), { replaceState: true });
+      await goto(session.home(), { replace: true });
     } catch (err) {
       error = errorMessage(err);
     } finally {
@@ -140,6 +146,12 @@
       <span class="muted small">Rodzina</span>
       <strong>{info.familyName}</strong>
     </div>
+    {#if alreadyHere}
+      <p class="error-box">
+        Ten telefon jest już w domu „{info.familyName}”. Dołączenie utworzy tam nowy, pusty profil. Żeby zachować punkty, poproś rodzica o
+        kod „Połącz na nowym telefonie”.
+      </p>
+    {/if}
 
     <form class="stack" onsubmit={redeem}>
       {#if info.kind === 'join' && info.role === 'child'}

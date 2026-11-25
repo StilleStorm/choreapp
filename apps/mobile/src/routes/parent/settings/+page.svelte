@@ -123,9 +123,14 @@
 
   async function saveSettings(e: SubmitEvent) {
     e.preventDefault();
-    saving = true;
     saved = false;
     settingsError = '';
+    // The same start and end means "no quiet hours" to the server.
+    if (quietEnabled && quietFrom === quietTo) {
+      settingsError = 'Godziny ciszy muszą się zaczynać i kończyć o różnych godzinach.';
+      return;
+    }
+    saving = true;
     try {
       await api.patch<FamilyDto>('/v1/family', {
         name: familyName.trim(),

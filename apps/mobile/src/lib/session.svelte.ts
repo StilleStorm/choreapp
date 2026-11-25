@@ -7,6 +7,8 @@ import { offline } from './offline.svelte.js';
 import { NO_HOMES, activeHome, addHome, removeHome, restoreHomes, switchHome, updateHome, type Home, type Homes } from './homes.js';
 
 const HOMES_KEY = 'homes';
+/** Reload /me when the app returns after this long (signed image URLs live 24-48 h). */
+const RESUME_REFRESH_MS = 30 * 60_000;
 /** Before 1.0.6 the phone kept a single token; still written for the active home. */
 const LEGACY_TOKEN_KEY = 'session_token';
 
@@ -19,6 +21,10 @@ class Session {
   clockSkew = 0;
   /** A home being dropped after a 401, so callers can wait for the fallback. */
   private dropping: Promise<void> = Promise.resolve();
+  /** The running check of the other homes, so overlapping calls share it. */
+  private checking: Promise<void> | null = null;
+  /** When /me last succeeded (phone clock), to refresh signed image URLs after a long pause. */
+  private refreshedAt = 0;
 
   get me(): MemberDto | null {
     return this.data?.me ?? null;
@@ -77,6 +83,23 @@ class Session {
       }
     }
     this.ready = true;
+    // Homes a parent removed meanwhile disappear without opening Profil.
+    void this.checkHomes();
+  }
+
+  /**
+   * The app came back to the foreground: after a long pause reload /me (names,
+   * fresh signed image URLs) and check the other homes. Throttled, so switching
+   * apps back and forth costs nothing.
+   */
+  async resume(): Promise<void> {
+    if (!this.homes.active || Date.now() - this.refreshedAt < RESUME_REFRESH_MS) return;
+    try {
+      await this.refresh();
+    } catch {
+      /* offline or dropped (handled by the 401 handler) */
+    }
+    await this.checkHomes();
   }
 
   private async setHomes(h: Homes): Promise<void> {
@@ -93,6 +116,7 @@ class Session {
     const data = await api.get<MeDto>('/v1/me');
     if (token !== this.homes.active) return; // switched meanwhile
     this.clockSkew = data.now - Date.now();
+    this.refreshedAt = Date.now();
     this.data = data;
     const home = activeHome(this.homes);
     if (token && home && (home.familyName !== data.family.name || home.memberName !== data.me.name || !home.familyId)) {
@@ -148,7 +172,7 @@ class Session {
     if (!wasActive) return;
     if (!this.homes.active) {
       this.data = null;
-      await goto('/welcome', { replaceState: true });
+      await goto('/welcome', { replace: true });
       return;
     }
     try {
@@ -156,16 +180,26 @@ class Session {
     } catch {
       /* offline: screens show empty state until the next refresh */
     }
-    await goto(this.home(), { replaceState: true });
+    await goto(this.home(), { replace: true });
   }
 
-  /** Checks the other homes (names, removed by a parent) when they are listed. */
-  async checkHomes(): Promise<void> {
-    for (const h of this.homes.list) {
-      if (h.token === this.homes.active) continue;
+  /**
+   * Checks the other homes (names, removed by a parent): one /me per other home.
+   * Only saves when something changed, so it never wakes up readers of `homes`
+   * for nothing (an $effect reading `homes` must still not call it: use onMount).
+   */
+  checkHomes(): Promise<void> {
+    this.checking ??= this.checkOtherHomes().finally(() => (this.checking = null));
+    return this.checking;
+  }
+
+  private async checkOtherHomes(): Promise<void> {
+    const others = this.homes.list.filter((h) => h.token !== this.homes.active);
+    for (const h of others) {
       try {
         const data = await request<MeDto>('GET', '/v1/me', { token: h.token });
-        await this.setHomes(updateHome(this.homes, h.token, detailsOf(data)));
+        const next = updateHome(this.homes, h.token, detailsOf(data));
+        if (next !== this.homes) await this.setHomes(next);
       } catch {
         /* 401 dropped it; offline keeps it */
       }
@@ -182,7 +216,7 @@ class Session {
     }
     await this.setHomes(NO_HOMES);
     this.data = null;
-    await goto('/welcome', { replaceState: true });
+    await goto('/welcome', { replace: true });
   }
 
   /** Where the logged-in member belongs. */

@@ -25,7 +25,7 @@
     error = '';
     try {
       await api.patch(`/v1/tasks/${page.params.id}`, input);
-      await goto('/parent/tasks', { replaceState: true });
+      await goto('/parent/tasks', { replace: true });
     } catch (e) {
       error = errorMessage(e);
     } finally {
@@ -36,7 +36,7 @@
   async function remove() {
     try {
       await api.del(`/v1/tasks/${page.params.id}`);
-      await goto('/parent/tasks', { replaceState: true });
+      await goto('/parent/tasks', { replace: true });
     } catch (e) {
       error = errorMessage(e);
     }

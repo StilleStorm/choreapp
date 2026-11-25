@@ -2,6 +2,7 @@
   import '../app.css';
   import '#lib/themes/themes.css';
   import '#lib/themes/decorations.css';
+  import { onMount, untrack } from 'svelte';
   import { goto } from '$app/navigation';
   import { installNativeHandlers } from '#lib/native.js';
   import NoticeBanner from '#lib/components/NoticeBanner.svelte';
@@ -12,20 +13,25 @@
 
   let { children }: LayoutProps = $props();
 
-  // Register for push whenever someone is logged in.
+  // Register for push whenever someone logs in (not on every /me refresh).
+  const signedInAs = $derived(session.ready ? (session.me?.id ?? null) : null);
   $effect(() => {
-    if (session.ready && session.me) {
+    if (!signedInAs) return;
+    untrack(() => {
       void setupPush();
       void update.check();
-    }
+    });
   });
 
-  $effect(() => {
+  onMount(() => {
     void session.init();
     void installNativeHandlers((token) => {
       // A child scanned the QR with the system camera: open the join flow.
       void goto(`/join?t=${encodeURIComponent(token)}`);
     });
+    const onVisible = () => document.visibilityState === 'visible' && void session.resume();
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   });
 </script>
 

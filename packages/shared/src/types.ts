@@ -60,6 +60,13 @@ export interface InviteDto {
   /** Payload encoded in the QR code. */
   qr: string;
   expiresAt: number;
+  /** Server clock when the code was made, so the phone counts down without trusting its own clock. */
+  now: number;
+}
+
+/** Whether the other phone has used a code yet. "gone" = revoked, replaced or expired. */
+export interface InviteStatusDto {
+  status: 'pending' | 'used' | 'gone';
 }
 
 export interface InviteSummaryDto {

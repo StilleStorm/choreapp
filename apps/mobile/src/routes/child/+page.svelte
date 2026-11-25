@@ -2,6 +2,6 @@
   import { goto } from '$app/navigation';
 
   $effect(() => {
-    void goto('/child/today', { replaceState: true });
+    void goto('/child/today', { replace: true });
   });
 </script>

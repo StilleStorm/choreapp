@@ -5,6 +5,9 @@
   import BackHeader from '#lib/components/BackHeader.svelte';
   import { errorMessage } from '#lib/messages.js';
   import { session } from '#lib/session.svelte.js';
+  import { leaveIfSignedIn } from '#lib/guards.svelte.js';
+
+  leaveIfSignedIn();
 
   let email = $state('');
   let password = $state('');
@@ -18,7 +21,7 @@
     try {
       const s = await api.post<SessionDto>('/v1/auth/login', { email, password }, { public: true });
       await session.signIn(s);
-      await goto(session.home(), { replaceState: true });
+      await goto(session.home(), { replace: true });
     } catch (err) {
       error = errorMessage(err);
     } finally {

@@ -1,5 +1,6 @@
 <script lang="ts">
-  import type { InviteDto, InviteSummaryDto, Role } from '@choreapp/shared';
+  import type { InviteDto, InviteStatusDto, Role } from '@choreapp/shared';
+  import { untrack } from 'svelte';
   import { api } from '../api.js';
   import { errorMessage } from '../messages.js';
   import { session } from '../session.svelte.js';
@@ -14,40 +15,57 @@
   }: { open?: boolean; role: Role; memberId?: string | null; memberName?: string | null } = $props();
 
   let invite = $state<InviteDto | null>(null);
+  /** When the code expires on this phone's clock (from the server's own time, so a wrong phone clock doesn't matter). */
+  let deadline = $state(0);
   let error = $state('');
   let now = $state(Date.now());
   let done = $state(false);
+  /** Revoked or replaced elsewhere (e.g. the same adult opened a new code on another phone). */
+  let gone = $state(false);
 
   const kind = $derived(!memberId ? 'join' : role === 'child' ? 'reconnect' : 'reset');
   const title = $derived(
     kind === 'join' ? (role === 'child' ? 'Dodaj dziecko' : 'Dodaj rodzica') : kind === 'reconnect' ? `Nowy telefon: ${memberName}` : `Reset hasła: ${memberName}`,
   );
-  const remaining = $derived(invite ? Math.max(0, invite.expiresAt - now) : 0);
-  const expired = $derived(!!invite && remaining === 0);
+  const remaining = $derived(invite ? Math.max(0, deadline - now) : 0);
+  const expired = $derived(!!invite && (gone || remaining === 0));
 
   async function create() {
     error = '';
     done = false;
+    gone = false;
     invite = null;
     try {
-      invite = await api.post<InviteDto>('/v1/invites', { role, ...(memberId ? { memberId } : {}) });
+      const dto = await api.post<InviteDto>('/v1/invites', { role, ...(memberId ? { memberId } : {}) });
+      now = Date.now();
+      deadline = now + (dto.expiresAt - dto.now);
+      invite = dto;
     } catch (e) {
       error = errorMessage(e);
     }
   }
 
+  /** A code nobody used is revoked when the sheet closes, so it can't be used later. */
+  function revoke(i: InviteDto | null) {
+    if (i) void api.del(`/v1/invites/${i.id}`).catch(() => {});
+  }
+
   $effect(() => {
     if (!open) return;
-    void create();
+    untrack(() => void create());
     const tick = setInterval(() => (now = Date.now()), 1000);
-    // Notice when the other phone has used the code.
+    // Notice when the other phone has used this very code.
     const poll = setInterval(async () => {
-      if (!invite || done || Date.now() > invite.expiresAt) return;
+      const i = invite;
+      if (!i || done || gone || Date.now() > deadline) return;
       try {
-        const pending = await api.get<InviteSummaryDto[]>('/v1/invites');
-        if (invite && !pending.some((p) => p.id === invite!.id)) {
+        const { status } = await api.get<InviteStatusDto>(`/v1/invites/${i.id}`);
+        if (i !== invite) return;
+        if (status === 'used') {
           done = true;
           await session.refresh();
+        } else if (status === 'gone') {
+          gone = true;
         }
       } catch {
         /* offline: keep showing the code */
@@ -56,6 +74,8 @@
     return () => {
       clearInterval(tick);
       clearInterval(poll);
+      if (!done) revoke(invite);
+      invite = null;
     };
   });
 
@@ -87,7 +107,7 @@
     </div>
     <div class="code" aria-label="Kod">{invite.code.slice(0, 3)} {invite.code.slice(3)}</div>
     {#if expired}
-      <p class="center">Kod wygasł.</p>
+      <p class="center">{gone ? 'Ten kod został unieważniony.' : 'Kod wygasł.'}</p>
       <button class="btn primary block" onclick={create}>Nowy kod</button>
     {:else}
       <p class="center muted small">Ważny jeszcze {fmt(remaining)} · jednorazowy</p>

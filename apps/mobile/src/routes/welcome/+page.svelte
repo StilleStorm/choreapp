@@ -1,5 +1,8 @@
 <script lang="ts">
   import Icon from '#lib/components/Icon.svelte';
+  import { leaveIfSignedIn } from '#lib/guards.svelte.js';
+
+  leaveIfSignedIn();
 </script>
 
 <main class="screen no-tabs welcome">

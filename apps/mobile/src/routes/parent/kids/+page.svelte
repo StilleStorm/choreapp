@@ -7,11 +7,13 @@
 
   let summary = $state<Record<string, PointsDto>>({});
 
+  // Only a changed list of children reloads, not every /me refresh.
+  const childIds = $derived(session.children.map((c) => c.id).join(','));
   $effect(() => {
-    for (const child of session.children) {
+    for (const id of childIds ? childIds.split(',') : []) {
       api
-        .get<PointsDto>(`/v1/members/${child.id}/points`)
-        .then((p) => (summary = { ...summary, [child.id]: p }))
+        .get<PointsDto>(`/v1/members/${id}/points`)
+        .then((p) => (summary = { ...summary, [id]: p }))
         .catch(() => {});
     }
   });

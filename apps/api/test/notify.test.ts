@@ -192,6 +192,20 @@ describe('quiet hours', () => {
     expect(sent).toHaveLength(1);
   });
 
+  it('switching quiet hours off releases what was held', async () => {
+    const fam = await registerFamily();
+    const ola = await addChild(fam, 'Ola');
+    const now = Date.now();
+    await env.DB.prepare(
+      "INSERT INTO notification_outbox (id, member_id, type, title, body, data, created_at, deliver_after) VALUES (?, ?, 'task_new', 'A', 'a', NULL, ?, ?)",
+    )
+      .bind(crypto.randomUUID(), ola.id, now, now + 8 * 3_600_000)
+      .run();
+    await noQuiet(fam.parentToken);
+    const row = await env.DB.prepare('SELECT deliver_after FROM notification_outbox WHERE member_id = ?').bind(ola.id).first<{ deliver_after: number }>();
+    expect(row!.deliver_after).toBeLessThanOrEqual(Date.now());
+  });
+
   it('single on-time notification keeps its own text', () => {
     const msg = composeForMember([
       { id: '1', member_id: 'm', type: 'report', title: 'Ola: zrobione!', body: 'Pokój', data: '{"screen":"approvals"}', created_at: 5, deliver_after: 5 },

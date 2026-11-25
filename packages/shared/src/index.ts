@@ -48,7 +48,20 @@ export const THEMES = [
 export type ThemeId = (typeof THEMES)[number];
 /** Adults may also keep the plain neutral style (the app's base tokens); it is their default. */
 export const NEUTRAL_THEME = 'neutral';
-export const ADULT_THEMES = [NEUTRAL_THEME, ...THEMES] as const;
+/**
+ * Not offered to adults: dark pages with light cards. Their light inputs, chips,
+ * plain buttons and sheet titles sit outside the cards in the adults' forms and
+ * get the page's light text colour, so they are unreadable there.
+ */
+export const ADULT_HIDDEN_THEMES: readonly string[] = ['guild', 'lanterns', 'detective'];
+/** Every theme id the API stores; which ones a member may pick depends on the role. */
+export const ALL_THEMES = [NEUTRAL_THEME, ...THEMES] as const;
+
+/** Adults: neutral plus the readable themes. Children: any of the 25. */
+export function themeAllowed(role: 'parent' | 'child', theme: string): boolean {
+  if (role === 'child') return (THEMES as readonly string[]).includes(theme);
+  return theme === NEUTRAL_THEME || ((THEMES as readonly string[]).includes(theme) && !ADULT_HIDDEN_THEMES.includes(theme));
+}
 
 // ---------------------------------------------------------------------------
 // Auth, family, members, invites
@@ -66,7 +79,7 @@ export const loginBody = z.object({ email, password: z.string().min(1).max(200) 
 
 export const updateMeBody = z.object({
   name: name.optional(),
-  theme: z.enum(ADULT_THEMES).optional(),
+  theme: z.enum(ALL_THEMES).optional(),
 });
 
 /** An adult changes their own login; both need the current password. */

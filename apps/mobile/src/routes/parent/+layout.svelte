@@ -10,8 +10,8 @@
   let { children }: LayoutProps = $props();
 
   $effect(() => {
-    if (!session.me) void goto('/welcome', { replaceState: true });
-    else if (!session.isParent) void goto('/child', { replaceState: true });
+    if (!session.me) void goto('/welcome', { replace: true });
+    else if (!session.isParent) void goto('/child', { replace: true });
   });
 
   // Keep the approvals badge fresh even when the Today tab isn't open.

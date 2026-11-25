@@ -3,6 +3,6 @@
   import { session } from '#lib/session.svelte.js';
 
   $effect(() => {
-    void goto(session.home(), { replaceState: true });
+    void goto(session.home(), { replace: true });
   });
 </script>

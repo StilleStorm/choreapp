@@ -12,7 +12,7 @@ export const files = new Hono<AppBindings>().get('/files/*', async (c) => {
   const headers = new Headers();
   obj.writeHttpMetadata(headers);
   headers.set('ETag', obj.httpEtag);
-  headers.set('Cache-Control', 'private, max-age=604800, immutable');
+  headers.set('Cache-Control', 'private, max-age=86400, immutable');
   // SVG stickers come from packs: never let them run scripts.
   headers.set('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; img-src data:");
   headers.set('X-Content-Type-Options', 'nosniff');

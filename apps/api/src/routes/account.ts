@@ -7,6 +7,7 @@ import {
   loginBody,
   NEUTRAL_THEME,
   registerBody,
+  themeAllowed,
   registerDeviceBody,
   updateFamilyBody,
   updateMeBody,
@@ -22,8 +23,11 @@ import { first, hit, isLimited, isUniqueViolation, run } from '../lib/db.js';
 import { IMAGE_TYPES, MAX_AVATAR_BYTES } from '../lib/files.js';
 import { ApiError, badRequest, body, conflict, forbidden, notFound } from '../lib/http.js';
 import { familyDto, loadFamily, loadMember, loadMembers, memberDto } from '../lib/rows.js';
+import { rescheduleHeld } from '../services/notify.js';
 
 const FAIL_WINDOW = 15 * 60_000;
+/** E-mail changes (with the right password) per adult per hour. */
+export const EMAIL_CHANGE_LIMIT = 5;
 
 export async function sessionResponse(env: Env, origin: string, memberId: string, token: string): Promise<SessionDto> {
   const m = (await loadMember(env, memberId))!;
@@ -157,8 +161,8 @@ export const account = new Hono<AppBindings>()
   .patch('/me', async (c) => {
     const b = await body(c, updateMeBody);
     const { memberId, role } = c.get('auth');
-    // The neutral style is the adults' default; children pick one of the 25 themes.
-    if (b.theme === NEUTRAL_THEME && role !== 'parent') throw badRequest('invalid_input');
+    // Adults: neutral or a readable theme; children: one of the 25 themes.
+    if (b.theme !== undefined && !themeAllowed(role, b.theme)) throw badRequest('invalid_input');
     if (b.name !== undefined) await run(c.env.DB, 'UPDATE member SET name = ? WHERE id = ?', b.name, memberId);
     if (b.theme !== undefined) await run(c.env.DB, 'UPDATE member SET theme = ? WHERE id = ?', b.theme, memberId);
     return c.json(await memberDto(c.env, new URL(c.req.url).origin, (await loadMember(c.env, memberId))!, true));
@@ -168,7 +172,12 @@ export const account = new Hono<AppBindings>()
   .post('/me/email', requireParent, async (c) => {
     const b = await body(c, changeEmailBody);
     const { memberId } = c.get('auth');
+    // The password comes first, so nobody can probe which e-mails have accounts without it;
+    // the limit keeps even the account owner from enumerating many addresses.
     await assertCurrentPassword(c.env, memberId, b.currentPassword);
+    if (!(await hit(c.env.DB, `email-change:${memberId}`, EMAIL_CHANGE_LIMIT, 60 * 60_000))) {
+      throw new ApiError(429, 'too_many_attempts');
+    }
     const taken = await first(c.env.DB, 'SELECT 1 FROM parent_login WHERE email = ? AND member_id != ?', b.newEmail, memberId);
     if (taken) throw conflict('email_taken');
     try {
@@ -291,7 +300,9 @@ export const account = new Hono<AppBindings>()
       }
     }
     if (sets.length > 0) await run(c.env.DB, `UPDATE family SET ${sets.join(', ')} WHERE id = ?`, ...args, familyId);
-    return c.json(familyDto(await loadFamily(c.env, familyId)));
+    const family = await loadFamily(c.env, familyId);
+    if (b.quietFrom !== undefined || b.quietTo !== undefined || b.timezone !== undefined) await rescheduleHeld(c.env, family);
+    return c.json(familyDto(family));
   })
 
   .get('/members', async (c) => {
@@ -322,9 +333,11 @@ export const account = new Hono<AppBindings>()
     const now = Date.now();
     await revokeMemberSessions(c.env.DB, m.id, now);
     await c.env.DB.batch([
-      c.env.DB.prepare('UPDATE member SET removed_at = ? WHERE id = ?').bind(now, m.id),
+      c.env.DB.prepare('UPDATE member SET removed_at = ?, avatar_key = NULL WHERE id = ?').bind(now, m.id),
       // Free the e-mail so the person could be invited again later.
       c.env.DB.prepare('DELETE FROM parent_login WHERE member_id = ?').bind(m.id),
     ]);
+    // Their photo stops being served, even through a signed URL handed out earlier.
+    if (m.avatar_key) await c.env.FILES.delete(m.avatar_key);
     return c.json({ ok: true });
   });

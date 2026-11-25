@@ -14,7 +14,7 @@
     error = '';
     try {
       await api.post('/v1/tasks', input);
-      await goto('/parent/tasks', { replaceState: true });
+      await goto('/parent/tasks', { replace: true });
     } catch (e) {
       error = errorMessage(e);
     } finally {

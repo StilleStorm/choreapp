@@ -122,9 +122,14 @@ async function ownedIds(env: Env, memberId: string): Promise<Map<string, number 
   return new Map(rows.map((r) => [r.item_id, r.seen_at]));
 }
 
-function childOrSelf(auth: AuthInfo, id: string): string {
+/** A child sees only themselves; an adult any member of their own family (another family's id is "not found"). */
+async function childOrSelf(env: Env, auth: AuthInfo, id: string): Promise<string> {
   const memberId = id === 'me' ? auth.memberId : id;
   if (auth.role === 'child' && memberId !== auth.memberId) throw forbidden();
+  if (memberId !== auth.memberId) {
+    const m = await first(env.DB, 'SELECT 1 FROM member WHERE id = ? AND family_id = ?', memberId, auth.familyId);
+    if (!m) throw notFound('member_not_found');
+  }
   return memberId;
 }
 
@@ -143,7 +148,9 @@ export const shop = new Hono<AppBindings>()
   // -------------------------------------------------------------------------
   .get('/shop', async (c) => {
     const auth = c.get('auth');
-    const memberId = auth.role === 'child' ? auth.memberId : (c.req.query('member') ?? '');
+    // An adult may look at the shop as one of their children (?member=); without it there is no balance.
+    const asMember = c.req.query('member');
+    const memberId = auth.role === 'child' ? auth.memberId : asMember ? await childOrSelf(c.env, auth, asMember) : '';
     const family = await loadFamily(c.env, auth.familyId);
     const origin = new URL(c.req.url).origin;
     const [rewards, items, owned, b, pending] = await Promise.all([
@@ -343,7 +350,7 @@ export const shop = new Hono<AppBindings>()
   // -------------------------------------------------------------------------
   .get('/members/:id/collection', async (c) => {
     const auth = c.get('auth');
-    const memberId = childOrSelf(auth, c.req.param('id'));
+    const memberId = await childOrSelf(c.env, auth, c.req.param('id'));
     const family = await loadFamily(c.env, auth.familyId);
     const origin = new URL(c.req.url).origin;
     const owned = await ownedIds(c.env, memberId);

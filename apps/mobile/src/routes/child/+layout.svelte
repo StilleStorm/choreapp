@@ -11,8 +11,8 @@
   let { children }: LayoutProps = $props();
 
   $effect(() => {
-    if (!session.me) void goto('/welcome', { replaceState: true });
-    else if (session.isParent) void goto('/parent', { replaceState: true });
+    if (!session.me) void goto('/welcome', { replace: true });
+    else if (session.isParent) void goto('/parent', { replace: true });
   });
 
   let reveal: RevealSheet | undefined = $state();

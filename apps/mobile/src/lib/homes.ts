@@ -62,7 +62,19 @@ export function switchHome(h: Homes, token: string): Homes {
   return h.list.some((x) => x.token === token) ? { ...h, active: token } : h;
 }
 
-/** Fresh names from the server (and family/member ids for migrated homes). */
+/**
+ * Fresh names from the server (and family/member ids for migrated homes).
+ * Returns the same object when nothing changed, so callers can skip saving
+ * and reactive readers are not woken up for nothing.
+ */
 export function updateHome(h: Homes, token: string, details: Omit<Home, 'token'>): Homes {
-  return { ...h, list: h.list.map((x) => (x.token === token ? { ...details, token } : x)) };
+  const old = h.list.find((x) => x.token === token);
+  if (!old) return h;
+  const same =
+    old.familyId === details.familyId &&
+    old.familyName === details.familyName &&
+    old.memberId === details.memberId &&
+    old.memberName === details.memberName;
+  if (same) return h;
+  return { ...h, list: h.list.map((x) => (x === old ? { ...details, token } : x)) };
 }

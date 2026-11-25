@@ -29,6 +29,17 @@ describe('homes on a child phone', () => {
     expect(h.list.map((x) => x.token)).toEqual(['new']);
   });
 
+  it('updating a home with unchanged details returns the same object', () => {
+    const h = addHome(addHome(NO_HOMES, home('a', 'f1')), home('b', 'f2'));
+    const { token: _t, ...same } = home('a', 'f1');
+    expect(updateHome(h, 'a', same)).toBe(h);
+    expect(updateHome(h, 'unknown', same)).toBe(h);
+    const renamed = updateHome(h, 'a', { ...same, familyName: 'Dom babci' });
+    expect(renamed).not.toBe(h);
+    expect(renamed.list[0]!.familyName).toBe('Dom babci');
+    expect(renamed.list[1]).toBe(h.list[1]);
+  });
+
   it('adds a second home and makes it active', () => {
     let h = addHome(NO_HOMES, home('a', 'f1'));
     h = addHome(h, home('b', 'f2'));

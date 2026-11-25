@@ -5,6 +5,9 @@
   import BackHeader from '#lib/components/BackHeader.svelte';
   import { errorMessage } from '#lib/messages.js';
   import { session } from '#lib/session.svelte.js';
+  import { leaveIfSignedIn } from '#lib/guards.svelte.js';
+
+  leaveIfSignedIn();
 
   let familyName = $state('');
   let parentName = $state('');
@@ -25,7 +28,7 @@
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Warsaw';
       const s = await api.post<SessionDto>('/v1/auth/register', { familyName, parentName, email, password, timezone }, { public: true });
       await session.signIn(s);
-      await goto('/parent', { replaceState: true });
+      await goto('/parent', { replace: true });
     } catch (err) {
       error = errorMessage(err);
     } finally {

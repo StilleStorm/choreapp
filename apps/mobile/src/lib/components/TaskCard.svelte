@@ -49,7 +49,8 @@
     {:else if state === 'approved'}
       <span class="status done">Zrobione ✓</span>
     {:else if state === 'closed'}
-      <span class="status done">Zrobione ✓</span>
+      <!-- "Wystarczy jedno": a sibling did it and got the points. -->
+      <span class="status sibling">Zrobione przez rodzeństwo</span>
     {:else if child.canReport && onreport}
       <button class="done-btn" onclick={onreport}>{doneText}</button>
     {/if}
@@ -157,6 +158,11 @@
   .status.done {
     background: var(--success-soft);
     color: var(--success);
+  }
+  .status.sibling {
+    background: var(--surface-2);
+    color: var(--muted);
+    font-weight: 600;
   }
   .task-card[data-state='approved'],
   .task-card[data-state='closed'] {

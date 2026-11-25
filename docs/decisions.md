@@ -5,12 +5,19 @@ Specyfikacja: https://claude.ai/artifact/SK3JoeQcavgGKoMuXnsXkS. Poniżej to, cz
 ## Konta
 
 - Dziecko nie ma e-maila ani hasła. Dołącza kodem QR albo 6 cyframi od rodzica (jednorazowe, ważne 15 minut) i zostaje zalogowane na stałe. Nowy kod do istniejącego profilu wylogowuje stary telefon.
-- Przed zgadywaniem kodów chroni limit 10 błędnych prób z jednego adresu na 15 minut.
+- Przed zgadywaniem kodów chronią trzy limity (1.0.7):
+  - 10 błędnych prób (kod albo link) z jednego adresu IP na 15 minut; jedynym zaufanym źródłem adresu jest nagłówek `CF-Connecting-IP`, który ustawia brzeg Cloudflare,
+  - 6 cyfr nie mówi, w które zaproszenie ktoś celował, więc każdy błędny kod liczy się do wszystkich aktywnych zaproszeń (`invite.code_misses`). Po 20 błędnych kodach kod zaproszenia przestaje działać, a link z QR (256 losowych bitów) działa dalej. Atakujący z dowolną liczbą adresów ma więc najwyżej 20 prób na zaproszenie, czyli szansę około 1 na 50 000,
+  - po 50 błędnych kodach z wszystkich adresów w 15 minut wpisywanie kodów jest wstrzymane do końca okna (odpowiedź 429; QR działa). To też ogranicza zapisy do D1 przy zalewie żądań.
+  Koszt: ktoś złośliwy może na chwilę zablokować wpisywanie kodów wszystkim rodzinom. To akceptowalne w prywatnej aplikacji, bo QR działa, a nowy kod to jedno dotknięcie.
+- Nowy kod zastępuje tylko wcześniejszy, nieużyty kod tej samej osoby do tego samego celu. Kody innych dorosłych zostają ważne. Arkusz z kodem pyta o swój kod (`GET /v1/invites/:id`: pending, used albo gone), więc pokazuje „Gotowe!” tylko po użyciu właśnie tego kodu. Zamknięcie arkusza unieważnia nieużyty kod (`DELETE /v1/invites/:id`, może to zrobić tylko jego autor albo administrator). Odliczanie liczy się od czasu serwera (`InviteDto.now`), więc zły zegar telefonu nie przeszkadza.
+- Zalogowana osoba, która trafi na ekran powitalny, logowanie albo rejestrację (np. przyciskiem Wstecz), wraca do swojego ekranu głównego. Kolejny dom dziecko dodaje tylko przez Profil → „Dodaj kolejny dom” (`/join?add=1`) albo link z QR. Jeśli kod jest do rodziny, w której telefon już jest, aplikacja ostrzega, że powstanie nowy, pusty profil.
 - Hasło rodzica: PBKDF2-SHA256, 50 tys. iteracji (około 6 ms, mieści się w limicie CPU planu Free). Liczba iteracji jest zapisana przy koncie, więc można ją podnieść; hash przelicza się wtedy przy logowaniu.
 - Od dzieci nie zbieramy danych osobowych: bez e-maila i hasła, a zamiast imienia dowolna nazwa (może być pseudonim, aplikacja prosi, żeby nie wpisywać nazwiska). Dorośli podają imię.
 - Telefon dziecka zmienia się kodem „Połącz na nowym telefonie” w profilu dziecka: punkty, naklejki i historia zostają, stary telefon zostaje wylogowany.
 - Telefon dziecka może należeć do kilku domów (np. dom mamy, dom taty, dziadkowie). W każdym domu dziecko jest osobnym członkiem z własnymi punktami, naklejkami, zadaniami, nazwą i motywem; między domami nic się nie łączy. Telefon trzyma listę sesji (`homes` w Preferences; stary pojedynczy token zamienia się w listę z jednym domem) i jedną aktywną. Profil → Domy: przełączanie, „Dodaj kolejny dom” (kod QR albo 6 cyfr od dorosłego z drugiego domu) i „Usuń ten dom z telefonu”. Ponowne dołączenie do tej samej rodziny zastępuje jej wpis. Gdy domów jest kilka, na górze ekranów dziecka widać nazwę aktywnego domu. Sesja odrzucona przez serwer (np. rodzic usunął dziecko) znika z listy. Token powiadomień jest rejestrowany w każdym domu (urządzenie jest unikalne dla pary token + członek), więc powiadomienia przychodzą ze wszystkich domów. Dorosły ma zawsze jeden dom.
 - Dorosły sam zmienia swój e-mail i hasło w Ustawieniach → Konto (`POST /v1/me/email`, `POST /v1/me/password`). Obie zmiany wymagają obecnego hasła (limit 10 błędnych prób na 15 minut). Po zmianie hasła pozostałe telefony tej osoby są wylogowane, bieżący zostaje.
+- Zajęty e-mail przy zmianie e-maila daje 409 `email_taken`, bo dorosły musi wiedzieć, że wpisał adres, którego nie może użyć. Serwer sprawdza go dopiero po poprawnym obecnym haśle i najwyżej 5 razy na godzinę na osobę, więc nie da się tak tanio sprawdzać, kto ma konto. Rejestracja też zwraca 409 i ma limit 10 na adres IP na godzinę. Logowanie i „Nie pamiętam hasła” nie zdradzają, czy konto istnieje.
 - Reset hasła dla dorosłych przez e-mail: „Nie pamiętam hasła” wysyła 6-cyfrowy kod (ważny 15 minut, jednorazowy, 5 błędnych prób unieważnia kod; limit 3 prośby na e-mail na godzinę i 10 na IP na 15 minut). Odpowiedź nie zdradza, czy konto istnieje. Po zmianie hasła wszystkie telefony tej osoby są wylogowane. Nadawca „Zadania <noreply@stillestormstudio.com>”, odpowiedzi trafiają na zadania@stillestormstudio.com. Dzieci nigdy nie podają e-maila. Kody resetu od administratora rodziny (Ustawienia) zostają jako zapasowa droga.
 - Administrator rodziny to dorosły, który ją założył (jeden na rodzinę, `family.admin_member_id`). Tylko on zmienia ustawienia rodziny, edytuje profile innych dorosłych, daje im kody resetu hasła i usuwa członków; jego samego nie da się usunąć, więc w rodzinie zawsze zostaje rodzic. Pozostali dorośli mają resztę uprawnień: zadania, akceptacje, nagrody, paczki, sklep, zapraszanie dzieci i dorosłych, edycję dzieci i własnego profilu. Usunięty członek traci dostęp, ale jego historia zostaje.
 
@@ -34,6 +41,8 @@ Specyfikacja: https://claude.ai/artifact/SK3JoeQcavgGKoMuXnsXkS. Poniżej to, cz
 
 ## Paczki i licencje
 
+- Pliki z R2 (zdjęcia, obrazki z paczek rodziny) są podawane przez podpisane adresy ważne 24–48 godzin (koniec doby w górę), z nagłówkami `Content-Security-Policy` (bez skryptów) i `nosniff`. Aplikacja dostaje świeże adresy z każdą odpowiedzią API i odświeża `/me` po powrocie po ponad 30 minutach. Zdjęcie usuniętego członka jest kasowane z R2, więc stary adres przestaje działać. Ryzyko szczątkowe: obrazek z paczki rodziny, którego adres ktoś skopiował, działa do wygaśnięcia adresu. Serwer nie sprawdza właściciela przy każdym pobraniu, bo kosztowałoby to odczyt D1 na każdy obrazek.
+- Dorosły może sprawdzić sklep i kolekcję tylko członków swojej rodziny (`?member=` i `/members/:id/collection`). Obcy identyfikator daje 404.
 - Wbudowane paczki (`family_id NULL`) leżą w statycznych assetach Workera: to backend, nie APK, i jest darmowe. Każda rodzina może je wyłączyć u siebie. Paczki dodane przez rodzica trafiają do R2.
 - Źródła:
   - Fluent Emoji (Microsoft, MIT) dla naklejek oraz ikonek zadań i nagród,
@@ -45,12 +54,12 @@ Specyfikacja: https://claude.ai/artifact/SK3JoeQcavgGKoMuXnsXkS. Poniżej to, cz
 ## Powiadomienia
 
 - Jeden cron co 5 minut: generuje wystąpienia na 14 dni naprzód, wysyła przypomnienie (raz dziennie, tylko przy niezrobionych zadaniach) i dostarcza wstrzymane powiadomienia.
-- W godzinach ciszy wszystko czeka. Po ich końcu każda osoba dostaje jedno zbiorcze powiadomienie.
+- W godzinach ciszy wszystko czeka. Po ich końcu każda osoba dostaje jedno zbiorcze powiadomienie. Gdy rodzic skróci albo wyłączy godziny ciszy, wstrzymane powiadomienia dostają nowy termin i wychodzą przy najbliższym cronie. „Od” równe „Do” oznacza brak ciszy, więc formularz tego nie przyjmuje.
 - Token OAuth do FCM jest w pamięci podręcznej w D1 (około godziny). Nieważne tokeny urządzeń są usuwane.
 
 ## Wygląd
 
-- 25 motywów z mockupów, dziecko wybiera w Profil → Wygląd aplikacji. Dorosły wybiera w Ustawienia → Konto → Wygląd aplikacji: domyślnie „Neutralny” (id `neutral`, tylko dla dorosłych) albo jeden z 25 poza guild, lanterns i detective (ciemna strona z jasnymi kartami: pola formularzy, przyciski i tytuły arkuszy poza kartami są tam nieczytelne; lista `ADULT_HIDDEN_THEMES`). Motyw jest zapisany na serwerze (member.theme), więc działa na każdym telefonie.
+- 25 motywów z mockupów, dziecko wybiera w Profil → Wygląd aplikacji. Dorosły wybiera w Ustawienia → Konto → Wygląd aplikacji: domyślnie „Neutralny” (id `neutral`, tylko dla dorosłych) albo jeden z 25 poza guild, lanterns i detective (ciemna strona z jasnymi kartami: pola formularzy, przyciski i tytuły arkuszy poza kartami są tam nieczytelne; lista `ADULT_HIDDEN_THEMES` w `packages/shared`, wspólna dla aplikacji i API, które odrzuca te motywy dla dorosłych). Motyw jest zapisany na serwerze (member.theme), więc działa na każdym telefonie.
 - Po sprawdzeniu ekranów dorosłych (listy, formularze, arkusze) poprawione tokeny: jasne `--surface-2` w manga, sport, comic oraz w kartach i arkuszach lanterns i detective, ciemniejszy kolor akcentu w sport, ducks, comic i na kartach w detective, jaśniejsze tła etykiet (`*-soft`).
 - Poprawki kontrastu względem mockupów (guild, lanterns, detective, retro90, sport, monsters, comic): ciemniejsze kolory tekstu na jasnych kartach i nieco ciemniejsze tła przycisków, żeby spełnić WCAG AA.
 - Napis na przycisku pochodzi z motywu. „Zrobiłem/Zrobiłam” dziecko wybiera samo.

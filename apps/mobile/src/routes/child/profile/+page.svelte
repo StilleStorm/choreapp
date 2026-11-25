@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { CollectionDto, ItemDto } from '@choreapp/shared';
+  import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import type { Home } from '#lib/homes.js';
   import { api } from '#lib/api.js';
@@ -74,15 +75,16 @@
   let switching = $state('');
   let leaving = $state<Home | null>(null);
   let leaveOpen = $state(false);
-  $effect(() => {
-    if (session.homes.list.length > 1) void session.checkHomes();
+  // Once per visit. Never from an $effect: it reads `homes` and may save it.
+  onMount(() => {
+    void session.checkHomes();
   });
   async function switchTo(h: Home) {
     homeError = '';
     switching = h.token;
     try {
       await session.switchTo(h.token);
-      await goto('/child/today', { replaceState: true });
+      await goto('/child/today', { replace: true });
     } catch (e) {
       homeError = errorMessage(e);
     } finally {
@@ -165,7 +167,7 @@
       {/each}
     </div>
     {#if homeError}<div class="error-box">{homeError}</div>{/if}
-    <a class="btn block" href="/join"><Icon name="plus" size={18} /> Dodaj kolejny dom</a>
+    <a class="btn block" href="/join?add=1"><Icon name="plus" size={18} /> Dodaj kolejny dom</a>
     <p class="muted small">Np. dom taty albo dziadków. Poproś dorosłego z tamtego domu o kod QR albo 6 cyfr.</p>
   </section>
 

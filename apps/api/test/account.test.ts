@@ -127,6 +127,34 @@ describe('me and family settings', () => {
     expect(await me()).toBe('neutral');
   });
 
+  it('refuses the themes hidden from adults, which children may still pick', async () => {
+    const fam = await registerFamily();
+    const kid = await addChild(fam);
+    for (const theme of ['guild', 'lanterns', 'detective']) {
+      expect((await call('PATCH', '/v1/me', { token: fam.parentToken, json: { theme } })).status).toBe(400);
+      expect((await call('PATCH', '/v1/me', { token: kid.token, json: { theme } })).status).toBe(200);
+    }
+    expect((await call('GET', '/v1/me', { token: fam.parentToken })).body.me.theme).toBe('neutral');
+  });
+
+  it('stops serving a removed member’s photo', async () => {
+    const fam = await registerFamily();
+    const kid = await addChild(fam);
+    const up = await call('PUT', '/v1/me/avatar', { token: kid.token, raw: new Uint8Array([1, 2, 3]), contentType: 'image/png' });
+    const path = (up.body.avatarUrl as string).replace(/^https?:\/\/[^/]+/, '');
+    expect((await call('GET', path)).status).toBe(200);
+    await call('DELETE', `/v1/members/${kid.id}`, { token: fam.parentToken });
+    expect((await call('GET', path)).status).toBe(404);
+  });
+
+  it('signs file URLs for one to two days', async () => {
+    const fam = await registerFamily();
+    const up = await call('PUT', '/v1/me/avatar', { token: fam.parentToken, raw: new Uint8Array([1, 2, 3]), contentType: 'image/png' });
+    const exp = Number(new URL(up.body.avatarUrl).searchParams.get('e'));
+    expect(exp - Date.now()).toBeGreaterThanOrEqual(86_400_000);
+    expect(exp - Date.now()).toBeLessThanOrEqual(2 * 86_400_000);
+  });
+
   it('uploads an avatar and serves it through a signed URL', async () => {
     const fam = await registerFamily();
     const kid = await addChild(fam);

@@ -7,18 +7,38 @@
  *  role parent, no member  -> another parent joins: name, e-mail, password
  *  role parent, member     -> password reset for that parent
  */
-import { NEUTRAL_THEME, createInviteBody, inviteRef, redeemInviteBody, type InviteDto, type InviteInfoDto, type InviteSummaryDto } from '@choreapp/shared';
+import {
+  NEUTRAL_THEME,
+  createInviteBody,
+  inviteRef,
+  redeemInviteBody,
+  type InviteDto,
+  type InviteInfoDto,
+  type InviteStatusDto,
+  type InviteSummaryDto,
+} from '@choreapp/shared';
 import { Hono } from 'hono';
 import type { AppBindings, Env } from '../env.js';
-import { assertFamilyAdmin, clientIp, createSession, requireParent, revokeMemberSessions } from '../lib/auth.js';
+import { assertFamilyAdmin, clientIp, isFamilyAdmin, createSession, requireParent, revokeMemberSessions } from '../lib/auth.js';
 import { hashPassword, newId, randomToken, sha256Hex, sixDigitCode } from '../lib/crypto.js';
 import { all, first, hit, isLimited, isUniqueViolation, run } from '../lib/db.js';
-import { ApiError, badRequest, body, conflict, notFound } from '../lib/http.js';
+import { ApiError, badRequest, body, conflict, forbidden, notFound } from '../lib/http.js';
 import { sessionResponse } from './account.js';
 
 export const INVITE_TTL_MS = 15 * 60_000;
 const FAIL_WINDOW = 15 * 60_000;
+/** Wrong codes or links from one IP per window. */
 const FAIL_LIMIT = 10;
+/**
+ * A 6-digit code can't tell which invite a wrong guess was aimed at, so every
+ * wrong code counts against every live invite: after this many the code stops
+ * working (the QR link, 256 random bits, still does). Holds even against
+ * guesses spread over many IPs.
+ */
+export const CODE_MISS_LIMIT = 20;
+/** Wrong codes from all IPs together per window; above it code entry pauses (QR links still work). */
+export const GLOBAL_CODE_FAIL_LIMIT = 50;
+const GLOBAL_CODE_FAIL_KEY = 'invite-code-fail:all';
 
 interface InviteRow {
   id: string;
@@ -33,19 +53,28 @@ interface InviteRow {
 
 async function findInvite(env: Env, ip: string, ref: { token?: string; code?: string }): Promise<InviteRow> {
   const failKey = `invite-fail:${ip}`;
+  const byCode = !ref.token;
   if (await isLimited(env.DB, failKey, FAIL_LIMIT, FAIL_WINDOW)) throw new ApiError(429, 'too_many_attempts');
-  const column = ref.token ? 'token_hash' : 'code_hash';
+  if (byCode && (await isLimited(env.DB, GLOBAL_CODE_FAIL_KEY, GLOBAL_CODE_FAIL_LIMIT, FAIL_WINDOW))) {
+    throw new ApiError(429, 'too_many_attempts');
+  }
+  const now = Date.now();
   const hash = await sha256Hex(ref.token ?? ref.code!);
   const row = await first<InviteRow>(
     env.DB,
     `SELECT i.*, f.name AS family_name, m.name AS member_name
        FROM invite i JOIN family f ON f.id = i.family_id LEFT JOIN member m ON m.id = i.member_id
-      WHERE i.${column} = ? AND i.used_at IS NULL AND i.expires_at > ?`,
+      WHERE i.${byCode ? 'code_hash' : 'token_hash'} = ? AND i.used_at IS NULL AND i.expires_at > ?
+        ${byCode ? `AND i.code_misses < ${CODE_MISS_LIMIT}` : ''}`,
     hash,
-    Date.now(),
+    now,
   );
   if (!row) {
     await hit(env.DB, failKey, 1_000_000, FAIL_WINDOW);
+    if (byCode) {
+      await hit(env.DB, GLOBAL_CODE_FAIL_KEY, 1_000_000, FAIL_WINDOW);
+      await run(env.DB, 'UPDATE invite SET code_misses = code_misses + 1 WHERE used_at IS NULL AND expires_at > ?', now);
+    }
     throw new ApiError(404, 'invite_invalid');
   }
   return row;
@@ -157,11 +186,12 @@ export const invites = new Hono<AppBindings>()
     const now = Date.now();
     const token = randomToken();
     const tokenHash = await sha256Hex(token);
-    // Replace any earlier pending code for the same purpose.
+    // Replace this adult's own earlier pending code for the same purpose; other adults' codes stay valid.
     await run(
       c.env.DB,
-      'DELETE FROM invite WHERE family_id = ? AND used_at IS NULL AND role = ? AND member_id IS ?',
+      'DELETE FROM invite WHERE family_id = ? AND created_by = ? AND used_at IS NULL AND role = ? AND member_id IS ?',
       familyId,
+      createdBy,
       b.role,
       b.memberId ?? null,
     );
@@ -192,6 +222,7 @@ export const invites = new Hono<AppBindings>()
           token,
           qr: `choreapp://join?t=${token}`,
           expiresAt: now + INVITE_TTL_MS,
+          now,
         };
         return c.json(dto, 201);
       } catch (e) {
@@ -221,8 +252,30 @@ export const invites = new Hono<AppBindings>()
     return c.json(dto);
   })
 
+  /** Polled by the sheet showing the code: has the other phone used it? */
+  .get('/invites/:id', requireParent, async (c) => {
+    const i = await first<{ used_at: number | null; expires_at: number }>(
+      c.env.DB,
+      'SELECT used_at, expires_at FROM invite WHERE id = ? AND family_id = ?',
+      c.req.param('id'),
+      c.get('auth').familyId,
+    );
+    const dto: InviteStatusDto = { status: i?.used_at ? 'used' : i && i.expires_at > Date.now() ? 'pending' : 'gone' };
+    return c.json(dto);
+  })
+
+  /** Revokes an unused code (the sheet was closed). Its creator or the family administrator only. */
   .delete('/invites/:id', requireParent, async (c) => {
-    await run(c.env.DB, 'DELETE FROM invite WHERE id = ? AND family_id = ?', c.req.param('id'), c.get('auth').familyId);
+    const auth = c.get('auth');
+    const i = await first<{ id: string; created_by: string }>(
+      c.env.DB,
+      'SELECT id, created_by FROM invite WHERE id = ? AND family_id = ?',
+      c.req.param('id'),
+      auth.familyId,
+    );
+    if (!i) throw notFound();
+    if (i.created_by !== auth.memberId && !(await isFamilyAdmin(c.env.DB, auth))) throw forbidden();
+    await run(c.env.DB, 'DELETE FROM invite WHERE id = ? AND used_at IS NULL', i.id);
     return c.json({ ok: true });
   });
 

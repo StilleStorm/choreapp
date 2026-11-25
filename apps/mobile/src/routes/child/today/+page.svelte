@@ -38,7 +38,9 @@
   const today = $derived(agenda?.today ?? session.today);
   const overdue = $derived(agenda?.items.filter((i) => i.date < today) ?? []);
   const todays = $derived(agenda?.items.filter((i) => i.date === today) ?? []);
-  const doneCount = $derived(todays.filter((i) => ['approved', 'closed', 'reported'].includes(child(i).state) || offline.isQueued(i.occurrenceId)).length);
+  // A "wystarczy jedno" task a sibling did is no longer this child's: not in the progress.
+  const mine = $derived(todays.filter((i) => child(i).state !== 'closed'));
+  const doneCount = $derived(mine.filter((i) => ['approved', 'reported'].includes(child(i).state) || offline.isQueued(i.occurrenceId)).length);
 
   function child(i: AgendaItemDto) {
     return i.children[0]!;
@@ -76,10 +78,10 @@
   {#if error}<div class="error-box">{error}</div>{/if}
 
   {#if agenda}
-    {#if todays.length > 0}
-      <div class="progress" aria-label="Zrobione {doneCount} z {todays.length}">
-        <div class="bar"><span style:width="{(doneCount / todays.length) * 100}%"></span></div>
-        <span class="label">{doneCount} z {todays.length}</span>
+    {#if mine.length > 0}
+      <div class="progress" aria-label="Zrobione {doneCount} z {mine.length}">
+        <div class="bar"><span style:width="{(doneCount / mine.length) * 100}%"></span></div>
+        <span class="label">{doneCount} z {mine.length}</span>
       </div>
     {/if}
 

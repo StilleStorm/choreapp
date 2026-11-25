@@ -47,6 +47,21 @@ export async function enqueue(env: Env, family: FamilyRow, memberIds: string[], 
   if (!isQuietAt(now, family.timezone, family.quiet_from, family.quiet_to)) await deliverDue(env, now, memberIds);
 }
 
+/**
+ * Quiet hours changed (shortened or switched off): held notifications follow the
+ * new window, so the next cron run sends whatever is no longer quiet.
+ */
+export async function rescheduleHeld(env: Env, family: FamilyRow, now = Date.now()): Promise<void> {
+  await run(
+    env.DB,
+    `UPDATE notification_outbox SET deliver_after = ?
+      WHERE sent_at IS NULL AND deliver_after > ? AND member_id IN (SELECT id FROM member WHERE family_id = ?)`,
+    quietEndsAt(now, family.timezone, family.quiet_from, family.quiet_to),
+    now,
+    family.id,
+  );
+}
+
 function plural(n: number, one: string, few: string, many: string): string {
   if (n === 1) return one;
   const last = n % 10;
