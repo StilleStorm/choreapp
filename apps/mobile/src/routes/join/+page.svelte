@@ -3,7 +3,6 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { api } from '#lib/api.js';
-  import AvatarPicker from '#lib/components/AvatarPicker.svelte';
   import BackHeader from '#lib/components/BackHeader.svelte';
   import Icon from '#lib/components/Icon.svelte';
   import { errorMessage } from '#lib/messages.js';
@@ -16,7 +15,6 @@
   let name = $state('');
   let email = $state('');
   let password = $state('');
-  let avatar = $state<Blob | null>(null);
   let error = $state('');
   let busy = $state(false);
   /** A child already logged in is adding another home (mum's, dad's, grandparents'). */
@@ -96,14 +94,6 @@
         { public: true },
       );
       await session.signIn(s);
-      if (avatar) {
-        try {
-          await api.upload('/v1/me/avatar', avatar);
-          await session.refresh();
-        } catch {
-          // Joining worked; the photo can be added later in the profile.
-        }
-      }
       await goto(session.home(), { replace: true });
     } catch (err) {
       error = errorMessage(err);
@@ -160,10 +150,7 @@
           <input type="text" bind:value={name} required maxlength="40" autocomplete="off" />
           <span class="hint muted small">Może być pseudonim. Nie wpisuj nazwiska.</span>
         </label>
-        <div class="field">
-          <span>Twoje zdjęcie (możesz dodać później)</span>
-          <AvatarPicker name={name || '?'} bind:blob={avatar} />
-        </div>
+        <p class="muted small">Awatar i ramkę wybierzesz potem w Profilu.</p>
       {:else if info.kind === 'join'}
         <p class="muted">Dołączasz jako rodzic. Będziesz logować się e-mailem i hasłem.</p>
         <label class="field">

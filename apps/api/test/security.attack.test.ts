@@ -11,7 +11,7 @@
 import { env as cfEnv } from 'cloudflare:workers';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../src/index.js';
-import { addChild, call, env, registerFamily } from './helpers.js';
+import { addChild, call, env, legacyChildPhoto, registerFamily } from './helpers.js';
 
 async function give(memberId: string, amount: number, reason = 'task') {
   await env.DB.prepare('INSERT INTO points_ledger (id, member_id, amount, reason, created_at) VALUES (?, ?, ?, ?, ?)')
@@ -185,10 +185,7 @@ describe('X1 signed URL survives member removal', () => {
   it('a removed child avatar must stop being served', async () => {
     const fam = await registerFamily();
     const kid = await addChild(fam, 'Kid');
-    const up = await call('PUT', '/v1/me/avatar', { token: kid.token, raw: new Uint8Array([1, 2, 3, 4]), contentType: 'image/png' });
-    expect(up.status).toBe(200);
-    const url: string = up.body.avatarUrl;
-    const path = url.replace(/^https?:\/\/[^/]+/, '');
+    const path = await legacyChildPhoto(fam, kid);
 
     expect((await call('GET', path)).status).toBe(200); // works while a member
 

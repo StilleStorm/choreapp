@@ -1,6 +1,6 @@
 import { localDateAt } from '@choreapp/core';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { addChild, call, env, registerFamily, uniqueEmail, type Family } from './helpers.js';
+import { addChild, call, env, legacyChildPhoto, registerFamily, uniqueEmail, type Family } from './helpers.js';
 
 const PW = 'tajne-haslo-123';
 let op = 0;
@@ -17,7 +17,7 @@ async function addParent(fam: Family): Promise<{ token: string; id: string; emai
   return { token: r.body.token, id: r.body.me.id, email };
 }
 
-/** A family with real history: the second adult creates and approves a task, delivers a reward; the child has a photo. */
+/** A family with real history: the second adult creates and approves a task, delivers a reward; the child has a pre-1.0.9 photo. */
 async function busyFamily() {
   const fam = await registerFamily();
   const dad = await addParent(fam);
@@ -33,7 +33,7 @@ async function busyFamily() {
   const reward = (await call('POST', '/v1/rewards', { token: fam.parentToken, json: { name: 'Lody', icon: 'gift', cost: 5 } })).body;
   const red = await call('POST', `/v1/rewards/${reward.id}/redeem`, { token: kid.token });
   await call('POST', `/v1/redemptions/${red.body.redemptionId}/deliver`, { token: dad.token });
-  await call('PUT', '/v1/me/avatar', { token: kid.token, raw: new Uint8Array([1, 2, 3]), contentType: 'image/png' });
+  await legacyChildPhoto(fam, kid);
   await call('PUT', '/v1/me/avatar', { token: dad.token, raw: new Uint8Array([4, 5, 6]), contentType: 'image/png' });
   await call('POST', '/v1/devices', { token: kid.token, json: { pushToken: `tok-${Date.now()}-${op++}` } });
   return { fam, dad, kid };

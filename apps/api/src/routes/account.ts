@@ -9,6 +9,7 @@ import {
   NEUTRAL_THEME,
   registerBody,
   themeAllowed,
+  transferAdminBody,
   registerDeviceBody,
   updateFamilyBody,
   updateMeBody,
@@ -209,9 +210,10 @@ export const account = new Hono<AppBindings>()
     return c.json({ ok: true });
   })
 
-  /** Raw image body; the app resizes to 256 px WebP before upload. */
+  /** Raw image body; the app resizes to 256 px WebP before upload. Adults only: children use avatars (Google Play Families). */
   .put('/me/avatar', async (c) => {
-    const { memberId, familyId } = c.get('auth');
+    const { memberId, familyId, role } = c.get('auth');
+    if (role !== 'parent') throw forbidden('child_photo_not_allowed');
     const type = (c.req.header('Content-Type') ?? '').split(';')[0]!.trim();
     const ext = IMAGE_TYPES[type];
     if (!ext || ext === 'svg') throw badRequest('unsupported_image_type');
@@ -344,6 +346,22 @@ export const account = new Hono<AppBindings>()
     if (await isFamilyAdmin(c.env.DB, auth)) throw conflict('admin_must_delete_family');
     await eraseMember(c.env, auth.memberId);
     return c.json({ ok: true });
+  })
+
+  /**
+   * The administrator hands the role to another adult of this family (per family:
+   * an adult belongs to one family, children are never administrators).
+   */
+  .post('/family/admin', requireParent, requireAdmin, async (c) => {
+    const b = await body(c, transferAdminBody);
+    const auth = c.get('auth');
+    await assertCurrentPassword(c.env, auth.memberId, b.currentPassword);
+    const m = await loadMember(c.env, b.memberId);
+    if (!m || m.family_id !== auth.familyId || m.removed_at) throw notFound('member_not_found');
+    if (m.role !== 'parent') throw badRequest('admin_must_be_adult');
+    if (m.id === auth.memberId) throw conflict('already_admin');
+    await run(c.env.DB, 'UPDATE family SET admin_member_id = ? WHERE id = ? AND admin_member_id = ?', m.id, auth.familyId, auth.memberId);
+    return c.json(familyDto(await loadFamily(c.env, auth.familyId)));
   })
 
   /** The administrator deletes the family: every member, task, reward, pack and file. */

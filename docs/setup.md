@@ -72,6 +72,21 @@ cd apps/mobile && pnpm run aab
 
 Buduje wersję bez samodzielnych aktualizacji (`VITE_DISTRIBUTION=play`) i podpisany pakiet `android/app/build/outputs/bundle/release/app-release.aab` (tym samym kluczem z `keystore.properties`; w Play Console można go zarejestrować jako klucz przesyłania). W Play Console podaj politykę prywatności `https://<adres Workera>/privacy` i stronę usuwania konta `https://<adres Workera>/delete-account`.
 
+## Zdjęcia dzieci (migracja 0007, wersja 1.0.9)
+
+Dzieci mają już tylko awatary (zasady Google Play dla rodzin). Migracja `0007_child_photos_removed.sql` czyści odwołania do zdjęć dzieci w D1, ale pliki w R2 trzeba usunąć ręcznie, **przed** `db:migrate:remote` (potem klucze znikają z bazy):
+
+```bash
+cd apps/api
+pnpm exec wrangler d1 execute choreapp --remote --json \
+  --command "SELECT avatar_key FROM member WHERE role = 'child' AND avatar_key IS NOT NULL" \
+  | node -e 'for (const r of JSON.parse(require("fs").readFileSync(0))[0].results) console.log(r.avatar_key)' \
+  | while read -r key; do pnpm exec wrangler r2 object delete "choreapp-files/$key" --remote; done
+pnpm run db:migrate:remote
+```
+
+Jeśli migracja poszła pierwsza: zdjęcia dzieci leżą w R2 pod `families/<rodzina>/avatars/<id dziecka>-*` (lista w panelu Cloudflare → R2).
+
 ## Praca lokalna
 
 ```bash

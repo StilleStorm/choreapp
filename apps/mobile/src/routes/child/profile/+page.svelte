@@ -5,7 +5,6 @@
   import type { Home } from '#lib/homes.js';
   import { api } from '#lib/api.js';
   import Avatar from '#lib/components/Avatar.svelte';
-  import AvatarPicker from '#lib/components/AvatarPicker.svelte';
   import Icon from '#lib/components/Icon.svelte';
   import ItemImage from '#lib/components/ItemImage.svelte';
   import Sheet from '#lib/components/Sheet.svelte';
@@ -33,15 +32,13 @@
   const ownedAvatars = $derived((collection?.avatars ?? []).filter((a) => a.owned));
   const ownedFrames = $derived((collection?.frames ?? []).filter((f) => f.owned));
 
-  // Name + photo
+  // Name (children have avatars only, no photos: Google Play Families policy)
   let editOpen = $state(false);
   let name = $state('');
-  let blob = $state<Blob | null>(null);
   let busy = $state(false);
   let editError = $state('');
   function openEdit() {
     name = me.name;
-    blob = null;
     editError = '';
     editOpen = true;
   }
@@ -50,7 +47,6 @@
     editError = '';
     try {
       if (name.trim() && name.trim() !== me.name) await api.patch('/v1/me', { name: name.trim() });
-      if (blob) await api.upload('/v1/me/avatar', blob);
       await session.refresh();
       editOpen = false;
     } catch (e) {
@@ -113,7 +109,7 @@
     </button>
     <h1>{me.name}</h1>
     <div class="inline">
-      <button class="btn small" onclick={openEdit}><Icon name="edit" size={18} /> Nazwa i zdjęcie</button>
+      <button class="btn small" onclick={openEdit}><Icon name="edit" size={18} /> Nazwa</button>
       <button class="btn small" onclick={() => (lookOpen = true)}><Icon name="user" size={18} /> Awatar i ramka</button>
     </div>
     <a class="btn small ghost" href="/child/themes"><Icon name="palette" size={18} /> Wygląd aplikacji</a>
@@ -174,8 +170,7 @@
   <a class="btn ghost small" href="/about">O aplikacji</a>
 </main>
 
-<Sheet bind:open={editOpen} title="Nazwa i zdjęcie">
-  <AvatarPicker name={name || me.name} currentUrl={me.avatarItemId ? null : me.avatarUrl} bind:blob />
+<Sheet bind:open={editOpen} title="Nazwa">
   <label class="field">
     <span>Twoja nazwa</span>
     <input type="text" bind:value={name} maxlength="40" autocomplete="off" />
@@ -200,8 +195,8 @@
   <h3 class="section-title">Awatar</h3>
   <div class="pick-grid">
     <button class="pick" aria-pressed={!me.avatarItemId} onclick={() => wear(null, me.frameItemId)}>
-      <Avatar name={me.name} url={me.avatarItemId ? null : me.avatarUrl} size={64} />
-      <span>Moje zdjęcie</span>
+      <Avatar name={me.name} size={64} />
+      <span>Domyślny</span>
     </button>
     {#each ownedAvatars as a (a.id)}
       <button class="pick" aria-pressed={isWorn(a)} onclick={() => wear(a.id, me.frameItemId)}>

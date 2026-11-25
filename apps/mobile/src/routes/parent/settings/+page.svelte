@@ -111,12 +111,46 @@
     }
   }
 
-  // Delete own account (the administrator deletes the whole family)
+  /** Adults the administrator can hand the role to (the role is per family). */
+  const otherAdults = $derived(session.parents.filter((m) => m.id !== session.me?.id));
+
+  // Hand the administrator role to another adult
+  let adminOpen = $state(false);
+  let adminTarget = $state('');
+  let adminPassword = $state('');
+  let adminError = $state('');
+  let adminBusy = $state(false);
+  function openAdmin() {
+    adminTarget = otherAdults[0]?.id ?? '';
+    adminPassword = '';
+    adminError = '';
+    adminOpen = true;
+  }
+  async function transferAdmin(e: SubmitEvent) {
+    e.preventDefault();
+    adminError = '';
+    adminBusy = true;
+    try {
+      await api.post('/v1/family/admin', { memberId: adminTarget, currentPassword: adminPassword });
+      await session.refresh();
+      adminOpen = false;
+    } catch (err) {
+      adminError = errorMessage(err);
+    } finally {
+      adminBusy = false;
+    }
+  }
+
+  // Delete own account. The administrator either hands the role on first or deletes the whole family.
   let deleteOpen = $state(false);
+  let deleteMode = $state<'me' | 'family'>('me');
+  let deleteTarget = $state('');
   let deletePassword = $state('');
   let deleteError = $state('');
   let deleteBusy = $state(false);
   function openDelete() {
+    deleteMode = session.isAdmin && otherAdults.length === 0 ? 'family' : 'me';
+    deleteTarget = otherAdults[0]?.id ?? '';
     deletePassword = '';
     deleteError = '';
     deleteOpen = true;
@@ -127,12 +161,17 @@
     deleteError = '';
     deleteBusy = true;
     try {
-      await api.post(session.isAdmin ? '/v1/family/delete' : '/v1/me/delete', { currentPassword: deletePassword });
+      if (session.isAdmin && deleteMode === 'me') {
+        await api.post('/v1/family/admin', { memberId: deleteTarget, currentPassword: deletePassword });
+      }
+      await api.post(deleteMode === 'family' ? '/v1/family/delete' : '/v1/me/delete', { currentPassword: deletePassword });
       deleteOpen = false;
       // The server has already ended every session.
       await session.signOut(false);
     } catch (err) {
       deleteError = errorMessage(err);
+      // The role may already have moved on; a retry then only deletes the account.
+      if (session.isAdmin) await session.refresh().catch(() => {});
     } finally {
       deleteBusy = false;
     }
@@ -218,6 +257,9 @@
       {/each}
     </div>
     <button class="btn block" onclick={() => openInvite('parent')}><Icon name="plus" /> Dodaj rodzica lub opiekuna</button>
+    {#if session.isAdmin && otherAdults.length > 0}
+      <button class="btn ghost block" onclick={openAdmin}><Icon name="key" /> Przekaż rolę administratora</button>
+    {/if}
   </section>
 
   {#if session.isAdmin}
@@ -292,7 +334,7 @@
       </button>
       <button class="row member danger-text" onclick={openDelete}>
         <Icon name="trash" />
-        <span class="grow title">{session.isAdmin ? 'Usuń całą rodzinę' : 'Usuń konto'}</span>
+        <span class="grow title">{!session.isAdmin ? 'Usuń konto' : otherAdults.length > 0 ? 'Usuń konto lub rodzinę' : 'Usuń całą rodzinę'}</span>
       </button>
     </div>
   </section>
@@ -302,7 +344,8 @@
 
 <Sheet bind:open={memberOpen} title={selected?.name}>
   {#if selected}
-    {#if isMe}
+    {#if isMe && selected.role === 'parent'}
+      <!-- Photos are for adults only; children use avatars (Google Play Families policy). -->
       <AvatarPicker name={editName || selected.name} currentUrl={selected.avatarUrl} bind:blob={avatarBlob} />
     {/if}
     {#if canEdit}
@@ -378,12 +421,61 @@
   {/if}
 </Sheet>
 
-<Sheet bind:open={deleteOpen} title={session.isAdmin ? 'Usuń całą rodzinę' : 'Usuń konto'}>
-  <form class="stack" onsubmit={deleteAccount}>
+<Sheet bind:open={adminOpen} title="Przekaż rolę administratora">
+  <form class="stack" onsubmit={transferAdmin}>
+    <label class="field">
+      <span>Nowy administrator</span>
+      <select bind:value={adminTarget} required>
+        {#each otherAdults as m (m.id)}<option value={m.id}>{m.name}{m.email ? ` (${m.email})` : ''}</option>{/each}
+      </select>
+    </label>
     <div class="error-box">
-      {#if session.isAdmin}
+      {session.member(adminTarget)?.name ?? 'Ta osoba'} będzie zmieniać ustawienia rodziny, zarządzać dorosłymi i usuwać członków.
+      Ty zostaniesz zwykłym rodzicem i nie cofniesz tego sam.
+    </div>
+    <label class="field">
+      <span>Twoje hasło</span>
+      <input type="password" bind:value={adminPassword} required autocomplete="current-password" />
+    </label>
+    {#if adminError}<div class="error-box" role="alert">{adminError}</div>{/if}
+    <div class="inline">
+      <button type="button" class="btn grow" onclick={() => (adminOpen = false)}>Anuluj</button>
+      <button class="btn primary grow" disabled={adminBusy || !adminPassword || !adminTarget}>
+        {adminBusy ? 'Zapisywanie…' : 'Przekaż rolę'}
+      </button>
+    </div>
+  </form>
+</Sheet>
+
+<Sheet bind:open={deleteOpen} title={deleteMode === 'family' ? 'Usuń całą rodzinę' : 'Usuń konto'}>
+  <form class="stack" onsubmit={deleteAccount}>
+    {#if session.isAdmin && otherAdults.length > 0}
+      <div class="stack">
+        <label class="inline">
+          <input type="radio" bind:group={deleteMode} value="me" />
+          <span>Przekaż rolę administratora i usuń tylko moje konto</span>
+        </label>
+        <label class="inline">
+          <input type="radio" bind:group={deleteMode} value="family" />
+          <span>Usuń całą rodzinę</span>
+        </label>
+      </div>
+      {#if deleteMode === 'me'}
+        <label class="field">
+          <span>Nowy administrator</span>
+          <select bind:value={deleteTarget} required>
+            {#each otherAdults as m (m.id)}<option value={m.id}>{m.name}{m.email ? ` (${m.email})` : ''}</option>{/each}
+          </select>
+        </label>
+      {/if}
+    {/if}
+    <div class="error-box">
+      {#if deleteMode === 'family'}
         Jesteś administratorem, więc usuniesz rodzinę {session.family?.name} i wszystko, co w niej jest: konta wszystkich dorosłych,
         profile dzieci, zadania, punkty, naklejki, nagrody, własne paczki i zdjęcia. Wszystkie telefony zostaną wylogowane.
+      {:else if session.isAdmin}
+        {session.member(deleteTarget)?.name ?? 'Wybrana osoba'} zostanie administratorem, a Ty usuniesz swoje konto: e-mail, hasło, imię i
+        zdjęcie. Rodzina i dzieci zostają, a założone przez Ciebie zadania przejdą na nowego administratora.
       {:else}
         Usuniesz swoje konto: e-mail, hasło, imię i zdjęcie. Rodzina i dzieci zostają, a założone przez Ciebie zadania przejdą na
         administratora.
@@ -398,7 +490,7 @@
     <div class="inline">
       <button type="button" class="btn grow" onclick={() => (deleteOpen = false)}>Anuluj</button>
       <button class="btn danger grow" disabled={deleteBusy || !deletePassword}>
-        {deleteBusy ? 'Usuwanie…' : session.isAdmin ? 'Usuń rodzinę' : 'Usuń konto'}
+        {deleteBusy ? 'Usuwanie…' : deleteMode === 'family' ? 'Usuń rodzinę' : 'Usuń konto'}
       </button>
     </div>
   </form>

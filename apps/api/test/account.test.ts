@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addChild, call, env, registerFamily, uniqueEmail, type Family } from './helpers.js';
+import { addChild, call, env, legacyChildPhoto, registerFamily, uniqueEmail, type Family } from './helpers.js';
 
 describe('registration and login', () => {
   it('registers a family with its first parent', async () => {
@@ -140,8 +140,7 @@ describe('me and family settings', () => {
   it('stops serving a removed member’s photo', async () => {
     const fam = await registerFamily();
     const kid = await addChild(fam);
-    const up = await call('PUT', '/v1/me/avatar', { token: kid.token, raw: new Uint8Array([1, 2, 3]), contentType: 'image/png' });
-    const path = (up.body.avatarUrl as string).replace(/^https?:\/\/[^/]+/, '');
+    const path = await legacyChildPhoto(fam, kid);
     expect((await call('GET', path)).status).toBe(200);
     await call('DELETE', `/v1/members/${kid.id}`, { token: fam.parentToken });
     expect((await call('GET', path)).status).toBe(404);
@@ -157,9 +156,8 @@ describe('me and family settings', () => {
 
   it('uploads an avatar and serves it through a signed URL', async () => {
     const fam = await registerFamily();
-    const kid = await addChild(fam);
     const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 1, 2, 3, 4]);
-    const r = await call('PUT', '/v1/me/avatar', { token: kid.token, raw: png, contentType: 'image/png' });
+    const r = await call('PUT', '/v1/me/avatar', { token: fam.parentToken, raw: png, contentType: 'image/png' });
     expect(r.status).toBe(200);
     const url = new URL(r.body.avatarUrl);
     const img = await call('GET', url.pathname + url.search);

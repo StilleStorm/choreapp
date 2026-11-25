@@ -58,7 +58,8 @@ const privacy = page(
 <tr><td>Adres e-mail i hasło (przechowujemy tylko skrót hasła PBKDF2, nigdy samo hasło)</td><td>dorośli</td><td>logowanie, zmiana zapomnianego hasła</td></tr>
 <tr><td>Imię dorosłego, nazwa rodziny</td><td>dorośli</td><td>pokazanie w aplikacji członkom rodziny</td></tr>
 <tr><td>Nazwa dziecka wybrana w aplikacji (może być pseudonim; prosimy, żeby nie wpisywać nazwiska)</td><td>dzieci</td><td>pokazanie w aplikacji członkom rodziny</td></tr>
-<tr><td>Zdjęcie profilowe (opcjonalne, zmniejszane na telefonie do 256 pikseli) albo wybrany awatar i ramka</td><td>wszyscy</td><td>obrazek profilu widoczny dla rodziny</td></tr>
+<tr><td>Zdjęcie profilowe (opcjonalne, zmniejszane na telefonie do 256 pikseli)</td><td>tylko dorośli</td><td>obrazek profilu widoczny dla rodziny</td></tr>
+<tr><td>Wybrany awatar i ramka (gotowe obrazki z aplikacji)</td><td>wszyscy</td><td>obrazek profilu widoczny dla rodziny</td></tr>
 <tr><td>Zadania, zgłoszenia ich wykonania, akceptacje, komentarze rodzica, punkty, naklejki, nagrody i ich odbiór</td><td>rodzina</td><td>działanie aplikacji</td></tr>
 <tr><td>Obrazki dodane przez rodzica do własnych paczek naklejek</td><td>dorośli</td><td>naklejki i nagrody w rodzinie</td></tr>
 <tr><td>Ustawienia: strefa czasowa, godziny ciszy, godzina przypomnienia, wygląd aplikacji</td><td>rodzina</td><td>działanie aplikacji</td></tr>
@@ -72,7 +73,7 @@ const privacy = page(
 <h2>3. Dzieci</h2>
 <ul>
 <li>Profil dziecka zakłada i nim zarządza rodzic lub opiekun. Dziecko dołącza jednorazowym kodem QR albo 6 cyframi od dorosłego; zgoda i nadzór należą do rodzica.</li>
-<li>Od dziecka nie zbieramy e-maila, hasła, nazwiska, daty urodzenia ani lokalizacji. Dziecko wybiera tylko nazwę (może być pseudonim) i opcjonalnie zdjęcie albo awatar.</li>
+<li>Od dziecka nie zbieramy e-maila, hasła, nazwiska, daty urodzenia ani lokalizacji. Dziecko wybiera tylko nazwę (może być pseudonim) oraz awatar i ramkę spośród gotowych obrazków w aplikacji. Dzieci nie mogą dodawać zdjęć.</li>
 <li>Dane dziecka widzi tylko jego rodzina w aplikacji. Nie są publiczne i nie trafiają do nikogo innego.</li>
 <li>Rodzic może w każdej chwili zmienić nazwę dziecka albo usunąć jego profil razem ze wszystkimi danymi (Ustawienia → dziecko → Usuń z rodziny).</li>
 </ul>
@@ -104,7 +105,7 @@ const privacy = page(
 </ul>
 
 <h2>7. Usunięcie konta</h2>
-<p>Konto można usunąć w aplikacji: Ustawienia → Konto → Usuń konto. Administrator rodziny usuwa w ten sposób całą rodzinę ze wszystkimi danymi. Można też napisać na <a href="mailto:${CONTACT}">${CONTACT}</a> z adresu e-mail konta. Szczegóły: <a href="/delete-account">jak usunąć konto</a>.</p>
+<p>Konto można usunąć w aplikacji: Ustawienia → Konto → Usuń konto. Administrator rodziny może najpierw przekazać rolę administratora innemu dorosłemu i usunąć tylko swoje konto albo usunąć całą rodzinę ze wszystkimi danymi. Można też napisać na <a href="mailto:${CONTACT}">${CONTACT}</a> z adresu e-mail konta. Szczegóły: <a href="/delete-account">jak usunąć konto</a>.</p>
 
 <h2>8. Twoje prawa</h2>
 <p>Masz prawo do dostępu do swoich danych, ich sprostowania, usunięcia, ograniczenia przetwarzania, przeniesienia oraz sprzeciwu. Rodzic lub opiekun wykonuje te prawa w imieniu dziecka. Większość zmian zrobisz sam w aplikacji; w innych sprawach napisz na <a href="mailto:${CONTACT}">${CONTACT}</a>, odpowiemy w ciągu 30 dni.</p>
@@ -123,9 +124,10 @@ const deleteAccount = page(
 <ol>
 <li>Zaloguj się jako dorosły.</li>
 <li>Otwórz <strong>Ustawienia</strong> i przewiń do sekcji <strong>Konto</strong>.</li>
-<li>Dotknij <strong>Usuń konto</strong> (administrator rodziny widzi <strong>Usuń całą rodzinę</strong>).</li>
+<li>Dotknij <strong>Usuń konto</strong>.</li>
 <li>Wpisz swoje hasło i potwierdź.</li>
 </ol>
+<p><strong>Administrator rodziny</strong> (dorosły, który ją założył, albo ten, któremu przekazano tę rolę): jeśli w rodzinie są inni dorośli, wybierz <strong>Przekaż rolę administratora i usuń tylko moje konto</strong> i wskaż nowego administratora; rodzina zostaje. Możesz też wybrać <strong>Usuń całą rodzinę</strong>. Jeśli jesteś jedynym dorosłym, możesz usunąć tylko całą rodzinę. Rolę można też przekazać bez usuwania konta: <strong>Ustawienia → Rodzice i opiekunowie → Przekaż rolę administratora</strong>.</p>
 <p>Profil dziecka usuwa administrator rodziny: <strong>Ustawienia → dotknij dziecka → Usuń z rodziny</strong>. Dzieci nie mają własnego konta z e-mailem.</p>
 
 <h2>E-mailem (do 30 dni)</h2>
@@ -133,9 +135,9 @@ const deleteAccount = page(
 
 <h2>Co zostaje usunięte</h2>
 <ul>
-<li><strong>Konto dorosłego:</strong> e-mail, skrót hasła, imię, zdjęcie profilowe, sesje, tokeny powiadomień, kody zaproszeń i zmiany hasła. Zadania, które ta osoba założyła, zostają w rodzinie (przypisane administratorowi), bez jej danych.</li>
+<li><strong>Konto dorosłego:</strong> e-mail, skrót hasła, imię, zdjęcie profilowe, sesje, tokeny powiadomień, kody zaproszeń i zmiany hasła. Zadania, które ta osoba założyła, zostają w rodzinie (przypisane administratorowi, także nowemu, jeśli usuwający przekazał rolę), bez jej danych.</li>
 <li><strong>Cała rodzina (administrator):</strong> wszyscy członkowie i ich dane, zadania, zgłoszenia, punkty, naklejki, nagrody, własne paczki naklejek, wszystkie zdjęcia i obrazki, ustawienia rodziny.</li>
-<li><strong>Profil dziecka:</strong> nazwa, zdjęcie, punkty, naklejki, historia zadań i nagród, sesje i tokeny powiadomień.</li>
+<li><strong>Profil dziecka:</strong> nazwa, awatar i ramki, punkty, naklejki, historia zadań i nagród, sesje i tokeny powiadomień.</li>
 </ul>
 <p>Usunięcie w aplikacji jest natychmiastowe i nieodwracalne. Nie przechowujemy kopii usuniętych danych. Krótkotrwałe logi techniczne serwera (adres IP, czas zapytania) znikają same po kilku dniach.</p>
 <p><a href="/privacy">Polityka prywatności</a></p>`,
