@@ -174,17 +174,21 @@
     }
   }
 
-  // Delete own account. The administrator either hands the role on first or deletes the whole family.
+  // An adult deletes their own account; the administrator can only delete the whole family
+  // (or hand the role on first, in its own sheet, and then delete their account).
   let deleteOpen = $state(false);
   let deleteMode = $state<'me' | 'family'>('me');
-  let deleteTarget = $state('');
   let deletePassword = $state('');
+  let deleteConfirmName = $state('');
+  const deleteNameOk = $derived(
+    deleteMode !== 'family' || deleteConfirmName.trim().toLocaleLowerCase('pl') === (session.family?.name ?? '').trim().toLocaleLowerCase('pl'),
+  );
   let deleteError = $state('');
   let deleteBusy = $state(false);
-  function openDelete(mode?: 'me' | 'family') {
-    deleteMode = mode ?? (session.isAdmin && otherAdults.length === 0 ? 'family' : 'me');
-    deleteTarget = otherAdults[0]?.id ?? '';
+  function openDelete() {
+    deleteMode = session.isAdmin ? 'family' : 'me';
     deletePassword = '';
+    deleteConfirmName = '';
     deleteError = '';
     deleteOpen = true;
   }
@@ -194,17 +198,12 @@
     deleteError = '';
     deleteBusy = true;
     try {
-      if (session.isAdmin && deleteMode === 'me') {
-        await api.post('/v1/family/admin', { memberId: deleteTarget, currentPassword: deletePassword });
-      }
       await api.post(deleteMode === 'family' ? '/v1/family/delete' : '/v1/me/delete', { currentPassword: deletePassword });
       deleteOpen = false;
       // The server has already ended every session.
       await session.signOut(false);
     } catch (err) {
       deleteError = errorMessage(err);
-      // The role may already have moved on; a retry then only deletes the account.
-      if (session.isAdmin) await session.refresh().catch(() => {});
     } finally {
       deleteBusy = false;
     }
@@ -324,7 +323,7 @@
       </div>
     </form>
     <div class="card">
-      <button type="button" class="row member danger-text" onclick={() => openDelete('family')}>
+      <button type="button" class="row member danger-text" onclick={() => openDelete()}>
         <Icon name="trash" />
         <span class="grow title">Usuń rodzinę</span>
       </button>
@@ -380,7 +379,7 @@
       </button>
       <button class="row member danger-text" onclick={() => openDelete()}>
         <Icon name="trash" />
-        <span class="grow title">{!session.isAdmin ? 'Usuń konto' : otherAdults.length > 0 ? 'Usuń konto lub rodzinę' : 'Usuń całą rodzinę'}</span>
+        <span class="grow title">{session.isAdmin ? 'Usuń rodzinę' : 'Usuń konto'}</span>
       </button>
     </div>
   </section>
@@ -512,39 +511,34 @@
 
 <Sheet bind:open={deleteOpen} title={deleteMode === 'family' ? 'Usuń całą rodzinę' : 'Usuń konto'}>
   <form class="stack" onsubmit={deleteAccount}>
-    {#if session.isAdmin && otherAdults.length > 0}
-      <div class="stack">
-        <label class="inline">
-          <input type="radio" bind:group={deleteMode} value="me" />
-          <span>Przekaż rolę administratora i usuń tylko moje konto</span>
-        </label>
-        <label class="inline">
-          <input type="radio" bind:group={deleteMode} value="family" />
-          <span>Usuń całą rodzinę</span>
-        </label>
-      </div>
-      {#if deleteMode === 'me'}
-        <label class="field">
-          <span>Nowy administrator</span>
-          <select bind:value={deleteTarget} required>
-            {#each otherAdults as m (m.id)}<option value={m.id}>{m.name}{m.email ? ` (${m.email})` : ''}</option>{/each}
-          </select>
-        </label>
-      {/if}
-    {/if}
     <div class="error-box">
       {#if deleteMode === 'family'}
-        Jesteś administratorem, więc usuniesz rodzinę {session.family?.name} i wszystko, co w niej jest: konta wszystkich dorosłych,
-        profile dzieci, zadania, punkty, naklejki, nagrody, własne paczki i zdjęcia. Wszystkie telefony zostaną wylogowane.
-      {:else if session.isAdmin}
-        {session.member(deleteTarget)?.name ?? 'Wybrana osoba'} zostanie administratorem, a Ty usuniesz swoje konto: e-mail, hasło, imię i
-        zdjęcie. Rodzina i dzieci zostają, a założone przez Ciebie zadania przejdą na nowego administratora.
+        Usuniesz rodzinę {session.family?.name} i wszystko, co w niej jest: profile dzieci, zadania, punkty, naklejki, nagrody, własne
+        paczki i zdjęcia, a także konta wszystkich dorosłych. <strong>Twoje konto też zostanie usunięte</strong> i nie zalogujesz się już
+        tym e-mailem. Wszystkie telefony zostaną wylogowane.
       {:else}
         Usuniesz swoje konto: e-mail, hasło, imię i zdjęcie. Rodzina i dzieci zostają, a założone przez Ciebie zadania przejdą na
         administratora.
       {/if}
       <strong>Tego nie da się cofnąć.</strong>
     </div>
+    {#if deleteMode === 'family' && otherAdults.length > 0}
+      <p class="muted small">Chcesz tylko odejść, a rodzinę zostawić? Najpierw przekaż rolę administratora innemu dorosłemu, potem usuń swoje konto.</p>
+      <button
+        type="button"
+        class="btn ghost block"
+        onclick={() => {
+          deleteOpen = false;
+          openAdmin();
+        }}><Icon name="key" /> Przekaż rolę administratora</button
+      >
+    {/if}
+    {#if deleteMode === 'family'}
+      <label class="field">
+        <span>Wpisz nazwę rodziny: {session.family?.name}</span>
+        <input type="text" bind:value={deleteConfirmName} required autocomplete="off" />
+      </label>
+    {/if}
     <label class="field">
       <span>Hasło</span>
       <input type="password" bind:value={deletePassword} required autocomplete="current-password" />
@@ -552,7 +546,7 @@
     {#if deleteError}<div class="error-box" role="alert">{deleteError}</div>{/if}
     <div class="inline">
       <button type="button" class="btn grow" onclick={() => (deleteOpen = false)}>Anuluj</button>
-      <button class="btn danger grow" disabled={deleteBusy || !deletePassword}>
+      <button class="btn danger grow" disabled={deleteBusy || !deletePassword || !deleteNameOk}>
         {deleteBusy ? 'Usuwanie…' : deleteMode === 'family' ? 'Usuń rodzinę' : 'Usuń konto'}
       </button>
     </div>
