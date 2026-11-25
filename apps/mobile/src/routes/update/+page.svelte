@@ -1,7 +1,7 @@
 <script lang="ts">
   import BackHeader from '#lib/components/BackHeader.svelte';
   import { session } from '#lib/session.svelte.js';
-  import { update } from '#lib/update.svelte.js';
+  import { selfUpdates, update } from '#lib/update.svelte.js';
 
   $effect(() => {
     void update.check();
@@ -12,7 +12,9 @@
   <BackHeader title="Aktualizacja" back={session.home()} />
   <div class="card stack">
     <p>Zainstalowana wersja: <strong>{update.installed.name}</strong></p>
-    {#if update.latest}
+    {#if !selfUpdates}
+      <p class="muted">Aktualizacje przychodzą ze sklepu Google Play.</p>
+    {:else if update.latest}
       <p>Najnowsza wersja: <strong>{update.latest.versionName}</strong></p>
       {#if update.latest.notes}<p class="muted">{update.latest.notes}</p>{/if}
       {#if update.available}

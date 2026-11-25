@@ -72,3 +72,15 @@ export async function addChild(fam: Family, name = 'Ola'): Promise<{ token: stri
   if (r.status !== 201) throw new Error(`redeem failed: ${JSON.stringify(r.body)}`);
   return { token: r.body.token, id: r.body.me.id };
 }
+
+/**
+ * A child photo uploaded before 1.0.9, when children could still add photos
+ * (now refused). Returns the signed URL path the app was given.
+ */
+export async function legacyChildPhoto(fam: Family, kid: { id: string; token: string }): Promise<string> {
+  const key = `families/${fam.familyId}/avatars/${kid.id}-${Date.now()}.png`;
+  await env.FILES.put(key, new Uint8Array([1, 2, 3]), { httpMetadata: { contentType: 'image/png' } });
+  await env.DB.prepare('UPDATE member SET avatar_key = ? WHERE id = ?').bind(key, kid.id).run();
+  const me = await call('GET', '/v1/me', { token: kid.token });
+  return (me.body.me.avatarUrl as string).replace(/^https?:\/\/[^/]+/, '');
+}

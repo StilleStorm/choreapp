@@ -1,5 +1,6 @@
 /*
- * Base styles. The parent UI uses these neutral tokens; child screens set
+ * Base tokens. The default look (no data-theme) is refined at the end of this
+ * file; child screens set
  * data-theme on their root and every token below is overridden by the theme
  * (src/lib/themes).
  */
@@ -462,4 +463,159 @@ select:focus {
     animation-duration: 0.01ms;
     transition-duration: 0.01ms;
   }
+}
+
+/*
+ * Default look (no data-theme: signed-out screens, adults on the default
+ * style). Matches the app icon and the welcome screen: cream paper, the
+ * icon's orange, warm brown ink, chunky outlines and a flat "press" edge
+ * instead of blurred shadows. The 25 named themes are not affected.
+ * Rules use :where() so they weigh no more than the base rules they refine
+ * and a screen's own scoped styles still win.
+ */
+html:not([data-theme]) {
+  --bg: #fff6ea;
+  --surface: #ffffff;
+  --surface-2: #fcebd3;
+  --text: #4a2a14;
+  --muted: #7a5538;
+  --border: #ecd8bd;
+  --outline: #4a2a14;
+  --field-border: #c9a988;
+  --accent: #fa901d;
+  --accent-text: #2e1706;
+  --accent-soft: #ffe7c8;
+  /* Orange dark enough for text on cream and white (AA). */
+  --accent-ink: #a34e00;
+  --success: #1f7a45;
+  --success-soft: #e1f3e6;
+  --warning: #8a4b00;
+  --warning-soft: #fdecd2;
+  --danger: #b3261e;
+  --danger-soft: #fbe3df;
+  --radius: 20px;
+  --radius-sm: 14px;
+  --shadow: none;
+  --font: 'Baloo 2', system-ui, sans-serif;
+  --font-display: 'Baloo 2', system-ui, sans-serif;
+  --tabbar-active-text: var(--text);
+}
+:where(html:not([data-theme])) a {
+  color: var(--accent-ink);
+}
+:where(html:not([data-theme])) h1 {
+  font-weight: 800;
+}
+:where(html:not([data-theme])) .card,
+:where(html:not([data-theme])) .list {
+  border: 2px solid var(--outline);
+}
+:where(html:not([data-theme])) .btn {
+  font-weight: 700;
+  background: var(--surface);
+  border: 2px solid var(--outline);
+}
+:where(html:not([data-theme])) .btn.primary,
+:where(html:not([data-theme])) .btn.success {
+  box-shadow: 0 3px 0 var(--outline);
+}
+:where(html:not([data-theme])) .btn.primary {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+:where(html:not([data-theme])) .btn.success {
+  background: var(--success);
+}
+:where(html:not([data-theme])) .btn.danger {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+}
+:where(html:not([data-theme])) .btn.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--accent-ink);
+}
+:where(html:not([data-theme])) .btn.primary:active,
+:where(html:not([data-theme])) .btn.success:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--outline);
+}
+:where(html:not([data-theme])) .btn:disabled {
+  transform: none;
+}
+:where(html:not([data-theme])) :is(input, textarea, select):not([type='checkbox'], [type='radio'], [type='range']) {
+  border: 2px solid var(--field-border);
+}
+:where(html:not([data-theme])) :is(input, textarea, select):focus {
+  border-color: var(--outline);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+:where(html:not([data-theme])) .segmented {
+  border: 2px solid var(--outline);
+}
+:where(html:not([data-theme])) .segmented button[aria-pressed='true'] {
+  box-shadow: none;
+  background: var(--accent);
+  color: var(--accent-text);
+}
+:where(html:not([data-theme])) .chip {
+  border: 2px solid var(--field-border);
+}
+:where(html:not([data-theme])) .chip[aria-pressed='true'] {
+  border-color: var(--outline);
+  color: var(--text);
+}
+:where(html:not([data-theme])) .badge.accent,
+:where(html:not([data-theme])) .chip[aria-pressed='true'] svg {
+  color: var(--accent-ink);
+}
+:where(html:not([data-theme])) .badge.accent {
+  background: var(--accent-soft);
+}
+:where(html:not([data-theme])) .tabbar {
+  border-top: 2px solid var(--outline);
+}
+:where(html:not([data-theme])) .tabbar a[aria-current='page'] svg {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-radius: 12px;
+  padding: 2px 10px;
+  box-sizing: content-box;
+}
+
+/*
+ * Signed-out screens (login, register, join, forgot): the welcome screen's
+ * orange band behind the header, so they read as the same place.
+ */
+.screen.auth {
+  position: relative;
+  isolation: isolate;
+}
+.screen.auth::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: calc(var(--safe-top) + 84px);
+  background: radial-gradient(120% 140% at 50% 20%, #fba72f, #fa901d);
+  border-radius: 0 0 50% 50% / 0 0 22px 22px;
+}
+.screen.auth > .back-header {
+  margin-bottom: 18px;
+}
+.screen.auth > .back-header,
+.screen.auth > .back-header .icon-btn {
+  color: #2e1706;
+}
+/* The app icon as a small mark at the right end of the band. */
+.screen.auth > .back-header::after {
+  content: '';
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 2px solid #4a2a14;
+  background: url('/logo.png') center / cover;
 }

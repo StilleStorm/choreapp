@@ -161,6 +161,64 @@ describe('digital shop', () => {
   });
 });
 
+describe('theme avatars', () => {
+  /** A built-in pack of theme avatars like the seed's "Awatary motywów". */
+  async function themePack() {
+    const packId = crypto.randomUUID();
+    await env.DB.prepare(
+      "INSERT INTO pack (id, family_id, name, source, license, attribution, active, created_at) VALUES (?, NULL, 'Awatary motywów', 'na zlecenie', 'private', '© Stille Storm Studio', 1, ?)",
+    )
+      .bind(packId, Date.now())
+      .run();
+    const ids: string[] = [];
+    for (const [n, theme] of ['space', 'space', 'forest'].entries()) {
+      const id = crypto.randomUUID();
+      ids.push(id);
+      await env.DB.prepare(
+        "INSERT INTO item (id, pack_id, kind, name, album, rarity, image_key, price, droppable, sort, theme) VALUES (?, ?, 'avatar', ?, ?, 'common', ?, NULL, 0, ?, ?)",
+      )
+        .bind(id, packId, `Awatar ${n}`, theme, `builtin/theme-avatars/${theme}/${n}.webp`, n, theme)
+        .run();
+    }
+    return { packId, ids };
+  }
+
+  it('are listed with their theme and worn without buying, by children and adults', async () => {
+    const { fam, ola } = await setup();
+    const { ids } = await themePack();
+    const list = await call('GET', '/v1/avatars/themes', { token: ola.token });
+    expect(list.status).toBe(200);
+    const mine = list.body.filter((a: any) => ids.includes(a.id));
+    expect(mine.map((a: any) => a.theme)).toEqual(['space', 'space', 'forest']);
+    expect(mine[0]).toMatchObject({ kind: 'avatar', price: null, droppable: false });
+    expect(mine[0].imageUrl).toMatch(/\/builtin\/theme-avatars\/space\/0\.webp$/);
+
+    const ap = await call('PUT', '/v1/me/appearance', { token: ola.token, json: { avatarItemId: ids[0], frameItemId: null } });
+    expect(ap.status).toBe(200);
+    expect(ap.body).toMatchObject({ avatarItemId: ids[0] });
+    expect(ap.body.avatarUrl).toMatch(/space\/0\.webp$/);
+    const adult = await call('PUT', '/v1/me/appearance', { token: fam.parentToken, json: { avatarItemId: ids[2], frameItemId: null } });
+    expect(adult.status).toBe(200);
+
+    // Not for sale and not a collectible.
+    expect((await call('GET', '/v1/shop', { token: ola.token })).body.items.some((i: any) => ids.includes(i.id))).toBe(false);
+    expect((await call('GET', '/v1/members/me/collection', { token: ola.token })).body.avatars.some((i: any) => ids.includes(i.id))).toBe(false);
+    expect((await call('POST', `/v1/shop/items/${ids[1]}/buy`, { token: ola.token })).body.error).toBe('not_for_sale');
+    // Listed in the licences.
+    const lic = await call('GET', '/v1/licenses', { token: ola.token });
+    expect(lic.body.some((l: any) => l.pack === 'Awatary motywów' && l.attribution === '© Stille Storm Studio')).toBe(true);
+  });
+
+  it('cannot be picked once the family switches the pack off', async () => {
+    const { fam, ola } = await setup();
+    const { packId, ids } = await themePack();
+    await call('PATCH', `/v1/packs/${packId}`, { token: fam.parentToken, json: { active: false } });
+    expect((await call('GET', '/v1/avatars/themes', { token: ola.token })).body.some((a: any) => ids.includes(a.id))).toBe(false);
+    const ap = await call('PUT', '/v1/me/appearance', { token: ola.token, json: { avatarItemId: ids[0], frameItemId: null } });
+    expect(ap.status).toBe(403);
+  });
+});
+
 describe('collection', () => {
   it('groups stickers into albums with "x of y" counters', async () => {
     const { fam, ola } = await setup();

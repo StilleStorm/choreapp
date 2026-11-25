@@ -156,6 +156,8 @@ export interface ItemDto {
   price: number | null;
   droppable: boolean;
   owned?: boolean;
+  /** Theme avatars only: the app theme this avatar belongs to. Free to wear, never sold. */
+  theme?: string;
 }
 
 export interface DropResultDto {

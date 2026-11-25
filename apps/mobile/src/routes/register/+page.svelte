@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { SessionDto } from '@choreapp/shared';
   import { goto } from '$app/navigation';
-  import { api } from '#lib/api.js';
+  import { api, PRIVACY_URL } from '#lib/api.js';
   import BackHeader from '#lib/components/BackHeader.svelte';
   import { errorMessage } from '#lib/messages.js';
   import { session } from '#lib/session.svelte.js';
@@ -13,6 +13,7 @@
   let parentName = $state('');
   let email = $state('');
   let password = $state('');
+  let password2 = $state('');
   let error = $state('');
   let busy = $state(false);
 
@@ -21,6 +22,10 @@
     error = '';
     if (password.length < 8) {
       error = 'Hasło musi mieć co najmniej 8 znaków.';
+      return;
+    }
+    if (password !== password2) {
+      error = 'Hasła nie są takie same.';
       return;
     }
     busy = true;
@@ -37,7 +42,7 @@
   }
 </script>
 
-<main class="screen no-tabs">
+<main class="screen no-tabs auth">
   <BackHeader title="Nowa rodzina" back="/welcome" />
   <p class="muted">Zakładasz rodzinę jako pierwszy rodzic. Drugiego rodzica i dzieci zaprosisz kodem QR.</p>
   <form class="stack" onsubmit={submit}>
@@ -58,7 +63,14 @@
       <input type="password" bind:value={password} required minlength="8" autocomplete="new-password" />
       <span class="hint">Co najmniej 8 znaków.</span>
     </label>
+    <label class="field">
+      <span>Powtórz hasło</span>
+      <input type="password" bind:value={password2} required minlength="8" autocomplete="new-password" />
+    </label>
     {#if error}<div class="error-box" role="alert">{error}</div>{/if}
     <button class="btn primary block" disabled={busy}>{busy ? 'Zakładanie…' : 'Załóż rodzinę'}</button>
+    <p class="muted small">
+      Zakładając rodzinę, potwierdzasz, że znasz <a href={PRIVACY_URL} target="_blank" rel="noopener">politykę prywatności</a>.
+    </p>
   </form>
 </main>

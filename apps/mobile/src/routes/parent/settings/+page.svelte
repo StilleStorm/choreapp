@@ -1,14 +1,17 @@
 <script lang="ts">
-  import type { FamilyDto, MemberDto, Role } from '@choreapp/shared';
+  import { SUPPORT_URL, showSupport } from '#lib/support.js';
+  import type { FamilyDto, ItemDto, MemberDto, Role } from '@choreapp/shared';
   import { api } from '#lib/api.js';
   import Avatar from '#lib/components/Avatar.svelte';
   import AvatarPicker from '#lib/components/AvatarPicker.svelte';
   import Icon from '#lib/components/Icon.svelte';
   import InviteSheet from '#lib/components/InviteSheet.svelte';
   import Sheet from '#lib/components/Sheet.svelte';
+  import ThemeAvatarGrid from '#lib/components/ThemeAvatarGrid.svelte';
   import { errorMessage } from '#lib/messages.js';
   import { session } from '#lib/session.svelte.js';
   import { ADULT_THEMES, NEUTRAL } from '#lib/themes/pickable.js';
+  import { selfUpdates } from '#lib/update.svelte.js';
 
   // Invite sheet
   let inviteOpen = $state(false);
@@ -56,6 +59,31 @@
     }
   }
 
+  // Theme avatars: adults may wear them too, instead of a photo.
+  let avatarsOpen = $state(false);
+  let themeAvatars = $state<ItemDto[]>([]);
+  let avatarsError = $state('');
+  async function openAvatars() {
+    memberOpen = false;
+    avatarsError = '';
+    avatarsOpen = true;
+    try {
+      if (!themeAvatars.length) themeAvatars = await api.get<ItemDto[]>('/v1/avatars/themes');
+    } catch (e) {
+      avatarsError = errorMessage(e);
+    }
+  }
+  async function wearAvatar(itemId: string | null) {
+    avatarsError = '';
+    try {
+      await api.put('/v1/me/appearance', { avatarItemId: itemId, frameItemId: session.me?.frameItemId ?? null });
+      await session.refresh();
+      avatarsOpen = false;
+    } catch (e) {
+      avatarsError = errorMessage(e);
+    }
+  }
+
   async function removeMember() {
     if (!selected) return;
     try {
@@ -73,6 +101,7 @@
   let currentPassword = $state('');
   let newEmail = $state('');
   let newPassword = $state('');
+  let newPassword2 = $state('');
   let loginError = $state('');
   let loginBusy = $state(false);
   let loginDone = $state('');
@@ -80,6 +109,7 @@
     currentPassword = '';
     newEmail = what === 'email' ? (session.me?.email ?? '') : '';
     newPassword = '';
+    newPassword2 = '';
     loginError = '';
     loginDone = '';
     loginKind = what;
@@ -91,6 +121,10 @@
     loginError = '';
     if (loginKind === 'password' && newPassword.length < 8) {
       loginError = 'Hasło musi mieć co najmniej 8 znaków.';
+      return;
+    }
+    if (loginKind === 'password' && newPassword !== newPassword2) {
+      loginError = 'Hasła nie są takie same.';
       return;
     }
     loginBusy = true;
@@ -107,6 +141,71 @@
       loginError = errorMessage(err);
     } finally {
       loginBusy = false;
+    }
+  }
+
+  /** Adults the administrator can hand the role to (the role is per family). */
+  const otherAdults = $derived(session.parents.filter((m) => m.id !== session.me?.id));
+
+  // Hand the administrator role to another adult
+  let adminOpen = $state(false);
+  let adminTarget = $state('');
+  let adminPassword = $state('');
+  let adminError = $state('');
+  let adminBusy = $state(false);
+  function openAdmin() {
+    adminTarget = otherAdults[0]?.id ?? '';
+    adminPassword = '';
+    adminError = '';
+    adminOpen = true;
+  }
+  async function transferAdmin(e: SubmitEvent) {
+    e.preventDefault();
+    adminError = '';
+    adminBusy = true;
+    try {
+      await api.post('/v1/family/admin', { memberId: adminTarget, currentPassword: adminPassword });
+      await session.refresh();
+      adminOpen = false;
+    } catch (err) {
+      adminError = errorMessage(err);
+    } finally {
+      adminBusy = false;
+    }
+  }
+
+  // An adult deletes their own account; the administrator can only delete the whole family
+  // (or hand the role on first, in its own sheet, and then delete their account).
+  let deleteOpen = $state(false);
+  let deleteMode = $state<'me' | 'family'>('me');
+  let deletePassword = $state('');
+  let deleteConfirmName = $state('');
+  const deleteNameOk = $derived(
+    deleteMode !== 'family' || deleteConfirmName.trim().toLocaleLowerCase('pl') === (session.family?.name ?? '').trim().toLocaleLowerCase('pl'),
+  );
+  let deleteError = $state('');
+  let deleteBusy = $state(false);
+  function openDelete() {
+    deleteMode = session.isAdmin ? 'family' : 'me';
+    deletePassword = '';
+    deleteConfirmName = '';
+    deleteError = '';
+    deleteOpen = true;
+  }
+
+  async function deleteAccount(e: SubmitEvent) {
+    e.preventDefault();
+    deleteError = '';
+    deleteBusy = true;
+    try {
+      await api.post(deleteMode === 'family' ? '/v1/family/delete' : '/v1/me/delete', { currentPassword: deletePassword });
+      deleteOpen = false;
+      // The server has already ended every session.
+      await session.signOut(false);
+    } catch (err) {
+      deleteError = errorMessage(err);
+    } finally {
+      deleteBusy = false;
     }
   }
 
@@ -190,6 +289,9 @@
       {/each}
     </div>
     <button class="btn block" onclick={() => openInvite('parent')}><Icon name="plus" /> Dodaj rodzica lub opiekuna</button>
+    {#if session.isAdmin && otherAdults.length > 0}
+      <button class="btn ghost block" onclick={openAdmin}><Icon name="key" /> Przekaż rolę administratora</button>
+    {/if}
   </section>
 
   {#if session.isAdmin}
@@ -220,6 +322,12 @@
         <button class="btn primary" disabled={saving}>{saving ? 'Zapisywanie…' : saved ? 'Zapisano ✓' : 'Zapisz'}</button>
       </div>
     </form>
+    <div class="card">
+      <button type="button" class="row member danger-text" onclick={() => openDelete()}>
+        <Icon name="trash" />
+        <span class="grow title">Usuń rodzinę</span>
+      </button>
+    </div>
   {/if}
 
   <section class="section">
@@ -246,11 +354,20 @@
         </span>
         <Icon name="chevron" size={20} />
       </a>
-      <a class="row member" href="/update">
-        <Icon name="download" />
-        <span class="grow title">Wersja aplikacji</span>
-        <Icon name="chevron" size={20} />
-      </a>
+      {#if selfUpdates}
+        <a class="row member" href="/update">
+          <Icon name="download" />
+          <span class="grow title">Wersja aplikacji</span>
+          <Icon name="chevron" size={20} />
+        </a>
+      {/if}
+      {#if showSupport}
+        <a class="row member" href={SUPPORT_URL} target="_blank" rel="noopener">
+          <Icon name="coffee" />
+          <span class="grow title">Postaw twórcy kawę<span class="muted small support-sub">Aplikacja jest darmowa i bez reklam</span></span>
+          <Icon name="chevron" size={20} />
+        </a>
+      {/if}
       <a class="row member" href="/about">
         <Icon name="info" />
         <span class="grow title">O aplikacji</span>
@@ -260,6 +377,10 @@
         <Icon name="logout" />
         <span class="grow title">Wyloguj się</span>
       </button>
+      <button class="row member danger-text" onclick={() => openDelete()}>
+        <Icon name="trash" />
+        <span class="grow title">{session.isAdmin ? 'Usuń rodzinę' : 'Usuń konto'}</span>
+      </button>
     </div>
   </section>
 </main>
@@ -268,8 +389,10 @@
 
 <Sheet bind:open={memberOpen} title={selected?.name}>
   {#if selected}
-    {#if isMe}
+    {#if isMe && selected.role === 'parent'}
+      <!-- Photos are for adults only; children use avatars (Google Play Families policy). -->
       <AvatarPicker name={editName || selected.name} currentUrl={selected.avatarUrl} bind:blob={avatarBlob} />
+      <div class="center"><button type="button" class="btn ghost small" onclick={openAvatars}><Icon name="user" size={18} /> Albo wybierz awatar</button></div>
     {/if}
     {#if canEdit}
       <label class="field">
@@ -297,7 +420,11 @@
     {#if !isMe && session.isAdmin}
       {#if confirmRemove}
         <div class="error-box">
-          {selected.name} straci dostęp, a telefon zostanie wylogowany. Historia zadań i punktów zostaje.
+          {#if selected.role === 'child'}
+            Profil {selected.name} zostanie usunięty razem z punktami, naklejkami, historią zadań i zdjęciem. Telefon zostanie wylogowany. Tego nie da się cofnąć.
+          {:else}
+            Konto {selected.name} zostanie usunięte (e-mail, hasło, zdjęcie), a telefon wylogowany. Założone przez tę osobę zadania przejdą na Ciebie.
+          {/if}
         </div>
         <div class="inline">
           <button class="btn grow" onclick={() => (confirmRemove = false)}>Anuluj</button>
@@ -309,6 +436,18 @@
         </button>
       {/if}
     {/if}
+  {/if}
+</Sheet>
+
+<Sheet bind:open={avatarsOpen} title="Awatar">
+  {#if avatarsError}<div class="error-box">{avatarsError}</div>{/if}
+  {#if session.me}
+    <ThemeAvatarGrid avatars={themeAvatars} theme={session.me.theme} selectedId={session.me.avatarItemId} onpick={(a) => wearAvatar(a.id)}>
+      {#if session.me.avatarItemId}
+        <button class="btn block" onclick={() => wearAvatar(null)}>Bez awatara (zdjęcie albo inicjały)</button>
+      {/if}
+    </ThemeAvatarGrid>
+    {#if !themeAvatars.length && !avatarsError}<p class="empty">Wczytywanie…</p>{/if}
   {/if}
 </Sheet>
 
@@ -329,6 +468,10 @@
           <input type="password" bind:value={newPassword} required minlength="8" autocomplete="new-password" />
           <span class="hint">Co najmniej 8 znaków. Inne telefony zostaną wylogowane.</span>
         </label>
+        <label class="field">
+          <span>Powtórz nowe hasło</span>
+          <input type="password" bind:value={newPassword2} required minlength="8" autocomplete="new-password" />
+        </label>
       {/if}
       <label class="field">
         <span>Obecne hasło</span>
@@ -340,7 +483,81 @@
   {/if}
 </Sheet>
 
+<Sheet bind:open={adminOpen} title="Przekaż rolę administratora">
+  <form class="stack" onsubmit={transferAdmin}>
+    <label class="field">
+      <span>Nowy administrator</span>
+      <select bind:value={adminTarget} required>
+        {#each otherAdults as m (m.id)}<option value={m.id}>{m.name}{m.email ? ` (${m.email})` : ''}</option>{/each}
+      </select>
+    </label>
+    <div class="error-box">
+      {session.member(adminTarget)?.name ?? 'Ta osoba'} będzie zmieniać ustawienia rodziny, zarządzać dorosłymi i usuwać członków.
+      Ty zostaniesz zwykłym rodzicem i nie cofniesz tego sam.
+    </div>
+    <label class="field">
+      <span>Twoje hasło</span>
+      <input type="password" bind:value={adminPassword} required autocomplete="current-password" />
+    </label>
+    {#if adminError}<div class="error-box" role="alert">{adminError}</div>{/if}
+    <div class="inline">
+      <button type="button" class="btn grow" onclick={() => (adminOpen = false)}>Anuluj</button>
+      <button class="btn primary grow" disabled={adminBusy || !adminPassword || !adminTarget}>
+        {adminBusy ? 'Zapisywanie…' : 'Przekaż rolę'}
+      </button>
+    </div>
+  </form>
+</Sheet>
+
+<Sheet bind:open={deleteOpen} title={deleteMode === 'family' ? 'Usuń całą rodzinę' : 'Usuń konto'}>
+  <form class="stack" onsubmit={deleteAccount}>
+    <div class="error-box">
+      {#if deleteMode === 'family'}
+        Usuniesz rodzinę {session.family?.name} i wszystko, co w niej jest: profile dzieci, zadania, punkty, naklejki, nagrody, własne
+        paczki i zdjęcia, a także konta wszystkich dorosłych. <strong>Twoje konto też zostanie usunięte</strong> i nie zalogujesz się już
+        tym e-mailem. Wszystkie telefony zostaną wylogowane.
+      {:else}
+        Usuniesz swoje konto: e-mail, hasło, imię i zdjęcie. Rodzina i dzieci zostają, a założone przez Ciebie zadania przejdą na
+        administratora.
+      {/if}
+      <strong>Tego nie da się cofnąć.</strong>
+    </div>
+    {#if deleteMode === 'family' && otherAdults.length > 0}
+      <p class="muted small">Chcesz tylko odejść, a rodzinę zostawić? Najpierw przekaż rolę administratora innemu dorosłemu, potem usuń swoje konto.</p>
+      <button
+        type="button"
+        class="btn ghost block"
+        onclick={() => {
+          deleteOpen = false;
+          openAdmin();
+        }}><Icon name="key" /> Przekaż rolę administratora</button
+      >
+    {/if}
+    {#if deleteMode === 'family'}
+      <label class="field">
+        <span>Wpisz nazwę rodziny: {session.family?.name}</span>
+        <input type="text" bind:value={deleteConfirmName} required autocomplete="off" />
+      </label>
+    {/if}
+    <label class="field">
+      <span>Hasło</span>
+      <input type="password" bind:value={deletePassword} required autocomplete="current-password" />
+    </label>
+    {#if deleteError}<div class="error-box" role="alert">{deleteError}</div>{/if}
+    <div class="inline">
+      <button type="button" class="btn grow" onclick={() => (deleteOpen = false)}>Anuluj</button>
+      <button class="btn danger grow" disabled={deleteBusy || !deletePassword || !deleteNameOk}>
+        {deleteBusy ? 'Usuwanie…' : deleteMode === 'family' ? 'Usuń rodzinę' : 'Usuń konto'}
+      </button>
+    </div>
+  </form>
+</Sheet>
+
 <style>
+  .support-sub {
+    display: block;
+    font-weight: 400;
+  }
   .member {
     appearance: none;
     border: 0;

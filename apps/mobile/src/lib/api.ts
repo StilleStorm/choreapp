@@ -1,5 +1,7 @@
 /** HTTP client for the Worker API. */
 export const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? 'http://localhost:8787';
+/** Privacy policy page served by the Worker. */
+export const PRIVACY_URL = `${API_URL}/privacy`;
 
 export class ApiFailure extends Error {
   constructor(

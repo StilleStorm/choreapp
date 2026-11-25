@@ -85,6 +85,10 @@ export const updateMeBody = z.object({
 /** An adult changes their own login; both need the current password. */
 export const changeEmailBody = z.object({ currentPassword: z.string().min(1).max(200), newEmail: email });
 export const changePasswordBody = z.object({ currentPassword: z.string().min(1).max(200), newPassword: password });
+/** An adult deletes their own account (or, as administrator, the whole family). */
+export const deleteAccountBody = z.object({ currentPassword: z.string().min(1).max(200) });
+/** The administrator hands the role to another adult of the same family. */
+export const transferAdminBody = z.object({ memberId: id, currentPassword: z.string().min(1).max(200) });
 
 /** Forgotten password (adults only): a 6-digit code is e-mailed, then exchanged for a new password. */
 export const forgotPasswordBody = z.object({ email });
@@ -98,7 +102,7 @@ export const resetPasswordBody = z.object({
 });
 
 export const appearanceBody = z.object({
-  /** null = use the uploaded photo (or initials). */
+  /** An owned avatar item or any theme avatar; null = use the uploaded photo (or initials). */
   avatarItemId: id.nullable(),
   frameItemId: id.nullable(),
 });

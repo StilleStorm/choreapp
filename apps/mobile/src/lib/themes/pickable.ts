@@ -4,16 +4,16 @@ import { THEME_LIST, type ThemeInfo } from './themes.js';
 /** The adults' default: no data-theme, just the base tokens from app.css. */
 export const NEUTRAL: ThemeInfo = {
   id: NEUTRAL_THEME,
-  title: 'Neutralny',
+  title: 'Domyślny',
   dark: false,
   preview: {
-    bg: '#f6f7f9',
+    bg: '#fff6ea',
     card: '#ffffff',
-    accent: '#3858e9',
-    text: '#16181d',
-    font: 'system-ui, sans-serif',
-    radius: '14px',
-    border: '1px solid #dde1e8',
+    accent: '#fa901d',
+    text: '#4a2a14',
+    font: "'Baloo 2', system-ui, sans-serif",
+    radius: '20px',
+    border: '2px solid #4a2a14',
   },
   doneLabel: 'Zatwierdź',
   decorations: '',

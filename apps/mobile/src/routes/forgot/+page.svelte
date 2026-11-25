@@ -58,7 +58,7 @@
   }
 </script>
 
-<main class="screen no-tabs">
+<main class="screen no-tabs auth">
   <BackHeader title="Nie pamiętam hasła" back="/login" />
 
   {#if step === 'email'}

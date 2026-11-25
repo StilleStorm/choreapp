@@ -3,7 +3,6 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { api } from '#lib/api.js';
-  import AvatarPicker from '#lib/components/AvatarPicker.svelte';
   import BackHeader from '#lib/components/BackHeader.svelte';
   import Icon from '#lib/components/Icon.svelte';
   import { errorMessage } from '#lib/messages.js';
@@ -16,7 +15,7 @@
   let name = $state('');
   let email = $state('');
   let password = $state('');
-  let avatar = $state<Blob | null>(null);
+  let password2 = $state('');
   let error = $state('');
   let busy = $state(false);
   /** A child already logged in is adding another home (mum's, dad's, grandparents'). */
@@ -83,6 +82,10 @@
       error = 'Hasło musi mieć co najmniej 8 znaków.';
       return;
     }
+    if ((info.kind === 'reset' || (info.kind === 'join' && info.role === 'parent')) && password !== password2) {
+      error = 'Hasła nie są takie same.';
+      return;
+    }
     busy = true;
     try {
       const s = await api.post<SessionDto>(
@@ -96,14 +99,6 @@
         { public: true },
       );
       await session.signIn(s);
-      if (avatar) {
-        try {
-          await api.upload('/v1/me/avatar', avatar);
-          await session.refresh();
-        } catch {
-          // Joining worked; the photo can be added later in the profile.
-        }
-      }
       await goto(session.home(), { replace: true });
     } catch (err) {
       error = errorMessage(err);
@@ -113,7 +108,7 @@
   }
 </script>
 
-<main class="screen no-tabs">
+<main class="screen no-tabs auth">
   <BackHeader title={info ? (info.kind === 'reset' ? 'Nowe hasło' : 'Witaj!') : addingHome ? 'Dodaj kolejny dom' : 'Dołącz do rodziny'} back={addingHome ? '/child/profile' : '/welcome'} />
 
   {#if !info}
@@ -160,10 +155,7 @@
           <input type="text" bind:value={name} required maxlength="40" autocomplete="off" />
           <span class="hint muted small">Może być pseudonim. Nie wpisuj nazwiska.</span>
         </label>
-        <div class="field">
-          <span>Twoje zdjęcie (możesz dodać później)</span>
-          <AvatarPicker name={name || '?'} bind:blob={avatar} />
-        </div>
+        <p class="muted small">Awatar i ramkę wybierzesz potem w Profilu.</p>
       {:else if info.kind === 'join'}
         <p class="muted">Dołączasz jako rodzic. Będziesz logować się e-mailem i hasłem.</p>
         <label class="field">
@@ -179,6 +171,10 @@
           <input type="password" bind:value={password} required minlength="8" autocomplete="new-password" />
           <span class="hint">Co najmniej 8 znaków.</span>
         </label>
+        <label class="field">
+          <span>Powtórz hasło</span>
+          <input type="password" bind:value={password2} required minlength="8" autocomplete="new-password" />
+        </label>
       {:else if info.kind === 'reconnect'}
         <p>Cześć, <strong>{info.memberName}</strong>! Ten telefon zostanie połączony z Twoim profilem. Punkty i naklejki zostają.</p>
         <p class="muted small">Stary telefon zostanie wylogowany.</p>
@@ -187,6 +183,10 @@
         <label class="field">
           <span>Nowe hasło</span>
           <input type="password" bind:value={password} required minlength="8" autocomplete="new-password" />
+        </label>
+        <label class="field">
+          <span>Powtórz nowe hasło</span>
+          <input type="password" bind:value={password2} required minlength="8" autocomplete="new-password" />
         </label>
       {/if}
       {#if error}<div class="error-box" role="alert">{error}</div>{/if}
