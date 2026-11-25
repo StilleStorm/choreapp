@@ -4,6 +4,7 @@
   import { PRIVACY_URL } from '#lib/api.js';
   import { appVersion } from '#lib/native.js';
   import { session } from '#lib/session.svelte.js';
+  import { SUPPORT_URL, showSupport } from '#lib/support.js';
 
   const WEBSITE = 'https://stillestormstudio.com/pl';
   const EMAIL = 'zadania@stillestormstudio.com';
@@ -25,6 +26,9 @@
     {#if session.isParent}
       <p>Stworzone przez <a href={WEBSITE} target="_blank" rel="noopener">Stille Storm Studio</a></p>
       <p>Kontakt: <a href="mailto:{EMAIL}">{EMAIL}</a></p>
+      {#if showSupport}
+        <p>Podoba Ci się? <a href={SUPPORT_URL} target="_blank" rel="noopener">Postaw twórcy kawę</a></p>
+      {/if}
     {:else}
       <p>Stworzone przez Stille Storm Studio</p>
     {/if}
