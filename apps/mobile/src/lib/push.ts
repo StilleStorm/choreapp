@@ -25,7 +25,7 @@ function routeFor(screen: string | undefined): string {
 }
 
 export async function setupPush(): Promise<void> {
-  if (!isNative || !session.me) return;
+  if (!isNative || !__PUSH_ENABLED__ || !session.me) return;
   const { PushNotifications } = await import('@capacitor/push-notifications');
 
   if (!installed) {
