@@ -32,6 +32,11 @@ ok(requests.put(f"{B}/edits/{edit}/tracks/{TRACK}", headers=H, json={"track": TR
     "name": VNAME, "versionCodes": [str(vc)], "status": "completed",
     "releaseNotes": [{"language": "pl-PL", "text": NOTES}]}]}), "track")
 print("track updated")
+if os.environ.get("CONTACT_EMAIL"):
+    d = ok(requests.get(f"{B}/edits/{edit}/details", headers=H), "details")
+    d["contactEmail"] = os.environ["CONTACT_EMAIL"]
+    ok(requests.put(f"{B}/edits/{edit}/details", headers=H, json=d), "details update")
+    print("contact email", d["contactEmail"])
 ok(requests.delete(f"{B}/edits/{edit}/listings/pl-PL/phoneScreenshots", headers=H), "delete shots")
 for p in sorted(glob.glob(os.path.join(SHOTS, "*.png"))):
     with open(p, "rb") as f:

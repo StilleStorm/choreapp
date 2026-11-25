@@ -30,6 +30,9 @@ def button(href, label, primary):
             f'padding:9px 16px;font-weight:700;font-size:14px;text-decoration:none;margin:4px 6px 4px 0">{label}</a>')
 
 
+PENDING = os.environ.get("PENDING_REVIEW") == "1"
+PENDING_TEXT = "Google jeszcze sprawdza tę wersję. Do testów możecie dołączyć już teraz, a jeśli Google Play pokaże, że aplikacja jest niedostępna, zajrzyjcie za kilka godzin. Do tego czasu możecie korzystać z wersji z linku dla dziecka poniżej, działa na każdym telefonie z Androidem."
+PENDING_HTML = (f'<p style="margin:-8px 0 18px;font-size:13px;color:#7A5A40;">{PENDING_TEXT}</p>' if PENDING else "")
 items = "".join(f'<li style="margin:0 0 6px">{html.escape(n)}</li>' for n in notes)
 body_html = f"""<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:{CREAM};-webkit-text-size-adjust:100%;text-size-adjust:100%;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:{CREAM};">
@@ -52,6 +55,7 @@ body_html = f"""<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta
   <p style="margin:0 0 4px;font-weight:800;">Jeszcze Was nie ma w testach?</p>
   <p style="margin:0 0 10px;">Dołączcie i zainstalujcie aplikację z Google Play, tym samym kontem Google, na które przyszedł ten mail.</p>
   <p style="margin:0 0 18px;">{button(OPT_IN, "Dołącz do testów", True)}</p>
+  {PENDING_HTML}
   <p style="margin:0 0 4px;font-weight:800;">Już testujecie?</p>
   <p style="margin:0 0 10px;">Zaktualizujcie aplikację w Google Play.</p>
   <p style="margin:0 0 18px;">{button(STORE, "Otwórz w Google Play", False)}</p>
@@ -73,6 +77,7 @@ body_text = "\n".join([
     "Jest nowa wersja Zadań (" + version + "). Dzięki, że testujecie ją razem z nami!", "",
     "Co nowego:", *[f"- {n}" for n in notes], "",
     "Jeszcze Was nie ma w testach? Dołączcie tutaj (tym samym kontem Google, na które przyszedł ten mail):", OPT_IN, "",
+    *([PENDING_TEXT, ""] if PENDING else []),
     "Już testujecie? Zaktualizujcie aplikację w Google Play:", STORE, "",
     "A co z telefonem dziecka? Konta Google dzieci nie mogą dołączać do testów, dlatego na ich telefon zainstalujcie aplikację z tego linku (Android zapyta o zgodę na instalację spoza sklepu, dalsze wersje aplikacja pobierze sama). Po premierze Zadania będą w Google Play również dla najmłodszych:", kids_apk, "",
     "Coś nie działa albo macie pomysł? Po prostu odpiszcie na tego maila.", "",
