@@ -13,9 +13,11 @@ import html, os, subprocess, sys
 OPT_IN = "https://play.google.com/apps/testing/app.choreapp.family"
 STORE = "https://play.google.com/store/apps/details?id=app.choreapp.family"
 FROM = "hello@stillestormstudio.com"
+KIDS_APK = "https://github.com/StilleStorm/choreapp/releases/download/v{v}/choreapp-{v}.apk"
 ICON = os.environ.get("EMAIL_ICON_URL", "https://choreapp-api.stillestormstudio.workers.dev/builtin/brand/icon-128.png")
 
 version, notes_path, to, bcc = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4:]
+kids_apk = KIDS_APK.format(v=version)
 notes = [l.strip() for l in open(notes_path, encoding="utf-8") if l.strip()]
 
 INK, ORANGE, CREAM, SOFT = "#4A2A14", "#FA901D", "#FFF7EC", "#FFE9CC"
@@ -53,6 +55,11 @@ body_html = f"""<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta
   <p style="margin:0 0 4px;font-weight:800;">Już testujecie?</p>
   <p style="margin:0 0 10px;">Zaktualizujcie aplikację w Google Play.</p>
   <p style="margin:0 0 18px;">{button(STORE, "Otwórz w Google Play", False)}</p>
+  <div style="border:2px dashed {INK};border-radius:16px;padding:10px 14px;margin:0 0 16px;">
+    <div style="font-weight:800;margin:0 0 6px;">A co z telefonem dziecka?</div>
+    <p style="margin:0 0 8px;">Konta Google dzieci nie mogą dołączać do testów, dlatego na ich telefon zainstalujcie aplikację z tego linku. Android zapyta o zgodę na instalację spoza sklepu, a dalsze wersje aplikacja pobierze już sama. Po premierze Zadania będą w Google Play również dla najmłodszych.</p>
+    <p style="margin:0;">{button(kids_apk, "Pobierz dla dziecka", False)}</p>
+  </div>
   <p style="margin:0 0 14px;">Coś nie działa albo macie pomysł? Odpiszcie na tego maila, czytamy wszystko.</p>
   <p style="margin:0 0 22px;">Ściskamy całą rodzinkę!<br><strong>Stille Storm Studio</strong></p>
 </td></tr>
@@ -67,6 +74,7 @@ body_text = "\n".join([
     "Co nowego:", *[f"- {n}" for n in notes], "",
     "Jeszcze Was nie ma w testach? Dołączcie tutaj (tym samym kontem Google, na które przyszedł ten mail):", OPT_IN, "",
     "Już testujecie? Zaktualizujcie aplikację w Google Play:", STORE, "",
+    "A co z telefonem dziecka? Konta Google dzieci nie mogą dołączać do testów, dlatego na ich telefon zainstalujcie aplikację z tego linku (Android zapyta o zgodę na instalację spoza sklepu, dalsze wersje aplikacja pobierze sama). Po premierze Zadania będą w Google Play również dla najmłodszych:", kids_apk, "",
     "Coś nie działa albo macie pomysł? Po prostu odpiszcie na tego maila.", "",
     "Ściskamy całą rodzinkę!", "Stille Storm Studio",
 ])
