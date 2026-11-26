@@ -109,10 +109,24 @@ pnpm run db:migrate:remote   # 0009_sticker_webp.sql: image_key naklejek .svg ->
 pnpm run db:seed:remote      # te same klucze (seed jest idempotentny)
 ```
 
+## Zestawy naklejek (migracja 0010, wersja 1.0.15)
+
+20 autorskich zestawów (200 naklejek WebP pod `builtin/stickers/<zestaw>/`), każdy jako wbudowana paczka `builtin-set-<zestaw>`. Wersja 1.0.15 zawiera też 0009 (powyżej), więc przy aktualizacji z 1.0.14 kolejność jest jedna dla obu:
+
+```bash
+cd apps/api
+pnpm run deploy              # 1. Worker z nowymi assetami (.webp naklejek i zestawów)
+pnpm run db:migrate:remote   # 2. 0009 (image_key .svg -> .webp) i 0010 (nowe paczki włączone dla wszystkich rodzin)
+pnpm run db:seed:remote      # 3. paczki i pozycje zestawów (seed jest idempotentny)
+```
+
+Oryginały PNG 1024 px (poza repo) leżą w `~/choreapp-assets/sticker-sets-png/`.
+
 ## Praca lokalna
 
 ```bash
 cd apps/api && cp .dev.vars.example .dev.vars && pnpm run db:migrate:local && pnpm run db:seed:local && pnpm run dev
+node scripts/demo-family.mjs http://localhost:8787   # rodzina demo: mama@example.com / haslo-12345, dzieci Zosia i Kuba
 cd apps/mobile && pnpm run dev       # http://localhost:5173, API z VITE_API_URL (domyślnie http://localhost:8787)
 pnpm test                            # wszystkie testy
 ```
