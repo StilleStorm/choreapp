@@ -122,6 +122,27 @@ pnpm run db:seed:remote      # 3. paczki i pozycje zestawów (seed jest idempote
 
 Oryginały PNG 1024 px (poza repo) leżą w `~/choreapp-assets/sticker-sets-png/`.
 
+## Serwer testowy (staging)
+
+Osobny Worker `choreapp-api-staging` z własną bazą D1 `choreapp-staging` i kubełkiem R2 `choreapp-files-staging` (`env.staging` w `wrangler.jsonc`, bez crona: przypomnienia dzienne i zbiorcze po godzinach ciszy tam nie chodzą). Produkcja zostaje nietknięta. Jednorazowo:
+
+```bash
+cd apps/api
+pnpm exec wrangler d1 create choreapp-staging --location weur   # wpisz database_id do env.staging w wrangler.jsonc
+pnpm exec wrangler r2 bucket create choreapp-files-staging
+pnpm exec wrangler secret put FILE_SIGNING_KEY --env staging     # nowy losowy ciąg, inny niż produkcyjny
+pnpm exec wrangler secret put FCM_SERVICE_ACCOUNT --env staging  # ten sam JSON konta serwisowego Firebase
+```
+
+Wdrożenie (ta sama kolejność co na produkcji) i rodzina demo:
+
+```bash
+pnpm run deploy:staging && pnpm run db:migrate:staging && pnpm run db:seed:staging
+node ../../scripts/demo-family.mjs https://choreapp-api-staging.<subdomena>.workers.dev
+```
+
+Aplikacja testowa: `apps/mobile/.env.staging` z `VITE_API_URL=https://choreapp-api-staging.<subdomena>.workers.dev`, potem `cd apps/mobile && pnpm run apk:staging`. Powstaje podpisany APK `app.choreapp.family.staging` („Zadania TEST”), który instaluje się obok prawdziwej aplikacji, nigdy nie proponuje aktualizacji i pokazuje link „Postaw twórcy kawę”. Push działa dopiero, gdy w Firebase dodasz aplikację Android `app.choreapp.family.staging` i pobierzesz nowy `google-services.json` (bez tego build testowy po prostu nie rejestruje powiadomień).
+
 ## Praca lokalna
 
 ```bash

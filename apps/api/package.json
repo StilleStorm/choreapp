@@ -10,6 +10,9 @@
     "db:migrate:remote": "wrangler d1 migrations apply choreapp --remote",
     "db:seed:local": "wrangler d1 execute choreapp --local --file=seed/builtin.sql",
     "db:seed:remote": "wrangler d1 execute choreapp --remote --file=seed/builtin.sql",
+    "deploy:staging": "wrangler deploy --env staging",
+    "db:migrate:staging": "wrangler d1 migrations apply choreapp-staging --env staging --remote",
+    "db:seed:staging": "wrangler d1 execute choreapp-staging --env staging --remote --file=seed/builtin.sql",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

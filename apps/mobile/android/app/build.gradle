@@ -2,6 +2,10 @@ apply plugin: 'com.android.application'
 
 // Release signing: android/keystore.properties (not in git) with
 // storeFile, storePassword, keyAlias, keyPassword. See docs/apk.md.
+// Test-server build (`pnpm apk:staging`, gradle -Pstaging): installs next to the
+// real app as app.choreapp.family.staging, named "Zadania TEST".
+def staging = project.hasProperty('staging')
+
 def keystoreProps = new Properties()
 def keystoreFile = rootProject.file('keystore.properties')
 if (keystoreFile.exists()) keystoreProps.load(new FileInputStream(keystoreFile))
@@ -10,7 +14,7 @@ android {
     namespace = "app.choreapp.family"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "app.choreapp.family"
+        applicationId staging ? "app.choreapp.family.staging" : "app.choreapp.family"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Bump both for every APK you hand out; the app compares versionCode with the API.
@@ -33,6 +37,7 @@ android {
             }
         }
     }
+    if (staging) sourceSets.release.res.srcDirs += 'src/staging/res'
     buildTypes {
         release {
             if (keystoreFile.exists()) signingConfig signingConfigs.release
@@ -64,7 +69,8 @@ apply from: 'capacitor.build.gradle'
 
 try {
     def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
+    // The test build gets push only once Firebase has an Android app for its package.
+    if (servicesJSON.text && (!staging || servicesJSON.text.contains('"app.choreapp.family.staging"'))) {
         apply plugin: 'com.google.gms.google-services'
     }
 } catch(Exception e) {
