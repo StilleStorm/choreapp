@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Builds the built-in sticker, avatar and frame packs (served as Worker static assets) and their D1 seed SQL.",
+  "description": "Builds the built-in sticker, avatar and frame packs (served as Worker static assets), their D1 seed SQL, and the app's task icons.",
   "scripts": {
-    "build": "node build-packs.mjs"
+    "build": "node build-packs.mjs",
+    "task-icons": "node task-icons.mjs"
   },
   "devDependencies": {
     "@dicebear/core": "9.4.2",
@@ -14,6 +15,7 @@
     "@dicebear/open-peeps": "9.4.2",
     "@dicebear/pixel-art": "9.4.2",
     "@dicebear/thumbs": "9.4.2",
+    "sharp": "^0.35.5",
     "svgo": "^4.0.0"
   }
 }

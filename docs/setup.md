@@ -98,6 +98,17 @@ pnpm run db:seed:remote      # paczka „Awatary motywów” i 150 pozycji
 pnpm run deploy              # wysyła pliki WebP (assety) i nowy kod API
 ```
 
+## Naklejki WebP i cache obrazków (migracja 0009)
+
+Naklejki są rastrami WebP 192 px (ok. 4 KB każda, razem 1,7 MB zamiast 6,2 MB SVG), bo złożone SVG Fluent Emoji zacinały siatki na Androidzie. `apps/api/public/_headers` daje `/builtin/*` cache na rok (`immutable`). **Zasada:** plik wbudowany nigdy nie zmienia treści pod tą samą nazwą; nowa lub poprawiona grafika dostaje nową nazwę (i nowy `image_key`). Kolejność:
+
+```bash
+cd apps/api
+pnpm run deploy              # najpierw: assety mają i .webp, i stare .svg (stare zostają na jedno wydanie)
+pnpm run db:migrate:remote   # 0009_sticker_webp.sql: image_key naklejek .svg -> .webp
+pnpm run db:seed:remote      # te same klucze (seed jest idempotentny)
+```
+
 ## Praca lokalna
 
 ```bash
@@ -108,5 +119,6 @@ pnpm test                            # wszystkie testy
 
 ## Odtwarzanie danych
 
-- Paczki wbudowane: `pnpm --filter @choreapp/seed build` (pobiera Fluent Emoji z GitHuba, generuje awatary DiceBear i ramki, kopiuje awatary motywów), potem `db:seed:*`.
+- Paczki wbudowane: `pnpm --filter @choreapp/seed build` (pobiera Fluent Emoji z GitHuba, generuje awatary DiceBear i ramki, kopiuje awatary motywów, robi z naklejek WebP 192 px), potem `db:seed:*`. Nie zmieniaj treści istniejącego pliku pod tą samą nazwą (cache `immutable`, patrz migracja 0009).
+- Ikony zadań w APK: `pnpm --filter @choreapp/seed task-icons` (SVG z `packages/seed/task-icons/` -> WebP 192 px w `apps/mobile/static/icons/tasks/`).
 - Motywy i fonty: `node apps/mobile/scripts/gen-themes.mjs` (z `packages/seed/themes.json`, czyli tokenów odczytanych z mockupów).

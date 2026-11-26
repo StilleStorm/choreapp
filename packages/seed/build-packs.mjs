@@ -6,6 +6,10 @@
 // Images go to apps/api/public/builtin (Worker static assets: backend data,
 // not part of the APK). Rows go to apps/api/seed/builtin.sql (idempotent).
 //
+// RULE: built-in images are served as immutable (apps/api/public/_headers,
+// cached for a year). A file's content must never change under the same name:
+// new or changed art gets a new file name (and a new image_key).
+//
 // Usage: node build-packs.mjs   (needs network for the Fluent Emoji files)
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -20,13 +24,15 @@ import * as thumbs from '@dicebear/thumbs';
 import { optimize } from 'svgo';
 import { FRAMES } from './frames.mjs';
 import { ALBUMS, LEGENDARY, RARE } from './stickers.mjs';
+import { svgToWebp } from './webp.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const apiDir = join(here, '../../apps/api');
 const outDir = join(apiDir, 'public/builtin');
 const cacheDir = join(here, '.cache');
 mkdirSync(cacheDir, { recursive: true });
-rmSync(outDir, { recursive: true, force: true });
+// Only the generated folders (builtin/brand is hand-made and stays).
+for (const d of ['stickers', 'avatars', 'theme-avatars', 'frames']) rmSync(join(outDir, d), { recursive: true, force: true });
 mkdirSync(outDir, { recursive: true });
 
 const FLUENT_REPO = 'https://github.com/microsoft/fluentui-emoji';
@@ -64,10 +70,10 @@ function item(id, packId, kind, name, album, rarity, key, price, droppable, sort
   );
 }
 
-function write(key, svg) {
+function write(key, data) {
   const path = join(apiDir, 'public', key);
   mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, svg);
+  writeFileSync(path, data);
 }
 
 // ---------------------------------------------------------------------------
@@ -118,8 +124,12 @@ for (const album of ALBUMS) {
       continue;
     }
     const id = `fluent-${slug(folder)}`;
-    const key = `builtin/stickers/${slug(album.name)}/${slug(folder)}.svg`;
-    write(key, svg);
+    const base = `builtin/stickers/${slug(album.name)}/${slug(folder)}`;
+    const key = `${base}.webp`; // 192 px raster (was .svg until migration 0009)
+    write(key, await svgToWebp(svg, 192));
+    // Legacy SVG kept for one deploy, so rows still pointing at .svg keep working
+    // between the Worker deploy and migration 0009. TODO: drop afterwards.
+    write(`${base}.svg`, svg);
     const rarity = LEGENDARY.has(folder) ? 'legendary' : RARE.has(folder) || hash01(`r:${folder}`) < 0.12 ? 'rare' : 'common';
     // About two thirds only drop, one third only in the shop: both ways matter.
     const shopOnly = hash01(`s:${folder}`) < 0.33;
