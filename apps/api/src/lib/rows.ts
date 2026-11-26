@@ -1,6 +1,8 @@
 /** Row types and DTO mappers. */
 import { describeRecurrence, nextOccurrence, parseRRule, type LocalDate, type Rarity } from '@choreapp/core';
-import type { FamilyDto, ItemDto, MemberDto, TaskDto } from '@choreapp/shared';
+import { NEUTRAL_THEME, type FamilyDto, type ItemDto, type MemberDto, type TaskDto } from '@choreapp/shared';
+
+const CHILD_DEFAULT_THEME = 'kawaii';
 import type { Env } from '../env.js';
 import { all, allIn, first } from './db.js';
 import { signedFileUrl } from './files.js';
@@ -34,12 +36,13 @@ export interface MemberRow {
   avatar_item_key: string | null;
   frame_item_key: string | null;
   email: string | null;
-  connected: number;
+  /** Live sessions of the member's own devices (not an adult's phone switched into a child's account). */
+  devices: number;
 }
 
 export const MEMBER_SELECT = `
   SELECT m.*, ai.image_key AS avatar_item_key, fi.image_key AS frame_item_key, pl.email AS email,
-         EXISTS (SELECT 1 FROM session s WHERE s.member_id = m.id AND s.revoked_at IS NULL) AS connected
+         (SELECT COUNT(*) FROM session s WHERE s.member_id = m.id AND s.revoked_at IS NULL AND s.kind = 'device') AS devices
   FROM member m
   LEFT JOIN item ai ON ai.id = m.avatar_item_id
   LEFT JOIN item fi ON fi.id = m.frame_item_id
@@ -79,6 +82,21 @@ export interface ItemRow {
   theme: string | null;
 }
 
+/**
+ * A new member row with the defaults for their role (children start with the
+ * kawaii theme, adults with the neutral one; built-in packs are on for everyone
+ * unless the family switches them off). Shared by registration, invites and
+ * children added without a phone.
+ */
+export function insertMember(
+  db: D1Database,
+  m: { id: string; familyId: string; role: 'parent' | 'child'; name: string; now: number },
+): D1PreparedStatement {
+  return db
+    .prepare('INSERT INTO member (id, family_id, role, name, theme, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+    .bind(m.id, m.familyId, m.role, m.name, m.role === 'child' ? CHILD_DEFAULT_THEME : NEUTRAL_THEME, m.now);
+}
+
 export function familyDto(f: FamilyRow): FamilyDto {
   return {
     id: f.id,
@@ -103,7 +121,8 @@ export async function memberDto(env: Env, origin: string, m: MemberRow, includeE
     avatarItemId: m.avatar_item_id,
     frameItemId: m.frame_item_id,
     theme: m.theme,
-    connected: !!m.connected,
+    connected: m.devices > 0,
+    ...(m.role === 'child' && includeEmail ? { devices: m.devices } : {}),
     ...(includeEmail && m.email ? { email: m.email } : {}),
   };
 }

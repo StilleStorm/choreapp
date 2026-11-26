@@ -153,6 +153,53 @@ describe('push delivery', () => {
     const d = await env.DB.prepare('SELECT COUNT(*) AS n FROM device WHERE member_id = ?').bind(ola.id).first<any>();
     expect(d.n).toBe(0);
   });
+
+  /** Redeems a code for another device (or a move to a new phone) of an existing child. */
+  async function childDevice(fam: { parentToken: string }, childId: string, addDevice: boolean): Promise<string> {
+    const inv = await call('POST', '/v1/invites', { token: fam.parentToken, json: { role: 'child', memberId: childId, addDevice } });
+    const r = await call('POST', '/v1/invites/redeem', { json: { token: inv.body.token } });
+    expect(r.status).toBe(201);
+    return r.body.token;
+  }
+
+  it('every device of a child gets the push; a moved-away device stops getting it', async () => {
+    const fam = await registerFamily();
+    await noQuiet(fam.parentToken);
+    const ola = await addChild(fam, 'Ola');
+    const tablet = await childDevice(fam, ola.id, true);
+    await call('POST', '/v1/devices', { token: ola.token, json: { pushToken: 'ola-phone-token-4' } });
+    await call('POST', '/v1/devices', { token: tablet, json: { pushToken: 'ola-tablet-token-4' } });
+    await callFcm('POST', '/v1/tasks', fam.parentToken, { title: 'Oba', icon: 'books', assignees: [ola.id], startDate: today(), recurrence: { kind: 'once' } });
+    expect(sent.map((m) => m.token).sort()).toEqual(['ola-phone-token-4', 'ola-tablet-token-4']);
+
+    // Moving to a new phone logs out both: neither old token gets anything, the new phone does.
+    sent = [];
+    const newPhone = await childDevice(fam, ola.id, false);
+    await call('POST', '/v1/devices', { token: newPhone, json: { pushToken: 'ola-new-phone-token-4' } });
+    await callFcm('POST', '/v1/tasks', fam.parentToken, { title: 'Nowy', icon: 'books', assignees: [ola.id], startDate: today(), recurrence: { kind: 'once' } });
+    expect(sent.map((m) => m.token)).toEqual(['ola-new-phone-token-4']);
+  });
+
+  it('a token left behind by an ended session gets nothing', async () => {
+    const fam = await registerFamily();
+    await noQuiet(fam.parentToken);
+    const ola = await addChild(fam, 'Ola');
+    await call('POST', '/v1/devices', { token: ola.token, json: { pushToken: 'ola-stale-token-5' } });
+    // A device row whose session was ended some other way (e.g. before devices were cleaned up with it).
+    await env.DB.prepare('UPDATE session SET revoked_at = ? WHERE member_id = ?').bind(Date.now(), ola.id).run();
+    await callFcm('POST', '/v1/tasks', fam.parentToken, { title: 'X', icon: 'books', assignees: [ola.id], startDate: today(), recurrence: { kind: 'once' } });
+    expect(sent).toEqual([]);
+  });
+
+  it("an adult's phone switched into a child's account never registers for the child's pushes", async () => {
+    const fam = await registerFamily();
+    await noQuiet(fam.parentToken);
+    const ola = await addChild(fam, 'Ola');
+    const swap = await call('POST', `/v1/members/${ola.id}/session`, { token: fam.parentToken });
+    expect((await call('POST', '/v1/devices', { token: swap.body.token, json: { pushToken: 'parent-phone-as-ola-6' } })).status).toBe(200);
+    const d = await env.DB.prepare('SELECT COUNT(*) AS n FROM device WHERE member_id = ?').bind(ola.id).first<any>();
+    expect(d.n).toBe(0);
+  });
 });
 
 describe('quiet hours', () => {

@@ -122,6 +122,18 @@ pnpm run db:seed:remote      # 3. paczki i pozycje zestawów (seed jest idempote
 
 Oryginały PNG 1024 px (poza repo) leżą w `~/choreapp-assets/sticker-sets-png/`.
 
+## Kilka urządzeń dziecka (migracja 0011, wersja 1.0.16)
+
+`0011_child_devices.sql` dodaje `session.kind` (`device` / `swap`) i `invite.add_device`, a istniejące, niewylogowane sesje przełączenia (z telefonu dorosłego) oznacza jako `swap`: najstarsza żywa sesja dziecka to jego telefon (dotąd każdy nowy kod wylogowywał resztę), nowsze bez tokenu push to przełączenia. Nowy kod API zapisuje i czyta te kolumny, więc **migracja idzie pierwsza**:
+
+```bash
+cd apps/api
+pnpm run db:migrate:remote   # 1. 0011 (kolumny z wartościami domyślnymi; stary Worker dalej działa)
+pnpm run deploy              # 2. Worker z POST /v1/members, add_device i liczeniem urządzeń
+```
+
+Potem wydanie aplikacji 1.0.16. Starsze aplikacje dalej działają (kod bez `addDevice` = przeniesienie na nowy telefon, pole `connected` zostaje).
+
 ## Serwer testowy (staging)
 
 Osobny Worker `choreapp-api-staging` z własną bazą D1 `choreapp-staging` i kubełkiem R2 `choreapp-files-staging` (`env.staging` w `wrangler.jsonc`, bez crona: przypomnienia dzienne i zbiorcze po godzinach ciszy tam nie chodzą). Produkcja zostaje nietknięta. Jednorazowo:

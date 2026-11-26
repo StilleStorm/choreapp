@@ -12,7 +12,15 @@
     role,
     memberId = null,
     memberName = null,
-  }: { open?: boolean; role: Role; memberId?: string | null; memberName?: string | null } = $props();
+    addDevice = false,
+  }: {
+    open?: boolean;
+    role: Role;
+    memberId?: string | null;
+    memberName?: string | null;
+    /** A child's additional device (the others stay logged in) instead of a move to a new phone. */
+    addDevice?: boolean;
+  } = $props();
 
   let invite = $state<InviteDto | null>(null);
   /** When the code expires on this phone's clock (from the server's own time, so a wrong phone clock doesn't matter). */
@@ -25,7 +33,15 @@
 
   const kind = $derived(!memberId ? 'join' : role === 'child' ? 'reconnect' : 'reset');
   const title = $derived(
-    kind === 'join' ? (role === 'child' ? 'Dodaj dziecko' : 'Dodaj rodzica') : kind === 'reconnect' ? `Nowy telefon: ${memberName}` : `Reset hasła: ${memberName}`,
+    kind === 'join'
+      ? role === 'child'
+        ? 'Dodaj dziecko'
+        : 'Dodaj rodzica'
+      : kind === 'reconnect'
+        ? addDevice
+          ? `Kolejne urządzenie: ${memberName}`
+          : `Nowy telefon: ${memberName}`
+        : `Reset hasła: ${memberName}`,
   );
   const remaining = $derived(invite ? Math.max(0, deadline - now) : 0);
   const expired = $derived(!!invite && (gone || remaining === 0));
@@ -36,7 +52,11 @@
     gone = false;
     invite = null;
     try {
-      const dto = await api.post<InviteDto>('/v1/invites', { role, ...(memberId ? { memberId } : {}) });
+      const dto = await api.post<InviteDto>('/v1/invites', {
+        role,
+        ...(memberId ? { memberId } : {}),
+        ...(memberId && role === 'child' ? { addDevice } : {}),
+      });
       now = Date.now();
       deadline = now + (dto.expiresAt - dto.now);
       invite = dto;
@@ -91,7 +111,13 @@
       <div class="tick" aria-hidden="true">✓</div>
       <p><strong>Gotowe!</strong></p>
       <p class="muted">
-        {kind === 'join' ? 'Nowa osoba dołączyła do rodziny.' : kind === 'reconnect' ? 'Nowy telefon jest połączony.' : 'Hasło zostało zmienione.'}
+        {kind === 'join'
+          ? 'Nowa osoba dołączyła do rodziny.'
+          : kind === 'reconnect'
+            ? addDevice
+              ? 'Urządzenie jest połączone.'
+              : 'Nowy telefon jest połączony.'
+            : 'Hasło zostało zmienione.'}
       </p>
       <button class="btn primary block" onclick={() => (open = false)}>Zamknij</button>
     </div>
@@ -99,7 +125,8 @@
     <p class="muted small center">
       {#if kind === 'join' && role === 'child'}Na telefonie dziecka otwórz aplikację, wybierz „Mam kod od rodzica” i zeskanuj kod albo wpisz cyfry.{/if}
       {#if kind === 'join' && role === 'parent'}Drugi rodzic wybiera „Mam kod od rodzica”, a potem ustawia swój e-mail i hasło.{/if}
-      {#if kind === 'reconnect'}Na nowym telefonie wybierz „Mam kod od rodzica”. Stary telefon zostanie wylogowany, punkty zostają.{/if}
+      {#if kind === 'reconnect' && addDevice}Na kolejnym urządzeniu wybierz „Mam kod od rodzica”. Pozostałe urządzenia zostaną zalogowane, punkty zostają.{/if}
+      {#if kind === 'reconnect' && !addDevice}Na nowym telefonie wybierz „Mam kod od rodzica”. Pozostałe urządzenia zostaną wylogowane, punkty zostają.{/if}
       {#if kind === 'reset'}Na swoim telefonie {memberName} wybiera „Mam kod od rodzica” i ustawia nowe hasło.{/if}
     </p>
     <div class:faded={expired}>

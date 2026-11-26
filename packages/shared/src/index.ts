@@ -126,7 +126,12 @@ export const createInviteBody = z.object({
   role: z.enum(['parent', 'child']),
   /** Set to reconnect a child's new phone or reset a parent's password. */
   memberId: id.optional(),
+  /** With a child's memberId: another device that keeps the child's other devices logged in. */
+  addDevice: z.boolean().optional(),
 });
+
+/** An adult adds a child who has no phone (uses the adult's phone). Nickname only. */
+export const createChildBody = z.object({ name });
 
 /** Either the QR token or the short code typed by hand. */
 export const inviteRef = z
