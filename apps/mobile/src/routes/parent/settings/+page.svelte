@@ -402,6 +402,12 @@
         <Icon name="logout" />
         <span class="grow title">Wyloguj się</span>
       </button>
+    </div>
+  </section>
+
+  <!-- Kept apart from "Wyloguj się" so it is not tapped by mistake; the sheet still asks for confirmation. -->
+  <section class="section danger-zone">
+    <div class="list">
       <button class="row member danger-text" onclick={() => openDelete()}>
         <Icon name="trash" />
         <span class="grow title">{session.isAdmin ? 'Usuń rodzinę' : 'Usuń konto'}</span>
@@ -626,5 +632,8 @@
   }
   .danger-text {
     color: var(--danger);
+  }
+  .danger-zone {
+    margin-top: 24px;
   }
 </style>
