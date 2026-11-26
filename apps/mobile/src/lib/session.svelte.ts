@@ -1,5 +1,6 @@
 /** Logged-in member, family and members, shared by every screen. */
 import type { FamilyDto, MeDto, MemberDto, SessionDto } from '@choreapp/shared';
+import { tick } from 'svelte';
 import { goto } from '$app/navigation';
 import { Preferences } from '@capacitor/preferences';
 import { ApiFailure, api, hasToken, request, setToken, setUnauthorizedHandler } from './api.js';
@@ -11,12 +12,20 @@ const HOMES_KEY = 'homes';
 const RESUME_REFRESH_MS = 30 * 60_000;
 /** Before 1.0.6 the phone kept a single token; still written for the active home. */
 const LEGACY_TOKEN_KEY = 'session_token';
+/** The adult's homes, kept aside while a child uses the adult's phone. */
+const SWAP_KEY = 'swap_parent';
 
 class Session {
   ready = $state(false);
   data = $state<MeDto | null>(null);
   /** Families this phone is logged in to (several only on a child's phone). */
   homes = $state<Homes>(NO_HOMES);
+  /**
+   * Set while a child without a phone uses this adult's phone: the adult's own
+   * homes (their token stays valid, just not active). Getting them back takes
+   * the phone's unlock or the adult's password.
+   */
+  swapParent = $state<Homes | null>(null);
   /** Offset between server and phone clocks, so "today" follows the server. */
   clockSkew = 0;
   /** A home being dropped after a 401, so callers can wait for the fallback. */
@@ -40,6 +49,10 @@ class Session {
   }
   get parents(): MemberDto[] {
     return this.members.filter((m) => m.role === 'parent');
+  }
+  /** A child is using an adult's phone. */
+  get swapped(): boolean {
+    return !!this.swapParent;
   }
   get isParent(): boolean {
     return this.me?.role === 'parent';
@@ -67,11 +80,18 @@ class Session {
     setUnauthorizedHandler((token) => {
       this.dropping = this.dropping.then(() => this.dropHome(token));
     });
-    const [stored, legacy] = await Promise.all([
+    const [stored, legacy, swap] = await Promise.all([
       Preferences.get({ key: HOMES_KEY }),
       Preferences.get({ key: LEGACY_TOKEN_KEY }),
+      Preferences.get({ key: SWAP_KEY }),
     ]);
-    await this.setHomes(restoreHomes(stored.value, legacy.value));
+    const homes = restoreHomes(stored.value, legacy.value);
+    const parent = swap.value ? restoreHomes(swap.value, null) : NO_HOMES;
+    // The app was closed in the middle of switching back: the adult's homes are already active.
+    const swapped = !!parent.active && parent.active !== homes.active;
+    this.swapParent = swapped ? parent : null;
+    if (swap.value && !swapped) await Preferences.remove({ key: SWAP_KEY });
+    await this.setHomes(homes);
     if (hasToken()) {
       try {
         await this.refresh();
@@ -138,6 +158,87 @@ class Session {
     if (replaced) void logoutToken(replaced.token);
   }
 
+  /**
+   * An adult hands the phone to a child of their family who has no phone. The
+   * adult's homes are saved first, so nothing is lost if the app is closed midway.
+   */
+  async swapToChild(childId: string): Promise<void> {
+    if (!this.isParent || this.swapped) return;
+    const s = await api.post<SessionDto>(`/v1/members/${childId}/session`);
+    let data: MeDto;
+    try {
+      data = await request<MeDto>('GET', '/v1/me', { token: s.token });
+    } catch (e) {
+      void logoutToken(s.token);
+      throw e;
+    }
+    const parent = this.homes;
+    await Preferences.set({ key: SWAP_KEY, value: JSON.stringify(parent) });
+    // Switched together, so no screen ever sees an adult in child mode or the other way round.
+    this.swapParent = parent;
+    this.data = data;
+    this.clockSkew = data.now - Date.now();
+    this.refreshedAt = Date.now();
+    const saving = this.setHomes(addHome(NO_HOMES, { token: s.token, ...detailsOf(s) }));
+    void goto('/child', { replace: true });
+    await saving;
+  }
+
+  /**
+   * Gives the phone back to the adult. Call only after the phone's unlock or the
+   * adult's password succeeded. The child's session on this phone is logged out.
+   */
+  async returnToParent(): Promise<void> {
+    const parent = this.swapParent;
+    if (!parent?.active) return;
+    // Online check first, so the adult never lands on an empty screen; throws when offline.
+    let data: MeDto;
+    try {
+      data = await request<MeDto>('GET', '/v1/me', { token: parent.active });
+    } catch (e) {
+      // The adult was logged out meanwhile (password changed on another phone): log in again.
+      if (e instanceof ApiFailure && e.status === 401) return this.endSwapLoggedOut();
+      throw e;
+    }
+    await offline.flush(); // queued taps belong to the child
+    const childTokens = this.homes.list.map((h) => h.token);
+    this.swapParent = null;
+    this.data = data;
+    this.clockSkew = data.now - Date.now();
+    this.refreshedAt = Date.now();
+    const saving = this.setHomes(parent);
+    // The child screens react to the adult first (their guard goes to /parent, i.e. Dziś);
+    // navigating after that lands the adult back in Settings, where they started.
+    await tick();
+    void goto('/parent/settings', { replace: true });
+    await saving;
+    await Preferences.remove({ key: SWAP_KEY });
+    for (const t of childTokens) void logoutToken(t);
+  }
+
+  /** Checks the adult's app password (phones without a screen lock). Throws `wrong_password`. */
+  async verifyParentPassword(currentPassword: string): Promise<void> {
+    const token = this.swapParent?.active;
+    if (!token) return;
+    try {
+      await request('POST', '/v1/auth/verify-password', { token, json: { currentPassword } });
+    } catch (e) {
+      // The adult's session ended meanwhile (password changed on another phone): log in again.
+      if (e instanceof ApiFailure && e.status === 401) await this.endSwapLoggedOut();
+      throw e;
+    }
+  }
+
+  private async endSwapLoggedOut(): Promise<void> {
+    const childTokens = this.homes.list.map((h) => h.token);
+    this.swapParent = null;
+    await Preferences.remove({ key: SWAP_KEY });
+    for (const t of childTokens) void logoutToken(t);
+    await this.setHomes(NO_HOMES);
+    this.data = null;
+    await goto('/welcome', { replace: true });
+  }
+
   /** Shows another home on a child's phone. */
   async switchTo(token: string): Promise<void> {
     if (token === this.homes.active) return;
@@ -171,6 +272,7 @@ class Session {
     await this.setHomes(removeHome(this.homes, token));
     if (!wasActive) return;
     if (!this.homes.active) {
+      // On an adult's phone used by a child, welcome offers only the way back to the adult.
       this.data = null;
       await goto('/welcome', { replace: true });
       return;

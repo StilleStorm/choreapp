@@ -87,6 +87,8 @@ export const changeEmailBody = z.object({ currentPassword: z.string().min(1).max
 export const changePasswordBody = z.object({ currentPassword: z.string().min(1).max(200), newPassword: password });
 /** An adult deletes their own account (or, as administrator, the whole family). */
 export const deleteAccountBody = z.object({ currentPassword: z.string().min(1).max(200) });
+/** An adult proves it's them (back from a child's account on their own phone, when the phone has no screen lock). */
+export const verifyPasswordBody = z.object({ currentPassword: z.string().min(1).max(200) });
 /** The administrator hands the role to another adult of the same family. */
 export const transferAdminBody = z.object({ memberId: id, currentPassword: z.string().min(1).max(200) });
 

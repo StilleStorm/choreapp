@@ -218,6 +218,9 @@ importers:
 
   apps/mobile:
     dependencies:
+      '@aparajita/capacitor-biometric-auth':
+        specifier: ^10.0.0
+        version: 10.0.0
       '@capacitor-mlkit/barcode-scanning':
         specifier: ^8.2.2
         version: 8.2.2(@capacitor/core@8.6.2)
@@ -309,6 +312,9 @@ importers:
       '@dicebear/thumbs':
         specifier: 9.4.2
         version: 9.4.2(@dicebear/core@9.4.2)
+      sharp:
+        specifier: ^0.35.5
+        version: 0.35.5(@types/node@18.19.130)
       svgo:
         specifier: ^4.0.0
         version: 4.1.0
@@ -327,6 +333,10 @@ importers:
         version: 7.0.2
 
 packages:
+
+  '@aparajita/capacitor-biometric-auth@10.0.0':
+    resolution: {integrity: sha512-azjWaRucB8x1/gSzSTp/NxelaOZyg+m765gSzjwUkSQgg30RrZPmPq6pyLeeXVSZNDY3Rxf5Hj8obgZaXirCFQ==}
+    engines: {node: '>=20.0.0'}
 
   '@capacitor-mlkit/barcode-scanning@8.2.2':
     resolution: {integrity: sha512-ifQbo09HDAveFpu89H9jhKbYw1sISdHCpXOi3qJDp/geVuxtJC2GDffBLAL3R6mXNDSjm8jO00AIP2Z1GlV8hQ==}
@@ -350,6 +360,11 @@ packages:
 
   '@capacitor/core@8.6.2':
     resolution: {integrity: sha512-UEb9crRuqEAe2Iu2eGOEuQ8rLQxpwg7ZZIpl17UJoytEpnV1e4oXXW0K7yYS2NsCOGmJjyLeKjNlgG7tkAoX8g==}
+
+  '@capacitor/ios@8.6.2':
+    resolution: {integrity: sha512-YnVm0lRA1mQWK0SKd2bdJIOG+PXRRDDdndZ1+nGqeiob+QmHZmb4wWo5gVpWhoHO37pGi2qzH5w5WGvfKrs+Gg==}
+    peerDependencies:
+      '@capacitor/core': ^8.6.0
 
   '@capacitor/network@8.0.1':
     resolution: {integrity: sha512-9xK/FHFmzKGanB6BdoSZOzXk8vF0OFVQSQ4PAsIrzAzLuXHryO317qy8dcHVpgxYeuZq2noI0My9z1DvVDi/9w==}
@@ -2239,6 +2254,13 @@ packages:
 
 snapshots:
 
+  '@aparajita/capacitor-biometric-auth@10.0.0':
+    dependencies:
+      '@capacitor/android': 8.6.2(@capacitor/core@8.6.2)
+      '@capacitor/app': 8.1.2(@capacitor/core@8.6.2)
+      '@capacitor/core': 8.6.2
+      '@capacitor/ios': 8.6.2(@capacitor/core@8.6.2)
+
   '@capacitor-mlkit/barcode-scanning@8.2.2(@capacitor/core@8.6.2)':
     dependencies:
       '@capacitor/core': 8.6.2
@@ -2277,6 +2299,10 @@ snapshots:
   '@capacitor/core@8.6.2':
     dependencies:
       tslib: 2.9.1
+
+  '@capacitor/ios@8.6.2(@capacitor/core@8.6.2)':
+    dependencies:
+      '@capacitor/core': 8.6.2
 
   '@capacitor/network@8.0.1(@capacitor/core@8.6.2)':
     dependencies:
@@ -3369,7 +3395,7 @@ snapshots:
   miniflare@5.20261123.1-beta:
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
-      sharp: 0.35.5
+      sharp: 0.35.5(@types/node@18.19.130)
       undici: 7.30.2
       workerd: 1.20261123.1
       ws: 8.21.0
@@ -3541,7 +3567,7 @@ snapshots:
 
   set-blocking@2.0.0: {}
 
-  sharp@0.35.5:
+  sharp@0.35.5(@types/node@18.19.130):
     dependencies:
       '@img/colour': 1.1.0
       detect-libc: 2.1.2
@@ -3572,6 +3598,7 @@ snapshots:
       '@img/sharp-win32-arm64': 0.35.5
       '@img/sharp-win32-ia32': 0.35.5
       '@img/sharp-win32-x64': 0.35.5
+      '@types/node': 18.19.130
 
   shebang-command@2.0.0:
     dependencies:

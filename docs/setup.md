@@ -70,7 +70,7 @@ Skrypt buduje podpisany APK, wysyła go do R2 i rejestruje wersję. Telefony w r
 cd apps/mobile && pnpm run aab
 ```
 
-Buduje wersję bez samodzielnych aktualizacji (`VITE_DISTRIBUTION=play`) i podpisany pakiet `android/app/build/outputs/bundle/release/app-release.aab` (tym samym kluczem z `keystore.properties`; w Play Console można go zarejestrować jako klucz przesyłania). W Play Console podaj politykę prywatności `https://<adres Workera>/privacy` i stronę usuwania konta `https://<adres Workera>/delete-account`.
+Buduje wersję bez samodzielnych aktualizacji (`VITE_DISTRIBUTION=play`), z linkiem „Postaw twórcy kawę” w ustawieniach rodzica (`VITE_SHOW_SUPPORT=1`) i podpisany pakiet `android/app/build/outputs/bundle/release/app-release.aab` (tym samym kluczem z `keystore.properties`; w Play Console można go zarejestrować jako klucz przesyłania). W Play Console podaj politykę prywatności `https://<adres Workera>/privacy` i stronę usuwania konta `https://<adres Workera>/delete-account`.
 
 ## Zdjęcia dzieci (migracja 0007, wersja 1.0.9)
 
@@ -98,15 +98,62 @@ pnpm run db:seed:remote      # paczka „Awatary motywów” i 150 pozycji
 pnpm run deploy              # wysyła pliki WebP (assety) i nowy kod API
 ```
 
+## Naklejki WebP i cache obrazków (migracja 0009)
+
+Naklejki są rastrami WebP 192 px (ok. 4 KB każda, razem 1,7 MB zamiast 6,2 MB SVG), bo złożone SVG Fluent Emoji zacinały siatki na Androidzie. `apps/api/public/_headers` daje `/builtin/*` cache na rok (`immutable`). **Zasada:** plik wbudowany nigdy nie zmienia treści pod tą samą nazwą; nowa lub poprawiona grafika dostaje nową nazwę (i nowy `image_key`). Kolejność:
+
+```bash
+cd apps/api
+pnpm run deploy              # najpierw: assety mają i .webp, i stare .svg (stare zostają na jedno wydanie)
+pnpm run db:migrate:remote   # 0009_sticker_webp.sql: image_key naklejek .svg -> .webp
+pnpm run db:seed:remote      # te same klucze (seed jest idempotentny)
+```
+
+## Zestawy naklejek (migracja 0010, wersja 1.0.15)
+
+20 autorskich zestawów (200 naklejek WebP pod `builtin/stickers/<zestaw>/`), każdy jako wbudowana paczka `builtin-set-<zestaw>`. Wersja 1.0.15 zawiera też 0009 (powyżej), więc przy aktualizacji z 1.0.14 kolejność jest jedna dla obu:
+
+```bash
+cd apps/api
+pnpm run deploy              # 1. Worker z nowymi assetami (.webp naklejek i zestawów)
+pnpm run db:migrate:remote   # 2. 0009 (image_key .svg -> .webp) i 0010 (nowe paczki włączone dla wszystkich rodzin)
+pnpm run db:seed:remote      # 3. paczki i pozycje zestawów (seed jest idempotentny)
+```
+
+Oryginały PNG 1024 px (poza repo) leżą w `~/choreapp-assets/sticker-sets-png/`.
+
+## Serwer testowy (staging)
+
+Osobny Worker `choreapp-api-staging` z własną bazą D1 `choreapp-staging` i kubełkiem R2 `choreapp-files-staging` (`env.staging` w `wrangler.jsonc`, bez crona: przypomnienia dzienne i zbiorcze po godzinach ciszy tam nie chodzą). Produkcja zostaje nietknięta. Jednorazowo:
+
+```bash
+cd apps/api
+pnpm exec wrangler d1 create choreapp-staging --location weur   # wpisz database_id do env.staging w wrangler.jsonc
+pnpm exec wrangler r2 bucket create choreapp-files-staging
+pnpm exec wrangler secret put FILE_SIGNING_KEY --env staging     # nowy losowy ciąg, inny niż produkcyjny
+pnpm exec wrangler secret put FCM_SERVICE_ACCOUNT --env staging  # ten sam JSON konta serwisowego Firebase
+```
+
+Wdrożenie (ta sama kolejność co na produkcji) i rodzina demo:
+
+```bash
+pnpm run deploy:staging && pnpm run db:migrate:staging && pnpm run db:seed:staging
+node ../../scripts/demo-family.mjs https://choreapp-api-staging.<subdomena>.workers.dev
+```
+
+Aplikacja testowa: `apps/mobile/.env.staging` z `VITE_API_URL=https://choreapp-api-staging.<subdomena>.workers.dev`, potem `cd apps/mobile && pnpm run apk:staging`. Powstaje podpisany APK `app.choreapp.family.staging` („Zadania TEST”), który instaluje się obok prawdziwej aplikacji, nigdy nie proponuje aktualizacji i pokazuje link „Postaw twórcy kawę”. Push działa dopiero, gdy w Firebase dodasz aplikację Android `app.choreapp.family.staging` i pobierzesz nowy `google-services.json` (bez tego build testowy po prostu nie rejestruje powiadomień).
+
 ## Praca lokalna
 
 ```bash
 cd apps/api && cp .dev.vars.example .dev.vars && pnpm run db:migrate:local && pnpm run db:seed:local && pnpm run dev
+node scripts/demo-family.mjs http://localhost:8787   # rodzina demo: mama@example.com / haslo-12345, dzieci Zosia i Kuba
 cd apps/mobile && pnpm run dev       # http://localhost:5173, API z VITE_API_URL (domyślnie http://localhost:8787)
 pnpm test                            # wszystkie testy
 ```
 
 ## Odtwarzanie danych
 
-- Paczki wbudowane: `pnpm --filter @choreapp/seed build` (pobiera Fluent Emoji z GitHuba, generuje awatary DiceBear i ramki, kopiuje awatary motywów), potem `db:seed:*`.
+- Paczki wbudowane: `pnpm --filter @choreapp/seed build` (pobiera Fluent Emoji z GitHuba, generuje awatary DiceBear i ramki, kopiuje awatary motywów, robi z naklejek WebP 192 px), potem `db:seed:*`. Nie zmieniaj treści istniejącego pliku pod tą samą nazwą (cache `immutable`, patrz migracja 0009).
+- Ikony zadań w APK: `pnpm --filter @choreapp/seed task-icons` (SVG z `packages/seed/task-icons/` -> WebP 192 px w `apps/mobile/static/icons/tasks/`).
 - Motywy i fonty: `node apps/mobile/scripts/gen-themes.mjs` (z `packages/seed/themes.json`, czyli tokenów odczytanych z mockupów).

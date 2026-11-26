@@ -1,14 +1,15 @@
 /**
  * Manual updates for the sideloaded APK: compare the installed build with the
  * latest release. The Google Play build (VITE_DISTRIBUTION=play, `pnpm aab`)
- * never checks: Play forbids updating apps outside the store.
+ * never checks: Play forbids updating apps outside the store. Neither does the
+ * test-server build (VITE_DISTRIBUTION=staging, `pnpm apk:staging`).
  */
 import type { AppReleaseDto } from '@choreapp/shared';
 import { api } from './api.js';
 import { appVersion, isNative } from './native.js';
 import { notices } from './notices.svelte.js';
 
-export const selfUpdates = import.meta.env.VITE_DISTRIBUTION !== 'play';
+export const selfUpdates = !['play', 'staging'].includes(import.meta.env.VITE_DISTRIBUTION ?? '');
 
 class Update {
   latest = $state<AppReleaseDto | null>(null);

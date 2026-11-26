@@ -4,8 +4,9 @@ import { selfUpdates } from './update.svelte.js';
 export const SUPPORT_URL = 'https://buymeacoffee.com/stillestorq';
 
 /**
- * Google Play may treat tips to the developer as digital payments that must go
- * through Play Billing, so the Play build hides the link unless built with
- * VITE_SHOW_SUPPORT=1. The sideloaded (GitHub) build always shows it.
+ * Shown in both builds. The sideloaded (GitHub) build shows it via selfUpdates;
+ * the Play build (`pnpm aab`) sets VITE_SHOW_SUPPORT=1. Voluntary tips to the
+ * developer are peer-to-peer payments outside the app's content, which the Play
+ * Payments policy FAQ exempts from Play Billing. Parent settings only.
  */
 export const showSupport = selfUpdates || import.meta.env.VITE_SHOW_SUPPORT === '1';

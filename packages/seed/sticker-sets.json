@@ -1,0 +1,1253 @@
+[
+  {
+    "slug": "wojownicy-mocy",
+    "name": "Wojownicy Mocy",
+    "ages": "6 to 15",
+    "style": "1990s Japanese TV action anime (shonen fighting series) cel style: crisp hand-painted cel animation look, flat colors with hard-edged two-tone shadows, bold black linework, large expressive anime eyes, crisp flame-shaped teal and electric-violet energy auras with sharp pointed tongues, dynamic speed lines, floating pebbles, vivid saturated palette, energetic and positive",
+    "cast": "Recurring original characters (must not resemble any existing anime, manga or game character): the GIRL FIGHTER (about 11) has short wavy dark-red hair in a small high ponytail, a teal headband, warm brown skin, a sleeveless forest-green training top with a white cloth belt, loose charcoal-grey trousers wrapped at the ankles and dark fingerless gloves. The BOY FIGHTER (about 12) is stocky and friendly, with a short black buzz cut, light skin, a sleeveless maroon training vest with a grey sash, navy trousers and white hand wraps. No orange clothing, no spiky blond or golden hair, no tails, no orbs with stars, no face-worn devices, no symbols or lettering on the clothes.",
+    "stickers": [
+      {
+        "key": "power-up",
+        "name": "Wejście w moc",
+        "rarity": "legendary",
+        "subject": "the girl fighter mid power-up, crouched in a wide stance with both fists clenched at her hips, shouting with confident joy, surrounded by a crisp flame-shaped teal and violet aura, small rocks lifting off cracked ground"
+      },
+      {
+        "key": "energy-ball",
+        "name": "Kula energii",
+        "rarity": "rare",
+        "subject": "the boy fighter charging a glowing teal energy ball between his cupped palms at his side, focused grin, small sparks and wind lines around him"
+      },
+      {
+        "key": "flying-punch",
+        "name": "Lecący cios",
+        "subject": "the girl fighter flying forward through the air with one fist stretched ahead, hair streaming back, strong speed lines behind her, nobody being hit"
+      },
+      {
+        "key": "meditation",
+        "name": "Medytacja",
+        "subject": "the boy fighter meditating cross-legged with eyes closed, floating calmly above a small flat rock, a soft thin teal aura and a few floating pebbles"
+      },
+      {
+        "key": "push-ups",
+        "name": "Pompki na szczycie",
+        "subject": "the girl fighter doing one-arm push-ups on a tiny rocky mountain peak, a sweat drop, a few clouds around the peak"
+      },
+      {
+        "key": "landing",
+        "name": "Lądowanie",
+        "subject": "the boy fighter landing from a big jump in a crouched super-hero landing, one fist on the ground, the ground cracking in a ring with dust puffs"
+      },
+      {
+        "key": "sunrise",
+        "name": "Zwycięstwo o świcie",
+        "rarity": "rare",
+        "subject": "the girl fighter and the boy fighter standing side by side on a cliff edge at sunrise, each raising one fist in victory, a big orange sun behind them"
+      },
+      {
+        "key": "rice-bowl",
+        "name": "Miska ryżu",
+        "subject": "the boy fighter happily eating from a giant bowl of rice with chopsticks after training, cheeks full, a towel around his neck"
+      },
+      {
+        "key": "power-tea",
+        "name": "Herbatka mocy",
+        "subject": "a steaming round clay cup of glowing teal herbal tea with a floating leaf, on a small wooden tray next to a teapot, little sparkles, no character",
+        "extra": "Only the cup, tray and teapot: absolutely no people or characters in the image."
+      },
+      {
+        "key": "training",
+        "name": "Trening z głazem",
+        "subject": "the girl fighter jogging with a huge round boulder strapped to her back as a training weight, determined smile, sweat drops"
+      }
+    ]
+  },
+  {
+    "slug": "akademia-ninja",
+    "name": "Akademia Ninja",
+    "ages": "6 to 15",
+    "style": "modern shonen anime style, bold clean lines, cel shading, muted indigo and forest-green palette with warm accents, swirling leaves and white smoke puffs, energetic and friendly",
+    "cast": "Recurring original characters (must not resemble any existing anime character): the NINJA GIRL (about 12) has a short black bob, light-olive skin, a muted indigo hooded wrap top with a forest-green cloth sash, dark grey leg wraps and cloth hand wraps. The NINJA BOY (about 12) has messy chestnut-brown hair tied in a low short tail, tan skin, a forest-green sleeveless tunic over an indigo undershirt and a grey cloth scarf. No headbands, no forehead plates, no whisker marks, no orange clothing, no red cloud patterns, no red eyes, no blades or throwing stars, no symbols or lettering on the clothes.",
+    "stickers": [
+      {
+        "key": "hand-sign",
+        "name": "Pieczęć liści",
+        "rarity": "rare",
+        "subject": "the ninja girl making a two-handed finger sign in front of her chest, a swirl of green leaves spinning around her"
+      },
+      {
+        "key": "clone-trio",
+        "name": "Trzech klonów",
+        "rarity": "legendary",
+        "subject": "three identical copies of the ninja boy posing together in a row with cheeky grins, small smoke puffs around them"
+      },
+      {
+        "key": "branch-run",
+        "name": "Bieg po gałęzi",
+        "subject": "the ninja girl sprinting along a thick tree branch with leaves flying, body leaning forward, arms back"
+      },
+      {
+        "key": "scroll-peek",
+        "name": "Zerkanie zza zwoju",
+        "subject": "the ninja boy peeking playfully from behind a big unrolled blank paper scroll, only his eyes and hair visible above it"
+      },
+      {
+        "key": "toad-friend",
+        "name": "Wielka ropucha",
+        "rarity": "rare",
+        "subject": "a huge friendly round mossy-green toad with big sleepy eyes and a happy smile, the ninja girl sitting on top of its head waving"
+      },
+      {
+        "key": "smoke-vanish",
+        "name": "Znikanie w dymie",
+        "subject": "the ninja boy half-vanished in a big round white smoke puff, winking, a few leaves flying"
+      },
+      {
+        "key": "dummy-training",
+        "name": "Trening na manekinie",
+        "subject": "the ninja girl practising a palm strike on a wooden straw-wrapped training post, small impact lines"
+      },
+      {
+        "key": "noodle-stall",
+        "name": "Makaron po treningu",
+        "subject": "the ninja boy slurping noodles happily from a steaming bowl at a small wooden street stall counter"
+      },
+      {
+        "key": "wall-run",
+        "name": "Bieg po ścianie",
+        "subject": "the ninja girl running sideways up a stone wall, small dust puffs under her feet"
+      },
+      {
+        "key": "water-walk",
+        "name": "Chodzenie po wodzie",
+        "subject": "the ninja boy balancing and walking on the surface of a pond, glowing ripples spreading from his feet"
+      }
+    ]
+  },
+  {
+    "slug": "duchowi-szermierze",
+    "name": "Duchowi Szermierze",
+    "ages": "13 to 16",
+    "style": "sleek 2000s shonen anime style, elegant thin linework with ink-brush accents, flowing robes in deep teal and ivory, glowing ethereal blades made purely of pale blue light (clearly magical light, not metal), moonlit night mood, calm and graceful",
+    "cast": "Recurring original characters (must not resemble any existing anime character): the SPIRIT SWORDSMAN (about 15) has neat silver-blue shoulder-length hair tied back, pale skin, a flowing deep-teal robe with an ivory inner layer and a wide ivory sash. The SPIRIT SWORDSWOMAN (about 15) has long straight black hair with a lavender streak, warm skin, an ivory robe with deep-teal sleeves. No black robes, no white long coats, no oversized swords, no skull masks, no orange spiky hair, no blood, no fighting against people.",
+    "stickers": [
+      {
+        "key": "moon-blade",
+        "name": "Ostrze światła",
+        "rarity": "legendary",
+        "subject": "the spirit swordswoman raising a slim glowing blade of pale blue light toward a big full moon behind her, robes flowing in the wind"
+      },
+      {
+        "key": "rooftop-leap",
+        "name": "Skok po dachach",
+        "subject": "the spirit swordsman leaping gracefully between curved tiled rooftops at night, robe flowing like a silhouette",
+        "extra": "He is alone in the image. His light blade stays sheathed at his hip; nobody else is shown."
+      },
+      {
+        "key": "butterfly",
+        "name": "Motyl przewodnik",
+        "subject": "a single glowing pale-blue and teal spirit butterfly with luminous wing patterns, little light trails, no character"
+      },
+      {
+        "key": "spirit-mask",
+        "name": "Maska ducha",
+        "rarity": "rare",
+        "subject": "a decorative friendly ivory fox-spirit mask with teal and gold painted swirls and a small tassel, no character"
+      },
+      {
+        "key": "blue-flame",
+        "name": "Błękitny płomień",
+        "subject": "the spirit swordsman meditating kneeling with eyes closed, a small calm blue spirit flame floating above his open palm"
+      },
+      {
+        "key": "petal-release",
+        "name": "Płatki mocy",
+        "subject": "the spirit swordswoman with a swirl of glowing pink cherry petals and blue light spiralling around her, calm smile"
+      },
+      {
+        "key": "bow",
+        "name": "Ukłon szacunku",
+        "subject": "the spirit swordsman and the spirit swordswoman bowing politely to each other, light blades resting sheathed at their sides"
+      },
+      {
+        "key": "spirit-gate",
+        "name": "Brama światów",
+        "rarity": "rare",
+        "subject": "an old wooden gate glowing with soft mist between its posts, two paper lanterns hanging on it, a starry night portal inside, no character",
+        "extra": "Absolutely no people or characters in the image, only the gate, lanterns, mist and stars."
+      },
+      {
+        "key": "cat-spirit",
+        "name": "Kot duch",
+        "subject": "a cute translucent glowing teal spirit cat with two wisp-like tails of light, sitting and smiling"
+      },
+      {
+        "key": "level-up",
+        "name": "Wstęga mocy",
+        "subject": "a flowing ivory and teal silk ribbon spiralling upward with glowing blue spirit sparks, no character"
+      }
+    ]
+  },
+  {
+    "slug": "superbohaterowie",
+    "name": "Superbohaterowie",
+    "ages": "6 to 12",
+    "style": "bright retro comic-book style, halftone dots, bold black outlines, flat punchy colors in teal, coral, lilac and sunny yellow, dynamic poses, cheerful",
+    "cast": "Recurring original kid heroes (must not resemble any existing superhero): the HERO GIRL (about 9) wears a teal suit with a coral cape, a simple plain coral circle on the chest, a small teal eye mask, has short curly black hair and brown skin. The HERO BOY (about 9) wears a lilac suit with a teal cape, a simple plain yellow triangle on the chest, a small lilac eye mask, has messy ginger hair and freckles. No letters, bats, spiders, lightning bolts or stars on the chest, no red-and-blue costumes, no shields with stars.",
+    "stickers": [
+      {
+        "key": "flying",
+        "name": "Lot nad miastem",
+        "rarity": "legendary",
+        "subject": "the hero girl flying over a small city skyline at sunset with one fist forward, cape streaming"
+      },
+      {
+        "key": "car-lift",
+        "name": "Siłacz",
+        "subject": "the hero boy easily lifting a small cartoon car above his head with one hand, grinning"
+      },
+      {
+        "key": "kitten-rescue",
+        "name": "Ratunek kotka",
+        "rarity": "rare",
+        "subject": "the hero girl floating next to a tree branch, gently holding a small happy kitten in her arms"
+      },
+      {
+        "key": "speedster",
+        "name": "Błyskawiczny bieg",
+        "subject": "the hero boy running super fast leaving a colorful blur trail and speed lines behind him"
+      },
+      {
+        "key": "sidekick-pet",
+        "name": "Pies pomocnik",
+        "subject": "a cute small puppy wearing a tiny coral cape and a tiny teal eye mask, proudly standing"
+      },
+      {
+        "key": "landing",
+        "name": "Bohaterskie lądowanie",
+        "subject": "the hero girl landing on one knee with one fist on the ground, cape billowing, small comic impact burst"
+      },
+      {
+        "key": "pow-burst",
+        "name": "Komiksowy wybuch",
+        "subject": "a bright jagged comic-book action burst shape in yellow, coral and teal with halftone dots and motion lines, completely empty inside with no text"
+      },
+      {
+        "key": "mask-cape",
+        "name": "Peleryna na wieszaku",
+        "subject": "a coral hero cape and a small teal eye mask hanging on a wooden coat hanger, no character"
+      },
+      {
+        "key": "high-five",
+        "name": "Drużyna bohaterów",
+        "rarity": "rare",
+        "subject": "the hero girl and the hero boy jumping into a big mid-air high five, a little comic burst behind their hands"
+      },
+      {
+        "key": "light-shield",
+        "name": "Tarcza światła",
+        "subject": "the hero boy holding up a glowing round shield made of teal light, confident smile"
+      }
+    ]
+  },
+  {
+    "slug": "akademia-mocy",
+    "name": "Akademia Mocy",
+    "ages": "12 to 16",
+    "style": "contemporary anime and comic hybrid style, clean cel shading, crisp lines, glowing power effects in a distinct colour per power, cool and confident teen look",
+    "cast": "Original teen students (about 14) of a school for gifted kids, all in the same sleek original academy uniform: a navy jacket with mint piping and a mint shirt, navy trousers or a navy skirt, no tie, no badges with letters. Each sticker shows a different diverse student. No yellow-and-blue suits, no X shapes, no metal claws, no helmets, no grey blazers with red ties.",
+    "stickers": [
+      {
+        "key": "storm-cloud",
+        "name": "Władca burzy",
+        "rarity": "rare",
+        "subject": "a girl student with a short silver bob holding up one palm with a tiny storm cloud floating above it, little rain and a small lightning flicker"
+      },
+      {
+        "key": "telekinesis",
+        "name": "Latające książki",
+        "subject": "a boy student with glasses making a stack of books float in the air with a purple glow from his fingertips"
+      },
+      {
+        "key": "ice-hands",
+        "name": "Lodowe dłonie",
+        "subject": "a girl student with long dark braids creating sparkling blue ice crystals between her hands"
+      },
+      {
+        "key": "shapeshifter",
+        "name": "Zmiennokształtny",
+        "rarity": "rare",
+        "subject": "a cheerful boy student mid-transformation into a red fox, half of him already fox, swirls of orange light"
+      },
+      {
+        "key": "phasing",
+        "name": "Przez ścianę",
+        "subject": "a girl student with a ponytail stepping halfway through a brick wall, the part inside the wall shown translucent with a cyan shimmer"
+      },
+      {
+        "key": "sonic",
+        "name": "Fale dźwięku",
+        "subject": "a boy student with headphones around his neck clapping his hands and sending out bright yellow ring-shaped sound waves"
+      },
+      {
+        "key": "plant-grow",
+        "name": "Zielona dłoń",
+        "subject": "a smiling student's open hand with green vines and flowers sprouting and curling up from the palm, green glow"
+      },
+      {
+        "key": "mind-link",
+        "name": "Więź umysłów",
+        "rarity": "legendary",
+        "subject": "two girl student friends standing side by side doing a fist bump and grinning, a glowing pink and gold thread of light linking their temples above their heads"
+      },
+      {
+        "key": "crest",
+        "name": "Herb akademii",
+        "subject": "an original school crest: a navy and mint shield with a stylised star and two small wings, gold trim, no letters, no character",
+        "extra": "Only the crest object itself: absolutely no people or characters in the image."
+      },
+      {
+        "key": "teleport",
+        "name": "Teleportacja",
+        "subject": "a student appearing out of a sparkling violet teleport puff, giving a thumbs up"
+      }
+    ]
+  },
+  {
+    "slug": "kieszonkowe-stworki",
+    "name": "Kieszonkowe Stworki",
+    "ages": "6 to 12",
+    "style": "cute collectible creature-game style, chunky rounded chibi critters, big shiny eyes, clean dark outlines, soft cel shading, one element motif per creature, bright friendly colors",
+    "cast": "Each sticker is one original collectible creature, full body, sitting or standing, happy. No yellow mice, no lightning-bolt tails, no red-and-white balls, no resemblance to any existing game creature.",
+    "stickers": [
+      {
+        "key": "fire-fox",
+        "name": "Ogniolisek",
+        "rarity": "rare",
+        "subject": "a fire fox-pup with crimson fur, a tail tip made of a small friendly flame and ember freckles"
+      },
+      {
+        "key": "water-axolotl",
+        "name": "Wodniaczek",
+        "subject": "a water axolotl-frog with aqua skin, frilly gills shaped like little waves and a bubble on its head"
+      },
+      {
+        "key": "leaf-hedgehog",
+        "name": "Listojeżyk",
+        "subject": "a leaf hedgehog whose spikes are small green leaves, with a tiny flower on its back"
+      },
+      {
+        "key": "spark-hamster",
+        "name": "Iskrochomik",
+        "subject": "an electric hamster-bat with fluffy lilac and sky-blue fur, little bat wings and tiny blue sparks around it, not yellow"
+      },
+      {
+        "key": "rock-armadillo",
+        "name": "Kamieniak",
+        "subject": "a rock armadillo with a grey stone shell made of rounded pebbles and a few moss patches"
+      },
+      {
+        "key": "ice-owlet",
+        "name": "Śnieżna sówka",
+        "subject": "an ice owlet with pale blue feathers, frost crystal ear tufts and snowflake patterns"
+      },
+      {
+        "key": "cloud-lamb",
+        "name": "Chmurkowa owieczka",
+        "subject": "a cloud lamb with a fluffy white cloud body, tiny hooves and a little rainbow on its forehead"
+      },
+      {
+        "key": "crystal-beetle",
+        "name": "Kryształowy żuczek",
+        "rarity": "rare",
+        "subject": "a crystal beetle with a shiny faceted amethyst shell and tiny gem antennae"
+      },
+      {
+        "key": "ghost-jelly",
+        "name": "Duszkomeduza",
+        "subject": "a ghost jellyfish, translucent pale mint, gently glowing, with wavy ribbon tentacles and a shy smile"
+      },
+      {
+        "key": "star-kitten",
+        "name": "Gwiezdny kociak",
+        "rarity": "legendary",
+        "subject": "a star-dust kitten with deep indigo fur full of twinkling stars, a glowing star-tipped tail"
+      }
+    ]
+  },
+  {
+    "slug": "klockowy-swiat",
+    "name": "Klockowy Świat",
+    "ages": "6 to 12",
+    "style": "isometric voxel 3D style made of smooth glossy toy-like cubes (not pixel textures), bright saturated palette, soft ambient occlusion, toy-like and friendly",
+    "cast": "Original voxel designs only. The VOXEL KID is built of cubes: a bright orange-and-yellow hoodie, olive-green trousers, red sneakers, a yellow bucket hat over curly black hair, dark-brown skin, small white headphones around the neck. Never a cyan or teal shirt, never blue trousers, no brown flat blocky hair. No green pixel creatures, no yellow-headed blocky avatar, no logos.",
+    "stickers": [
+      {
+        "key": "voxel-kid",
+        "name": "Klockowy budowniczy",
+        "subject": "the voxel kid holding a small shovel and waving"
+      },
+      {
+        "key": "block-house",
+        "name": "Klockowy domek",
+        "subject": "a cosy little voxel cottage with a red cube roof, a door and a tiny flower patch"
+      },
+      {
+        "key": "wolf-pet",
+        "name": "Klockowy wilczek",
+        "rarity": "rare",
+        "subject": "a friendly voxel grey wolf pup with a teal collar, sitting and wagging its tail"
+      },
+      {
+        "key": "treasure-chest",
+        "name": "Skrzynia skarbów",
+        "rarity": "legendary",
+        "subject": "an open voxel wooden treasure chest overflowing with golden cube coins and shining gems"
+      },
+      {
+        "key": "ore-gems",
+        "name": "Lśniące kryształy",
+        "rarity": "rare",
+        "subject": "a voxel stone cube cluster with glowing turquoise, purple and gold crystal gems sticking out",
+        "extra": "Only the stone cube and the crystals: absolutely no people or characters in the image."
+      },
+      {
+        "key": "block-bee",
+        "name": "Klockowa pszczółka",
+        "subject": "a round chubby voxel bee with tiny cube wings, hovering next to a cube flower"
+      },
+      {
+        "key": "crafting-table",
+        "name": "Stół warsztatowy",
+        "subject": "a voxel wooden workbench with a small hammer, a saw and a few wooden blocks on top"
+      },
+      {
+        "key": "cake",
+        "name": "Klockowy tort",
+        "subject": "a voxel layered cake with pink frosting cubes and cube strawberries on top"
+      },
+      {
+        "key": "boat",
+        "name": "Klockowa łódka",
+        "subject": "a small voxel wooden boat with a white cube sail floating on little cube waves"
+      },
+      {
+        "key": "garden",
+        "name": "Klockowy ogródek",
+        "subject": "a small voxel garden plot with rows of carrots and lettuce and a tiny watering can"
+      }
+    ]
+  },
+  {
+    "slug": "slowianskie-legendy",
+    "name": "Słowiańskie Legendy",
+    "ages": "6 to 15",
+    "style": "Polish folk-art fairy-tale storybook illustration inspired by wycinanki paper cutouts and Slavic embroidery patterns, warm reds, greens and golds, decorative folk ornaments, cosy and magical",
+    "cast": "Original folklore characters drawn as cute and friendly storybook figures. No white-haired swordsmen, no medallions, no national emblems, no crowned eagles, no game logos.",
+    "stickers": [
+      {
+        "key": "river-dragon",
+        "name": "Smok znad Wisły",
+        "rarity": "legendary",
+        "subject": "a friendly chubby green dragon sitting by a river bank under a castle hill, happily eating a cake shaped like a woolly sheep"
+      },
+      {
+        "key": "domovoy",
+        "name": "Domowik",
+        "subject": "a tiny bearded house spirit with a fluffy grey beard and a red embroidered shirt, sitting by a warm tiled stove"
+      },
+      {
+        "key": "leshy",
+        "name": "Leszy",
+        "subject": "a gentle forest spirit made of moss, bark and leaves with antler-like twig horns and kind glowing eyes, holding a little mushroom"
+      },
+      {
+        "key": "fern-flower",
+        "name": "Kwiat paproci",
+        "rarity": "rare",
+        "subject": "a magical glowing golden fern flower blooming among dark green fern leaves at night, fireflies around, no character",
+        "extra": "A compact rounded composition with no dark rectangular background; the thick white outline must surround the whole design."
+      },
+      {
+        "key": "chicken-hut",
+        "name": "Chatka na kurzej nóżce",
+        "subject": "a cute small wooden forest hut standing on two big chicken legs, a smoking chimney and painted folk shutters"
+      },
+      {
+        "key": "rusalka",
+        "name": "Rusałka",
+        "subject": "a kind water spirit girl with long green hair and a modest long dress made of water-lily leaves, sitting on a rock holding a lily, child-friendly"
+      },
+      {
+        "key": "firebird",
+        "name": "Żar-ptak",
+        "rarity": "rare",
+        "subject": "a glowing firebird with a long flowing tail of golden and red flame-like feathers, folk ornament patterns, no character"
+      },
+      {
+        "key": "kupala-wreath",
+        "name": "Wianek świętojański",
+        "subject": "a flower wreath with a small lit candle floating on dark water, reflections and petals, no character"
+      },
+      {
+        "key": "mushroom-basket",
+        "name": "Koszyk grzybów",
+        "subject": "a wicker basket full of forest mushrooms and blueberries, with an embroidered folk cloth, no character"
+      },
+      {
+        "key": "paper-rooster",
+        "name": "Wycinankowy kogut",
+        "subject": "a colourful folk paper-cut rooster in the wycinanki style, layered red, green, yellow and blue paper shapes"
+      }
+    ]
+  },
+  {
+    "slug": "pilkarskie-gwiazdy",
+    "name": "Piłkarskie Gwiazdy",
+    "ages": "6 to 15",
+    "style": "energetic chibi sports cartoon, big heads and small bodies, bold outlines, motion lines, grass-green accents, bright confetti, cheerful",
+    "cast": "Original chibi kid footballers (must not resemble real players): the GIRL PLAYER wears a plain teal shirt, white shorts and teal socks, has a high dark-brown ponytail and light skin. The BOY PLAYER wears a plain coral shirt, navy shorts and coral socks, has short curly black hair and dark skin. Plain kits with no numbers, no logos, no crests, no flags. The ball is a plain classic white ball with simple dark panels.",
+    "stickers": [
+      {
+        "key": "bicycle-kick",
+        "name": "Przewrotka",
+        "rarity": "rare",
+        "subject": "the boy player doing an acrobatic overhead bicycle kick in mid-air, the ball flying away, motion lines"
+      },
+      {
+        "key": "keeper-dive",
+        "name": "Parada bramkarza",
+        "subject": "the girl player as goalkeeper in big green gloves diving sideways to catch the ball"
+      },
+      {
+        "key": "trophy",
+        "name": "Puchar",
+        "rarity": "legendary",
+        "subject": "the girl player and the boy player lifting a simple shiny golden cup with two round handles on a small base, confetti"
+      },
+      {
+        "key": "goal-net",
+        "name": "Gol!",
+        "subject": "the ball bulging into the white net of a goal, small sparkles, no character"
+      },
+      {
+        "key": "knee-slide",
+        "name": "Ślizg radości",
+        "subject": "the boy player celebrating with a happy knee slide on the grass, arms wide open, grass bits flying"
+      },
+      {
+        "key": "dribble",
+        "name": "Drybling",
+        "subject": "the girl player dribbling the ball between small orange training cones, focused smile"
+      },
+      {
+        "key": "duo",
+        "name": "Gramy razem",
+        "subject": "the girl player and the boy player running after the ball together on the grass, happy, confetti"
+      },
+      {
+        "key": "whistle",
+        "name": "Gwizdek",
+        "subject": "a shiny silver referee whistle on a teal cord with little sound swooshes, no character"
+      },
+      {
+        "key": "huddle",
+        "name": "Drużyna",
+        "subject": "four chibi kid players in plain teal shirts in a team huddle seen from the side, arms around shoulders, smiling"
+      },
+      {
+        "key": "stadium",
+        "name": "Stadion",
+        "rarity": "rare",
+        "subject": "a small cheerful football stadium seen from outside with floodlights and colourful confetti bursting above it, no character, no signs"
+      }
+    ]
+  },
+  {
+    "slug": "pluszaki-niespodzianki",
+    "name": "Pluszaki Niespodzianki",
+    "ages": "6 to 15",
+    "style": "soft 3D plush toy render, fuzzy fabric texture with visible stitching, pastel palette, round squishy shapes, tiny embroidered faces with small dot eyes and little smiles, cosy and collectible",
+    "cast": "Original designer plush toys. No toothy grins, no pointed teeth, no tall pointed rabbit ears, no oval bodies with fabric tags, no brand marks.",
+    "stickers": [
+      {
+        "key": "cat-bun",
+        "name": "Kotobułeczka",
+        "subject": "a round squishy cream-coloured cat plush shaped like a steamed bun, tiny ears, rosy cheeks"
+      },
+      {
+        "key": "sleepy-dino",
+        "name": "Śpiący dinek",
+        "subject": "a sleepy mint-green dinosaur plush lying down with closed embroidered eyes and a little nightcap"
+      },
+      {
+        "key": "mushroom",
+        "name": "Grzybek przytulak",
+        "subject": "a squishy mushroom plush with a red cap with white dots and a smiling embroidered face"
+      },
+      {
+        "key": "frog-hoodie",
+        "name": "Żabka w bluzie",
+        "subject": "a green frog plush wearing a tiny pastel pink hoodie, sitting"
+      },
+      {
+        "key": "cloud-bunny",
+        "name": "Chmurkowy króliczek",
+        "subject": "a fluffy white cloud-shaped bunny plush with short round floppy ears and two tiny soft rounded golden horn nubs"
+      },
+      {
+        "key": "cake-slice",
+        "name": "Kawałek torcika",
+        "subject": "a plush slice of strawberry layer cake with a happy embroidered face and a strawberry on top"
+      },
+      {
+        "key": "strawberry-cow",
+        "name": "Truskawkowa krówka",
+        "rarity": "rare",
+        "subject": "a pink cow plush with strawberry-shaped spots and a little leafy green hat"
+      },
+      {
+        "key": "pyjama-bear",
+        "name": "Miś w piżamce",
+        "subject": "a honey-brown bear plush wearing a light-blue pyjama onesie with tiny stars, yawning"
+      },
+      {
+        "key": "unboxing",
+        "name": "Otwieranie pudełka",
+        "rarity": "rare",
+        "subject": "a pastel mystery box with its lid popping open and sparkles bursting out, a small plush peeking out curiously"
+      },
+      {
+        "key": "secret-rare",
+        "name": "Tajny rarytas",
+        "rarity": "legendary",
+        "subject": "a glittery holographic lilac-and-gold plush bunny-bear figure with rounded ears, surrounded by sparkles and shining like a rare collectible"
+      }
+    ]
+  },
+  {
+    "slug": "dziwolagi",
+    "name": "Absurdalne Dziwolągi",
+    "ages": "9 to 13",
+    "style": "surreal glossy 3D cartoon render, absurd but cute object-animal hybrids, playful and wholesome, bright studio lighting, smooth shiny materials",
+    "cast": "Each sticker is one original object-animal hybrid character, cheerful and harmless. No sharks, no coffee-cup ballerinas, no airplane crocodiles, no tree trunks with bats, no weapons.",
+    "stickers": [
+      {
+        "key": "pierogi-dog",
+        "name": "Pierogopies",
+        "rarity": "rare",
+        "subject": "a cute dog whose body is a big golden dumpling (pierogi) with crimped edges, wearing tiny colourful sneakers"
+      },
+      {
+        "key": "toaster-whale",
+        "name": "Tosterowal",
+        "subject": "a friendly whale whose body is a shiny retro toaster, two slices of toast popping out like a water spout"
+      },
+      {
+        "key": "cactus-hippo",
+        "name": "Kaktusowa hipopotamica",
+        "subject": "a hippo made of a green cactus with tiny flowers, wearing a pink ballet tutu and standing on tiptoes"
+      },
+      {
+        "key": "pencil-croc",
+        "name": "Ołówkodyl",
+        "subject": "a crocodile whose long body is a yellow wooden pencil with an eraser tail, smiling, drawing a squiggle line"
+      },
+      {
+        "key": "croissant-turtle",
+        "name": "Rogalikożółw",
+        "subject": "a turtle whose shell is a flaky golden croissant, walking happily"
+      },
+      {
+        "key": "teapot-giraffe",
+        "name": "Czajnikożyrafa",
+        "rarity": "rare",
+        "subject": "a giraffe whose body is a spotted porcelain teapot and whose long neck is the spout, a little steam"
+      },
+      {
+        "key": "sock-octopus",
+        "name": "Skarpetornica",
+        "subject": "an octopus whose eight tentacles are colourful striped socks, waving"
+      },
+      {
+        "key": "banana-penguin",
+        "name": "Bananogwin",
+        "rarity": "legendary",
+        "subject": "a penguin whose body is a ripe banana, riding a skateboard with a big grin"
+      },
+      {
+        "key": "lamp-snail",
+        "name": "Lampoślimak",
+        "subject": "a snail whose shell is a warm glowing table lamp with a pleated shade"
+      },
+      {
+        "key": "jellybean-frog",
+        "name": "Żelkowa żaba astronauta",
+        "subject": "a shiny jelly-bean frog wearing a round astronaut helmet, floating among small stars"
+      }
+    ]
+  },
+  {
+    "slug": "smoczy-jezdzcy",
+    "name": "Smoczy Jeźdźcy",
+    "ages": "6 to 12",
+    "style": "cinematic family-animation style, chunky friendly rounded dragons in jewel tones, soft 3D-like shading, Nordic landscape accents, warm rim light, adventurous and heart-warming",
+    "cast": "Recurring original characters: the RIDER GIRL (about 10) has a long brown braid, freckles, light skin, a moss-green tunic with a fur-trimmed brown vest and leather boots. Her DRAGON is a chunky round sapphire-blue dragon with a cream belly, small rounded horns, little wings and big friendly amber eyes. No black dragons, no green eyes on dragons, no horned helmets, no weapons.",
+    "stickers": [
+      {
+        "key": "hug",
+        "name": "Przytulas ze smokiem",
+        "subject": "the rider girl hugging a baby version of her blue dragon, both with eyes closed and smiling"
+      },
+      {
+        "key": "fjord-flight",
+        "name": "Lot nad fiordem",
+        "rarity": "legendary",
+        "subject": "the rider girl riding her blue dragon flying over a small Nordic fjord with mountains and water below"
+      },
+      {
+        "key": "egg-hatch",
+        "name": "Wyklucie",
+        "rarity": "rare",
+        "subject": "a speckled dragon egg cracking open with a tiny curious ruby-red baby dragon peeking out, no human"
+      },
+      {
+        "key": "fish-snack",
+        "name": "Rybna przekąska",
+        "subject": "the rider girl tossing a fish to her happy blue dragon catching it with an open mouth"
+      },
+      {
+        "key": "sleeping",
+        "name": "Drzemka",
+        "subject": "the blue dragon sleeping curled around the dozing rider girl like a cosy blanket"
+      },
+      {
+        "key": "sneeze",
+        "name": "Kichnięcie iskier",
+        "subject": "the blue dragon sneezing a burst of colourful harmless sparkles, the rider girl laughing"
+      },
+      {
+        "key": "saddle",
+        "name": "Siodło i gogle",
+        "subject": "a small leather dragon saddle with flying goggles resting on it, no character"
+      },
+      {
+        "key": "scarf",
+        "name": "Smok w szaliku",
+        "subject": "the blue dragon wearing a long knitted striped scarf, looking proud"
+      },
+      {
+        "key": "kite",
+        "name": "Smoczy latawiec",
+        "subject": "a colourful dragon-shaped kite flying on a string with ribbons, no character"
+      },
+      {
+        "key": "hatchlings",
+        "name": "Gniazdo maluchów",
+        "rarity": "rare",
+        "subject": "three tiny baby dragons in emerald, amber and ruby snuggled in a twig nest, no human"
+      }
+    ]
+  },
+  {
+    "slug": "dino-odkrywcy",
+    "name": "Dino Odkrywcy",
+    "ages": "6 to 9",
+    "style": "cute rounded dinosaur cartoon, chunky simple shapes, bright greens and oranges, friendly smiling expressions, soft shading, bold outlines",
+    "cast": "Friendly original cartoon dinosaurs, never scary. The KID EXPLORER (about 7) wears a khaki explorer outfit with a safari hat and has curly brown hair. No logos, no sharp teeth showing, no menacing poses.",
+    "stickers": [
+      {
+        "key": "trex-teeth",
+        "name": "Mycie zębów",
+        "subject": "a cute green T-rex brushing its tiny rounded teeth with a toothbrush in its short arms, foam bubbles"
+      },
+      {
+        "key": "triceratops",
+        "name": "Triceratops z plecakiem",
+        "subject": "an orange triceratops wearing a little school backpack, walking happily"
+      },
+      {
+        "key": "long-neck",
+        "name": "Długoszyjek",
+        "rarity": "rare",
+        "subject": "a tall teal long-neck dinosaur stretching up to nibble leaves at the top of a palm tree"
+      },
+      {
+        "key": "egg-nest",
+        "name": "Gniazdo z jajami",
+        "subject": "a nest of three spotted dinosaur eggs, one with a tiny crack and a peeking eye"
+      },
+      {
+        "key": "fossil-dig",
+        "name": "Wykopalisko",
+        "subject": "the kid explorer brushing sand off a big dinosaur bone fossil with a soft brush"
+      },
+      {
+        "key": "ptero-kite",
+        "name": "Pterodaktyl z latawcem",
+        "subject": "a smiling purple pterodactyl flying while holding the string of a colourful kite"
+      },
+      {
+        "key": "stego-slide",
+        "name": "Zjeżdżalnia stegozaura",
+        "rarity": "legendary",
+        "subject": "the kid explorer happily sliding down the back of a gentle green stegosaurus like a slide"
+      },
+      {
+        "key": "volcano-picnic",
+        "name": "Piknik pod wulkanem",
+        "rarity": "rare",
+        "subject": "two little dinosaurs having a picnic on a checkered blanket in front of a small cartoon volcano puffing a harmless smoke cloud"
+      },
+      {
+        "key": "footprints",
+        "name": "Ślady dinozaura",
+        "subject": "a trail of big three-toed dinosaur footprints in sand with a magnifying glass, no character"
+      },
+      {
+        "key": "explorer-hat",
+        "name": "Kapelusz odkrywcy",
+        "subject": "a khaki safari explorer hat with a magnifying glass and a small map, no character"
+      }
+    ]
+  },
+  {
+    "slug": "scena-idoli",
+    "name": "Scena Idoli",
+    "ages": "9 to 15",
+    "style": "glossy K-pop concert illustration, neon pink, cyan and lilac stage lights, sparkles, chic stylised anime-like teens in original pastel stage outfits with sequins, upbeat and friendly",
+    "cast": "Original stage performers (teens about 15, must not resemble real people): the SINGER GIRL has a long lilac ponytail and a white sequinned jacket; the DANCER BOY has short mint-dyed hair and a pastel pink jacket. No swords, no demons, no romance, no logos, no text.",
+    "stickers": [
+      {
+        "key": "lightstick",
+        "name": "Świetlna pałeczka",
+        "subject": "a hand raising a glowing heart-shaped lightstick with light beams and sparkles"
+      },
+      {
+        "key": "mic-pose",
+        "name": "Mikrofon w dłoń",
+        "rarity": "rare",
+        "subject": "the singer girl holding a microphone, winking, with a big sparkle next to her"
+      },
+      {
+        "key": "dance-practice",
+        "name": "Próba tańca",
+        "subject": "the dancer boy practising a dance move in front of a big mirror in a practice room, sweat drop"
+      },
+      {
+        "key": "finger-snap",
+        "name": "Pstryk",
+        "subject": "the dancer boy doing a stylish finger-snap pose with a little sparkle burst"
+      },
+      {
+        "key": "confetti",
+        "name": "Konfetti na scenie",
+        "subject": "a burst of colourful stage confetti and streamers under pink and cyan spotlights, no character",
+        "extra": "Only the object itself as a compact die-cut shape: absolutely no people or characters, and no rectangular scene background."
+      },
+      {
+        "key": "band-silhouette",
+        "name": "Zespół w świetle",
+        "rarity": "legendary",
+        "subject": "four stage performers as dark silhouettes posing together in front of a bright pink and cyan spotlight glow"
+      },
+      {
+        "key": "photocard",
+        "name": "Fotokarta",
+        "rarity": "rare",
+        "subject": "a shiny holographic collectible photo card showing a cute portrait of the singer girl, a sparkle on the corner, no text"
+      },
+      {
+        "key": "snack",
+        "name": "Przekąska za kulisami",
+        "subject": "the singer girl backstage happily eating a rice snack with a bottle of water"
+      },
+      {
+        "key": "headset",
+        "name": "Mikrofon nagłowny",
+        "subject": "a stage headset microphone: a thin pastel pink headband arc with one round ear pad and a slim boom arm ending in a small round microphone in front, sparkles, no character",
+        "extra": "Only the object itself as a compact die-cut shape: absolutely no people or characters, and no rectangular scene background."
+      },
+      {
+        "key": "soundwave-heart",
+        "name": "Serce z dźwięku",
+        "subject": "a glowing heart shape made of colourful sound wave lines in pink, cyan and lilac, no character",
+        "extra": "Only the object itself as a compact die-cut shape: absolutely no people or characters, and no rectangular scene background."
+      }
+    ]
+  },
+  {
+    "slug": "mechy-pilotow",
+    "name": "Mechy Pilotów",
+    "ages": "12 to 16",
+    "style": "1990s mecha anime style, clean panel lines, cel shading, heroic angles, robots as friendly protectors and builders, warm and hopeful",
+    "cast": "Recurring original designs: the ROBOT is a chunky original giant robot in teal, cream and graphite with rounded shoulder armour, a visor face with two round friendly eye lights and one small round antenna on top. The PILOT (about 14) is a girl with a short black bob and a cream flight suit with teal stripes. No V-shaped forehead crests, no white-blue-red-yellow colour scheme, no purple-and-green robots, no guns, no blades, no missiles.",
+    "stickers": [
+      {
+        "key": "robot-wave",
+        "name": "Robot macha",
+        "rarity": "rare",
+        "subject": "the robot waving one big hand cheerfully, full body"
+      },
+      {
+        "key": "cockpit",
+        "name": "Kciuk z kokpitu",
+        "subject": "the pilot sitting in a glowing cockpit giving a thumbs up and smiling"
+      },
+      {
+        "key": "kitten",
+        "name": "Robot i kotek",
+        "rarity": "legendary",
+        "subject": "the robot gently holding a tiny kitten in its open palm, looking at it kindly"
+      },
+      {
+        "key": "hangar-launch",
+        "name": "Start z hangaru",
+        "subject": "the robot launching upward out of an open hangar with blue thruster flames and dust"
+      },
+      {
+        "key": "plant-tree",
+        "name": "Sadzenie drzewa",
+        "subject": "the robot kneeling and carefully planting a small young tree in the ground"
+      },
+      {
+        "key": "jetpack",
+        "name": "Dopalacz",
+        "subject": "the robot boosting through the sky with its back thrusters glowing, motion lines"
+      },
+      {
+        "key": "repair-crew",
+        "name": "Ekipa naprawcza",
+        "subject": "two small mechanics in overalls with wrenches repairing the robot's big foot, smiling"
+      },
+      {
+        "key": "mini-buddy",
+        "name": "Mały pomocnik",
+        "subject": "a tiny round helper robot in teal and cream with one antenna and a happy screen face, floating"
+      },
+      {
+        "key": "umbrella",
+        "name": "Wspólny parasol",
+        "subject": "the robot holding a giant umbrella over a small kid in the rain"
+      },
+      {
+        "key": "sunset",
+        "name": "Zachód słońca",
+        "rarity": "rare",
+        "subject": "the robot standing on a hill as a dark silhouette against a big orange and pink sunset"
+      }
+    ]
+  },
+  {
+    "slug": "magiczne-strazniczki",
+    "name": "Magiczne Strażniczki",
+    "ages": "6 to 12",
+    "style": "1990s shoujo magical-girl anime style, pastel sparkles, ribbons, star and heart motifs, big glossy eyes, soft gradients, delicate lines, sweet and cheerful",
+    "cast": "Recurring original guardians (must not resemble existing anime characters): the STAR GUARDIAN girl has long lilac hair in one side braid and a pastel pink-and-white dress with star-shaped ribbons. The HEART GUARDIAN boy has fluffy mint hair and a pastel blue jacket with heart-shaped ribbons. No sailor collars, no twin hair buns, no crescent marks on foreheads, no school uniforms.",
+    "stickers": [
+      {
+        "key": "transformation",
+        "name": "Przemiana",
+        "rarity": "legendary",
+        "subject": "the star guardian spinning in a swirl of ribbons, stars and sparkles during her magical transformation"
+      },
+      {
+        "key": "heart-wand",
+        "name": "Różdżka serca",
+        "subject": "a magical wand with a glowing pink heart crystal at the top and little wings, sparkles, no character"
+      },
+      {
+        "key": "pendant",
+        "name": "Kryształowy wisiorek",
+        "subject": "a heart-shaped pastel mint and pink crystal pendant hanging on a lilac silk ribbon with a bow, small sparkles, no character"
+      },
+      {
+        "key": "team-pose",
+        "name": "Drużyna strażników",
+        "rarity": "rare",
+        "subject": "four magical guardians (the star guardian, the heart guardian and two more friends in pastel yellow and lavender) in a cheerful team pose with sparkles"
+      },
+      {
+        "key": "mascot",
+        "name": "Kotek wróżka",
+        "rarity": "rare",
+        "subject": "a tiny floating white cat fairy mascot with small butterfly wings and a star on its tail tip"
+      },
+      {
+        "key": "ribbon-twirl",
+        "name": "Taniec wstążki",
+        "subject": "the heart guardian twirling a long glowing pastel ribbon in a spiral around himself"
+      },
+      {
+        "key": "star-shower",
+        "name": "Deszcz gwiazd",
+        "subject": "a shower of falling pastel stars and sparkles from a small cloud, no character"
+      },
+      {
+        "key": "compact",
+        "name": "Magiczna puderniczka",
+        "subject": "an open round gem compact with a glowing rainbow crystal inside and sparkles, no character"
+      },
+      {
+        "key": "flying",
+        "name": "Lot na skrzydełkach",
+        "subject": "the star guardian flying happily with tiny sparkling wings on her back"
+      },
+      {
+        "key": "rainbow-shield",
+        "name": "Tęczowa tarcza",
+        "subject": "the heart guardian holding up a dome-shaped rainbow shield of light with sparkles"
+      }
+    ]
+  },
+  {
+    "slug": "retro-arcade",
+    "name": "Retro Arcade 8-bit",
+    "ages": "9 to 16",
+    "style": "clean 16-bit pixel art with crisp square pixels, limited bright palette, slight glow, retro arcade nostalgia, each sticker a single object",
+    "cast": "Original pixel objects only, no characters from games. No mushrooms, no round yellow characters, no alien invader sprites, no console logos, no text, no numbers.",
+    "stickers": [
+      {
+        "key": "heart",
+        "name": "Pikselowe serce",
+        "subject": "a big red pixel heart with a white shine highlight"
+      },
+      {
+        "key": "coin",
+        "name": "Moneta",
+        "subject": "a shiny spinning gold pixel coin with sparkles"
+      },
+      {
+        "key": "power-star",
+        "name": "Gwiazdka mocy",
+        "subject": "a glowing rainbow pixel star power-up with sparkle pixels"
+      },
+      {
+        "key": "joystick",
+        "name": "Joystick",
+        "subject": "a classic arcade joystick with a red ball top and two round buttons on a dark base"
+      },
+      {
+        "key": "extra-life",
+        "name": "Dodatkowe życie",
+        "subject": "a glowing green pixel plus sign inside a small pixel circle, extra-life power-up feel"
+      },
+      {
+        "key": "trophy",
+        "name": "Pikselowy puchar",
+        "rarity": "rare",
+        "subject": "a golden pixel trophy cup with sparkle pixels"
+      },
+      {
+        "key": "controller",
+        "name": "Pad",
+        "subject": "an original colourful retro pixel game pad with a rounded purple body and teal grips, a yellow cross pad, and four small coloured buttons shaped like a circle, a triangle, a square and a star, no logo",
+        "extra": "Not grey, no red round buttons, no rectangular grey body."
+      },
+      {
+        "key": "cartridge",
+        "name": "Kartridż",
+        "subject": "a grey pixel game cartridge with a colourful abstract label of mountains and a sun, no text"
+      },
+      {
+        "key": "crt-tv",
+        "name": "Stary telewizor",
+        "rarity": "rare",
+        "subject": "a small retro CRT television with antennas, the screen showing a simple pixel landscape"
+      },
+      {
+        "key": "crown",
+        "name": "Korona rekordu",
+        "rarity": "legendary",
+        "subject": "a shining golden pixel crown with coloured gem pixels, glowing"
+      }
+    ]
+  },
+  {
+    "slug": "przytulne-hobby",
+    "name": "Przytulne Hobby",
+    "ages": "13 to 16",
+    "style": "soft risograph and gouache illustration, muted warm palette (sage, terracotta, cream, dusty pink), grain texture, cosy minimalist aesthetic, each sticker a single object or small scene",
+    "cast": "Cosy objects only, no logos, no brand names, no text or writing on anything.",
+    "stickers": [
+      {
+        "key": "crochet-frog",
+        "name": "Szydełkowa żabka",
+        "rarity": "rare",
+        "subject": "a small crocheted green frog toy with visible yarn stitches, sitting next to a ball of yarn and a crochet hook"
+      },
+      {
+        "key": "matcha",
+        "name": "Matcha latte",
+        "subject": "a ceramic cup of matcha latte with leaf latte art and a bamboo whisk"
+      },
+      {
+        "key": "film-camera",
+        "name": "Aparat analogowy",
+        "subject": "a vintage film camera with a strap and a film roll, no brand name"
+      },
+      {
+        "key": "vinyl",
+        "name": "Płyta winylowa",
+        "subject": "a vinyl record half out of a plain pastel sleeve, with a blank label"
+      },
+      {
+        "key": "journal",
+        "name": "Notes i taśmy washi",
+        "subject": "an open journal with doodles of flowers (no writing), pressed leaves and rolls of patterned washi tape"
+      },
+      {
+        "key": "books-candle",
+        "name": "Książki przy świecy",
+        "subject": "a small stack of books with plain covers and a lit candle on top"
+      },
+      {
+        "key": "palette",
+        "name": "Paleta akwareli",
+        "subject": "a watercolour paint palette with colourful paint pans and a brush"
+      },
+      {
+        "key": "sourdough",
+        "name": "Chleb na zakwasie",
+        "subject": "a round crusty sourdough loaf with a scored leaf pattern on a wooden board, a wheat stem"
+      },
+      {
+        "key": "bike",
+        "name": "Rower z koszykiem",
+        "rarity": "legendary",
+        "subject": "a vintage sage-green bicycle with a front basket full of flowers"
+      },
+      {
+        "key": "rainy-window",
+        "name": "Deszczowe okno",
+        "rarity": "rare",
+        "subject": "a cosy window with raindrops on the glass, a mug of tea and a small plant on the windowsill"
+      }
+    ]
+  },
+  {
+    "slug": "deskorolka-i-ulica",
+    "name": "Deskorolka i Ulica",
+    "ages": "13 to 16",
+    "style": "bold street-art cartoon style, thick outlines, flat bright colours with spray-paint texture and drips, urban energy, cool and fun",
+    "cast": "Recurring original character: the SKATER (about 15) wears a teal beanie, an oversized mustard hoodie, baggy grey trousers and plain sneakers, has dark skin and short twists of hair. No checkerboard patterns, no swooshes or stripes logos, no brand marks, no written tags, no letters anywhere.",
+    "stickers": [
+      {
+        "key": "kickflip",
+        "name": "Kickflip",
+        "rarity": "rare",
+        "subject": "the skater doing a kickflip in mid-air, the board spinning under him, motion lines"
+      },
+      {
+        "key": "deck-art",
+        "name": "Deska z grafiką",
+        "subject": "a skateboard deck seen from below with an original colourful abstract design of clouds, stars and lightning shapes, no text"
+      },
+      {
+        "key": "scooter",
+        "name": "Hulajnoga trik",
+        "subject": "a teen girl with pink braids doing a tail-whip trick on a stunt scooter, helmet on"
+      },
+      {
+        "key": "bmx",
+        "name": "BMX",
+        "rarity": "rare",
+        "subject": "a teen rider in a helmet doing a jump on a BMX bike in mid-air"
+      },
+      {
+        "key": "graffiti-cloud",
+        "name": "Graffiti chmurka",
+        "subject": "a puffy graffiti-style cloud shape with bubbly outlines, drips and colourful highlights, no letters, no character"
+      },
+      {
+        "key": "sneakers",
+        "name": "Sneakersy",
+        "subject": "a pair of chunky high-top sneakers in teal and white with plain soles, no logos, no character",
+        "extra": "Only the pair of sneakers: absolutely no people or characters; plain panels with no swoosh, stripes or other brand-like marks."
+      },
+      {
+        "key": "headphones",
+        "name": "Słuchawki",
+        "subject": "big over-ear headphones in mustard and black with little music notes, no character"
+      },
+      {
+        "key": "boombox",
+        "name": "Boombox",
+        "subject": "a retro boombox with two big speakers and sound waves bursting out, no character, no text"
+      },
+      {
+        "key": "ramp",
+        "name": "Rampa",
+        "subject": "a small concrete skatepark quarter-pipe ramp with a skateboard leaning on it, no character"
+      },
+      {
+        "key": "sunset-ride",
+        "name": "Jazda o zachodzie",
+        "rarity": "legendary",
+        "subject": "the skater cruising on a skateboard in front of a big orange-pink sunset over city rooftops"
+      }
+    ]
+  },
+  {
+    "slug": "duszki-strachy",
+    "name": "Duszki i Strachy Lite",
+    "ages": "9 to 15",
+    "style": "spooky-cute cartoon, purple, orange and teal night palette, round friendly shapes, soft glow, smiling faces, cosy and not scary at all",
+    "cast": "Everything is cute and friendly, nothing scary: no blood, no gore, no sharp teeth, no angry or creepy faces, no robots or animatronics.",
+    "stickers": [
+      {
+        "key": "ghost-lantern",
+        "name": "Duszek z latarenką",
+        "subject": "a small round white ghost holding a glowing lantern, smiling shyly"
+      },
+      {
+        "key": "pumpkin",
+        "name": "Uśmiechnięta dynia",
+        "subject": "a round orange pumpkin with a friendly carved smile glowing warmly inside, a curly vine"
+      },
+      {
+        "key": "bat-scarf",
+        "name": "Nietoperek w szaliku",
+        "subject": "a tiny round purple bat wearing a cosy striped knitted scarf, flapping happily"
+      },
+      {
+        "key": "skeleton-dance",
+        "name": "Tańczący szkielecik",
+        "rarity": "rare",
+        "subject": "a cute cartoon skeleton with a round smiling skull, dancing happily with one leg up, no scary details"
+      },
+      {
+        "key": "witch-cat",
+        "name": "Kot czarownicy",
+        "subject": "a black cat with big green-yellow eyes wearing a little purple witch hat, sitting on a broom"
+      },
+      {
+        "key": "haunted-house",
+        "name": "Nawiedzony domek",
+        "rarity": "legendary",
+        "subject": "a cute little crooked purple haunted house with glowing windows and three friendly ghosts waving from it, a big moon behind"
+      },
+      {
+        "key": "potion",
+        "name": "Eliksir",
+        "subject": "a round glass potion bottle with bubbling glowing teal liquid and a cork, no character"
+      },
+      {
+        "key": "cupcake",
+        "name": "Babeczka ze świeczką",
+        "subject": "a cupcake with purple frosting, orange sprinkles and a small lit candle"
+      },
+      {
+        "key": "moon-owl",
+        "name": "Księżycowa sowa",
+        "rarity": "rare",
+        "subject": "a fluffy owl sitting on a branch in front of a big glowing full moon, big kind eyes"
+      },
+      {
+        "key": "mushroom",
+        "name": "Świecący grzybek",
+        "subject": "a cute glowing teal mushroom with a sleepy smiling face and tiny fireflies"
+      }
+    ]
+  }
+]

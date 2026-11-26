@@ -209,6 +209,27 @@
     }
   }
 
+  // A child without a phone uses this phone: switch into their account.
+  let swapOpen = $state(false);
+  let swapError = $state('');
+  let swapBusy = $state('');
+  function openSwap() {
+    swapError = '';
+    swapOpen = true;
+  }
+  async function swapTo(m: MemberDto) {
+    swapError = '';
+    swapBusy = m.id;
+    try {
+      await session.swapToChild(m.id);
+      swapOpen = false;
+    } catch (err) {
+      swapError = errorMessage(err);
+    } finally {
+      swapBusy = '';
+    }
+  }
+
   // Family settings
   const f = session.family!;
   let familyName = $state(f.name);
@@ -322,12 +343,6 @@
         <button class="btn primary" disabled={saving}>{saving ? 'Zapisywanie…' : saved ? 'Zapisano ✓' : 'Zapisz'}</button>
       </div>
     </form>
-    <div class="card">
-      <button type="button" class="row member danger-text" onclick={() => openDelete()}>
-        <Icon name="trash" />
-        <span class="grow title">Usuń rodzinę</span>
-      </button>
-    </div>
   {/if}
 
   <section class="section">
@@ -346,6 +361,16 @@
         <span class="grow title">Zmień hasło</span>
         <Icon name="chevron" size={20} />
       </button>
+      {#if session.children.length > 0}
+        <button class="row member" onclick={openSwap}>
+          <Icon name="phone" />
+          <span class="grow">
+            <span class="title">Przełącz na konto dziecka</span>
+            <span class="meta">Dla dziecka bez własnego telefonu</span>
+          </span>
+          <Icon name="chevron" size={20} />
+        </button>
+      {/if}
       <a class="row member" href="/parent/settings/theme">
         <Icon name="palette" />
         <span class="grow">
@@ -377,6 +402,12 @@
         <Icon name="logout" />
         <span class="grow title">Wyloguj się</span>
       </button>
+    </div>
+  </section>
+
+  <!-- Kept apart from "Wyloguj się" so it is not tapped by mistake; the sheet still asks for confirmation. -->
+  <section class="section danger-zone">
+    <div class="list">
       <button class="row member danger-text" onclick={() => openDelete()}>
         <Icon name="trash" />
         <span class="grow title">{session.isAdmin ? 'Usuń rodzinę' : 'Usuń konto'}</span>
@@ -437,6 +468,23 @@
       {/if}
     {/if}
   {/if}
+</Sheet>
+
+<Sheet bind:open={swapOpen} title="Przełącz na konto dziecka">
+  <p class="muted small">
+    Dziecko korzysta z aplikacji na Twoim telefonie i widzi tylko swoje ekrany. Twoje konto pozostaje zalogowane. Aby wrócić, wybierz w profilu
+    dziecka „Wróć do rodzica” i odblokuj telefon (odcisk palca, twarz, PIN albo wzór) lub podaj swoje hasło.
+  </p>
+  <div class="list">
+    {#each session.children as m (m.id)}
+      <button class="row member" onclick={() => swapTo(m)} disabled={!!swapBusy}>
+        <Avatar name={m.name} url={m.avatarUrl} frameUrl={m.frameUrl} />
+        <span class="grow title">{m.name}</span>
+        {#if swapBusy === m.id}<span class="meta">Przełączanie…</span>{:else}<Icon name="chevron" size={20} />{/if}
+      </button>
+    {/each}
+  </div>
+  {#if swapError}<div class="error-box" role="alert">{swapError}</div>{/if}
 </Sheet>
 
 <Sheet bind:open={avatarsOpen} title="Awatar">
@@ -584,5 +632,8 @@
   }
   .danger-text {
     color: var(--danger);
+  }
+  .danger-zone {
+    margin-top: 24px;
   }
 </style>

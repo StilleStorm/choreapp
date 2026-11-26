@@ -11,7 +11,12 @@
 </script>
 
 <span class="item" data-rarity={rarity} class:locked style:width="{size}px" style:height="{size}px">
-  <img src={url} alt={locked ? 'Jeszcze nie masz' : name} loading="lazy" decoding="async" />
+  {#if locked}
+    <!-- Dark silhouette via a mask: cheaper to draw in big grids than a CSS filter on the image. -->
+    <span class="silhouette" role="img" aria-label="Jeszcze nie masz" style:--src={`url("${url}")`}></span>
+  {:else}
+    <img src={url} alt={name} loading="lazy" decoding="async" />
+  {/if}
 </span>
 
 <style>
@@ -25,7 +30,8 @@
     padding: 10%;
     flex: none;
   }
-  .item img {
+  .item img,
+  .silhouette {
     width: 100%;
     height: 100%;
     object-fit: contain;
@@ -38,8 +44,11 @@
     box-shadow: inset 0 0 0 3px #e0a800;
     background: linear-gradient(135deg, #fff6cc, #ffe08a);
   }
-  .item.locked img {
-    filter: grayscale(1) brightness(0.2);
-    opacity: 0.25;
+  .silhouette {
+    display: block;
+    background: #000;
+    opacity: 0.2;
+    -webkit-mask: var(--src) center / contain no-repeat;
+    mask: var(--src) center / contain no-repeat;
   }
 </style>

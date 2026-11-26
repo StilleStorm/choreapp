@@ -133,5 +133,5 @@ export const DEFAULT_TASK_ICON = 'sparkles';
 export const DEFAULT_REWARD_ICON = 'gift';
 
 export function taskIconUrl(id: string): string {
-  return `/icons/tasks/${TASK_ICONS.some((i) => i.id === id) ? id : DEFAULT_TASK_ICON}.svg`;
+  return `/icons/tasks/${TASK_ICONS.some((i) => i.id === id) ? id : DEFAULT_TASK_ICON}.webp`;
 }

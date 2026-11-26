@@ -22,6 +22,28 @@
   // Cloudflare Email Sending (password reset codes). The sender domain must be onboarded.
   "send_email": [{ "name": "EMAIL" }],
   // One trigger (Free plan allows 5): occurrences, reminders, quiet-hours digest, cleanup.
-  "triggers": { "crons": ["*/5 * * * *"] }
+  "triggers": { "crons": ["*/5 * * * *"] },
   // Secrets (wrangler secret put): FILE_SIGNING_KEY, FCM_SERVICE_ACCOUNT
+
+  // Test server (`--env staging`): own Worker, D1 and R2, never production data.
+  // No cron: tasks and immediate pushes work without it; only the daily reminder
+  // and the quiet-hours digest wait for a cron. Secrets: `wrangler secret put ... --env staging`.
+  "env": {
+    "staging": {
+      "name": "choreapp-api-staging",
+      "workers_dev": true,
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "choreapp-staging",
+          // Replace with the id printed by `wrangler d1 create choreapp-staging --location weur`.
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "r2_buckets": [{ "binding": "FILES", "bucket_name": "choreapp-files-staging" }],
+      "send_email": [{ "name": "EMAIL" }],
+      "triggers": { "crons": [] }
+    }
+  }
 }

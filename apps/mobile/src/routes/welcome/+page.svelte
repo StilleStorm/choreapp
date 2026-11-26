@@ -1,6 +1,8 @@
 <script lang="ts">
   import Icon from '#lib/components/Icon.svelte';
+  import ParentReturn from '#lib/components/ParentReturn.svelte';
   import { leaveIfSignedIn } from '#lib/guards.svelte.js';
+  import { session } from '#lib/session.svelte.js';
 
   leaveIfSignedIn();
 
@@ -29,6 +31,13 @@
       <p class="tagline">rodzinne misje</p>
     </div>
 
+    {#if session.swapped}
+      <!-- A parent's phone lent to a child whose session ended: only the way back to the parent. -->
+      <section class="part">
+        <p class="lead">Konto dziecka na tym telefonie zostało wylogowane.</p>
+        <ParentReturn prominent />
+      </section>
+    {:else}
     <section class="part">
       <p class="lead"><b>Dla dzieci.</b> Odhaczaj swoje zadania, zbieraj punkty i&nbsp;naklejki.</p>
       <a class="btn kid-btn block" href="/join">
@@ -39,8 +48,12 @@
     <section class="part">
       <p class="lead"><b>Dla rodziców.</b> Ustalasz zadania i&nbsp;nagrody, a&nbsp;potem tylko zatwierdzasz.</p>
       <a class="btn parent-btn block" href="/login">Zaloguj się jako rodzic</a>
+      <a class="btn ghost block second-parent" href="/join?as=parent">
+        <Icon name="qr" size={20} /> Drugi rodzic? Mam kod
+      </a>
       <a class="btn ghost block new-family" href="/register">Załóż nową rodzinę</a>
     </section>
+    {/if}
   </div>
 </main>
 
@@ -163,13 +176,19 @@
     color: var(--brown);
     border: 2px solid var(--brown);
   }
+  .second-parent {
+    color: var(--brown);
+    min-height: 40px;
+    border: 2px dashed var(--brown-soft);
+    border-radius: 16px;
+  }
   .new-family {
     color: #b45a05;
     min-height: 40px;
   }
 
-  /* Small phones (e.g. 320x568): tighten so all three actions fit without scrolling. */
-  @media (max-height: 600px) {
+  /* Small phones (e.g. 360x640, 320x568): tighten so all four actions fit without scrolling. */
+  @media (max-height: 700px) {
     .band {
       padding-bottom: 18px;
     }

@@ -20,6 +20,8 @@
   let busy = $state(false);
   /** A child already logged in is adding another home (mum's, dad's, grandparents'). */
   const addingHome = !!session.me && !session.isParent;
+  /** Came from "Drugi rodzic? Mam kod" on the welcome screen: a second parent or guardian. */
+  const asParent = page.url.searchParams.get('as') === 'parent';
   // Logged in and not here on purpose ("Dodaj kolejny dom" or a scanned QR link), e.g. Back from home.
   if (session.me && !page.url.searchParams.has('add') && !page.url.searchParams.has('t')) {
     void goto(session.home(), { replace: true });
@@ -109,11 +111,13 @@
 </script>
 
 <main class="screen no-tabs auth">
-  <BackHeader title={info ? (info.kind === 'reset' ? 'Nowe hasło' : 'Witaj!') : addingHome ? 'Dodaj kolejny dom' : 'Dołącz do rodziny'} back={addingHome ? '/child/profile' : '/welcome'} />
+  <BackHeader title={info ? (info.kind === 'reset' ? 'Nowe hasło' : 'Witaj!') : addingHome ? 'Dodaj kolejny dom' : asParent ? 'Dołącz jako rodzic' : 'Dołącz do rodziny'} back={addingHome ? '/child/profile' : '/welcome'} />
 
   {#if !info}
     {#if addingHome}
       <p class="muted">Dodajesz kolejny dom. Poproś dorosłego z tamtego domu o kod: Ustawienia → Dodaj dziecko. Twój obecny dom zostaje na telefonie.</p>
+    {:else if asParent}
+      <p class="muted">Poproś dorosłego, który już jest w rodzinie, o kod: Ustawienia → Dodaj rodzica lub opiekuna. Pokaże kod QR i 6 cyfr. Po wpisaniu kodu założysz swoje konto (e-mail i hasło).</p>
     {:else}
       <p class="muted">Rodzic pokazuje kod QR i 6 cyfr w swojej aplikacji: Ustawienia → Dodaj dziecko.</p>
     {/if}

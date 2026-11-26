@@ -16,7 +16,11 @@
 
 <main class="screen no-tabs">
   <BackHeader title="Licencje grafik" back="/about" />
-  <p class="muted small">Wszystkie grafiki w aplikacji pochodzą ze źródeł, które pozwalają ich używać. Oto skąd są:</p>
+  <p class="muted small">
+    Wszystkie grafiki w aplikacji pochodzą ze źródeł, które pozwalają ich używać, albo są naszymi własnymi grafikami. Część
+    naklejek i awatarów to oryginalne ilustracje wygenerowane z pomocą AI dla Stille Storm Studio: nie przedstawiają postaci
+    ani znaków z istniejących bajek, gier czy filmów. Oto skąd są:
+  </p>
   {#if error}<div class="error-box">{error}</div>{/if}
   <div class="list">
     {#each list as l (l.pack)}
