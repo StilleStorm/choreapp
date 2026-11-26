@@ -343,12 +343,6 @@
         <button class="btn primary" disabled={saving}>{saving ? 'Zapisywanie…' : saved ? 'Zapisano ✓' : 'Zapisz'}</button>
       </div>
     </form>
-    <div class="card">
-      <button type="button" class="row member danger-text" onclick={() => openDelete()}>
-        <Icon name="trash" />
-        <span class="grow title">Usuń rodzinę</span>
-      </button>
-    </div>
   {/if}
 
   <section class="section">
