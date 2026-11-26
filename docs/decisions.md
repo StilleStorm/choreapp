@@ -30,7 +30,7 @@ Specyfikacja: https://claude.ai/artifact/SK3JoeQcavgGKoMuXnsXkS. Poniżej to, cz
 
 ## Dystrybucja
 
-- Dwie wersje z tego samego kodu: APK do instalacji ręcznej (`pnpm apk`, `scripts/release-apk.sh`) sprawdza `/v1/app/latest` i pokazuje „Nowa wersja aplikacji”; wersja dla Google Play (`pnpm aab`, `VITE_DISTRIBUTION=play`) nigdy tego nie robi i nie ma linku „Wersja aplikacji”, bo Play zabrania aktualizacji spoza sklepu. Obie mają ten sam `versionCode`.
+- Dwie wersje z tego samego kodu: APK do instalacji ręcznej (`pnpm apk`, `scripts/release-apk.sh`) sprawdza `/v1/app/latest` i pokazuje „Nowa wersja aplikacji”; wersja dla Google Play (`pnpm aab`, `VITE_DISTRIBUTION=play`, `VITE_SHOW_SUPPORT=1`) nigdy tego nie robi i nie ma linku „Wersja aplikacji”, bo Play zabrania aktualizacji spoza sklepu. Obie mają ten sam `versionCode`.
 
 ## Zadania
 

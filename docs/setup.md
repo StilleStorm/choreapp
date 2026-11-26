@@ -70,7 +70,7 @@ Skrypt buduje podpisany APK, wysyła go do R2 i rejestruje wersję. Telefony w r
 cd apps/mobile && pnpm run aab
 ```
 
-Buduje wersję bez samodzielnych aktualizacji (`VITE_DISTRIBUTION=play`) i podpisany pakiet `android/app/build/outputs/bundle/release/app-release.aab` (tym samym kluczem z `keystore.properties`; w Play Console można go zarejestrować jako klucz przesyłania). W Play Console podaj politykę prywatności `https://<adres Workera>/privacy` i stronę usuwania konta `https://<adres Workera>/delete-account`.
+Buduje wersję bez samodzielnych aktualizacji (`VITE_DISTRIBUTION=play`), z linkiem „Postaw twórcy kawę” w ustawieniach rodzica (`VITE_SHOW_SUPPORT=1`) i podpisany pakiet `android/app/build/outputs/bundle/release/app-release.aab` (tym samym kluczem z `keystore.properties`; w Play Console można go zarejestrować jako klucz przesyłania). W Play Console podaj politykę prywatności `https://<adres Workera>/privacy` i stronę usuwania konta `https://<adres Workera>/delete-account`.
 
 ## Zdjęcia dzieci (migracja 0007, wersja 1.0.9)
 
