@@ -11,3 +11,11 @@ export function svgToWebp(svg, size = 192) {
     .webp({ quality: 85, alphaQuality: 90, effort: 6 })
     .toBuffer();
 }
+
+/** Raster master (PNG/WebP with alpha) -> square WebP sticker. */
+export function rasterToWebp(buf, size = 192) {
+  return sharp(buf)
+    .resize(size, size, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .webp({ quality: 85, alphaQuality: 90, effort: 6 })
+    .toBuffer();
+}
