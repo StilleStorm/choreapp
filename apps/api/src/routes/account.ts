@@ -14,6 +14,7 @@ import {
   updateFamilyBody,
   updateMeBody,
   updateMemberBody,
+  verifyPasswordBody,
   type MeDto,
   type SessionDto,
 } from '@choreapp/shared';
@@ -209,6 +210,35 @@ export const account = new Hono<AppBindings>()
     );
     await revokeMemberSessions(c.env.DB, memberId, Date.now(), sessionId);
     return c.json({ ok: true });
+  })
+
+  /**
+   * Back from a child's account on the adult's own phone: checks the adult's password
+   * when the phone has no screen lock (biometrics/PIN are checked on the phone). Limited like
+   * every other password check.
+   */
+  .post('/auth/verify-password', requireParent, async (c) => {
+    const b = await body(c, verifyPasswordBody);
+    await assertCurrentPassword(c.env, c.get('auth').memberId, b.currentPassword);
+    return c.json({ ok: true });
+  })
+
+  /**
+   * An adult hands their own phone to a child without a phone: a normal session for a child of
+   * their own family (any adult, like inviting children). The app logs it out when the adult
+   * switches back; a new code for the child or removing the child ends it too.
+   */
+  .post('/members/:id/session', requireParent, async (c) => {
+    const { familyId } = c.get('auth');
+    const m = await first<{ id: string }>(
+      c.env.DB,
+      "SELECT id FROM member WHERE id = ? AND family_id = ? AND role = 'child' AND removed_at IS NULL",
+      c.req.param('id'),
+      familyId,
+    );
+    if (!m) throw notFound('member_not_found');
+    const { token } = await createSession(c.env.DB, m.id);
+    return c.json(await sessionResponse(c.env, new URL(c.req.url).origin, m.id, token), 201);
   })
 
   /** Raw image body; the app resizes to 256 px WebP before upload. Adults only: children use avatars (Google Play Families). */

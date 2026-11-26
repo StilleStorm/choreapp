@@ -4,11 +4,13 @@
   import '#lib/themes/decorations.css';
   import { onMount, untrack } from 'svelte';
   import { goto } from '$app/navigation';
+  import { page } from '$app/state';
   import { installNativeHandlers } from '#lib/native.js';
   import NoticeBanner from '#lib/components/NoticeBanner.svelte';
   import { setupPush } from '#lib/push.js';
   import { update } from '#lib/update.svelte.js';
   import { session } from '#lib/session.svelte.js';
+  import { swapRedirect } from '#lib/swap.js';
   import type { LayoutProps } from './$types';
 
   let { children }: LayoutProps = $props();
@@ -21,6 +23,12 @@
       void setupPush();
       void update.check();
     });
+  });
+
+  // A child using a parent's phone: adult screens, login and joining are out of reach (deep links too).
+  const swapTarget = $derived(session.ready && session.swapped ? swapRedirect(page.url.pathname, !!session.me && !session.isParent) : null);
+  $effect(() => {
+    if (swapTarget) void goto(swapTarget, { replace: true });
   });
 
   onMount(() => {
@@ -39,7 +47,7 @@
   <title>Zadania</title>
 </svelte:head>
 
-{#if session.ready}
+{#if session.ready && !swapTarget}
   {@render children()}
   <NoticeBanner />
 {:else}

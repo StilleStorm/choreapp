@@ -218,6 +218,9 @@ importers:
 
   apps/mobile:
     dependencies:
+      '@aparajita/capacitor-biometric-auth':
+        specifier: ^10.0.0
+        version: 10.0.0
       '@capacitor-mlkit/barcode-scanning':
         specifier: ^8.2.2
         version: 8.2.2(@capacitor/core@8.6.2)
@@ -328,6 +331,10 @@ importers:
 
 packages:
 
+  '@aparajita/capacitor-biometric-auth@10.0.0':
+    resolution: {integrity: sha512-azjWaRucB8x1/gSzSTp/NxelaOZyg+m765gSzjwUkSQgg30RrZPmPq6pyLeeXVSZNDY3Rxf5Hj8obgZaXirCFQ==}
+    engines: {node: '>=20.0.0'}
+
   '@capacitor-mlkit/barcode-scanning@8.2.2':
     resolution: {integrity: sha512-ifQbo09HDAveFpu89H9jhKbYw1sISdHCpXOi3qJDp/geVuxtJC2GDffBLAL3R6mXNDSjm8jO00AIP2Z1GlV8hQ==}
     peerDependencies:
@@ -350,6 +357,11 @@ packages:
 
   '@capacitor/core@8.6.2':
     resolution: {integrity: sha512-UEb9crRuqEAe2Iu2eGOEuQ8rLQxpwg7ZZIpl17UJoytEpnV1e4oXXW0K7yYS2NsCOGmJjyLeKjNlgG7tkAoX8g==}
+
+  '@capacitor/ios@8.6.2':
+    resolution: {integrity: sha512-YnVm0lRA1mQWK0SKd2bdJIOG+PXRRDDdndZ1+nGqeiob+QmHZmb4wWo5gVpWhoHO37pGi2qzH5w5WGvfKrs+Gg==}
+    peerDependencies:
+      '@capacitor/core': ^8.6.0
 
   '@capacitor/network@8.0.1':
     resolution: {integrity: sha512-9xK/FHFmzKGanB6BdoSZOzXk8vF0OFVQSQ4PAsIrzAzLuXHryO317qy8dcHVpgxYeuZq2noI0My9z1DvVDi/9w==}
@@ -2239,6 +2251,13 @@ packages:
 
 snapshots:
 
+  '@aparajita/capacitor-biometric-auth@10.0.0':
+    dependencies:
+      '@capacitor/android': 8.6.2(@capacitor/core@8.6.2)
+      '@capacitor/app': 8.1.2(@capacitor/core@8.6.2)
+      '@capacitor/core': 8.6.2
+      '@capacitor/ios': 8.6.2(@capacitor/core@8.6.2)
+
   '@capacitor-mlkit/barcode-scanning@8.2.2(@capacitor/core@8.6.2)':
     dependencies:
       '@capacitor/core': 8.6.2
@@ -2277,6 +2296,10 @@ snapshots:
   '@capacitor/core@8.6.2':
     dependencies:
       tslib: 2.9.1
+
+  '@capacitor/ios@8.6.2(@capacitor/core@8.6.2)':
+    dependencies:
+      '@capacitor/core': 8.6.2
 
   '@capacitor/network@8.0.1(@capacitor/core@8.6.2)':
     dependencies:

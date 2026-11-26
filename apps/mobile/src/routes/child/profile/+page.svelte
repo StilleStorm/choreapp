@@ -7,6 +7,7 @@
   import Avatar from '#lib/components/Avatar.svelte';
   import Icon from '#lib/components/Icon.svelte';
   import ItemImage from '#lib/components/ItemImage.svelte';
+  import ParentReturn from '#lib/components/ParentReturn.svelte';
   import Sheet from '#lib/components/Sheet.svelte';
   import ThemeAvatarGrid from '#lib/components/ThemeAvatarGrid.svelte';
   import { errorMessage } from '#lib/messages.js';
@@ -148,6 +149,12 @@
     {/if}
   </section>
 
+  {#if session.swapped}
+    <!-- A parent's phone lent to this child: no other homes here, only the way back. -->
+    <section class="section swap-back">
+      <ParentReturn />
+    </section>
+  {:else}
   <section class="section">
     <h2 class="section-title">Domy</h2>
     <div class="card homes">
@@ -172,6 +179,7 @@
     <a class="btn block" href="/join?add=1"><Icon name="plus" size={18} /> Dodaj kolejny dom</a>
     <p class="muted small">Np. dom taty albo dziadków. Poproś dorosłego z tamtego domu o kod QR albo 6 cyfr.</p>
   </section>
+  {/if}
 
   <a class="btn ghost small" href="/about">O aplikacji</a>
 </main>
@@ -231,6 +239,12 @@
 </Sheet>
 
 <style>
+  .swap-back {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
   .profile-head {
     display: flex;
     flex-direction: column;

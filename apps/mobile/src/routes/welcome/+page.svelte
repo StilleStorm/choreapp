@@ -1,6 +1,8 @@
 <script lang="ts">
   import Icon from '#lib/components/Icon.svelte';
+  import ParentReturn from '#lib/components/ParentReturn.svelte';
   import { leaveIfSignedIn } from '#lib/guards.svelte.js';
+  import { session } from '#lib/session.svelte.js';
 
   leaveIfSignedIn();
 
@@ -29,6 +31,13 @@
       <p class="tagline">rodzinne misje</p>
     </div>
 
+    {#if session.swapped}
+      <!-- A parent's phone lent to a child whose session ended: only the way back to the parent. -->
+      <section class="part">
+        <p class="lead">Konto dziecka na tym telefonie zostało wylogowane.</p>
+        <ParentReturn prominent />
+      </section>
+    {:else}
     <section class="part">
       <p class="lead"><b>Dla dzieci.</b> Odhaczaj swoje zadania, zbieraj punkty i&nbsp;naklejki.</p>
       <a class="btn kid-btn block" href="/join">
@@ -41,6 +50,7 @@
       <a class="btn parent-btn block" href="/login">Zaloguj się jako rodzic</a>
       <a class="btn ghost block new-family" href="/register">Załóż nową rodzinę</a>
     </section>
+    {/if}
   </div>
 </main>
 

@@ -4,6 +4,9 @@
  * screen; a notification arriving while the app is open shows a banner.
  * A child's phone in several homes registers the token with each of them, so
  * notifications come from every home (tapping one opens the active home).
+ * An adult's phone lent to a child (session.swapped) stays registered to the
+ * adult only: the child's session never registers it, so the child gets no
+ * notifications there and the adult keeps theirs.
  */
 import { goto } from '$app/navigation';
 import { request } from './api.js';
@@ -27,7 +30,7 @@ function routeFor(screen: string | undefined): string {
 }
 
 export async function setupPush(): Promise<void> {
-  if (!isNative || !__PUSH_ENABLED__ || !session.me) return;
+  if (!isNative || !__PUSH_ENABLED__ || !session.me || session.swapped) return;
   const { PushNotifications } = await import('@capacitor/push-notifications');
 
   if (!installed) {
@@ -40,6 +43,7 @@ export async function setupPush(): Promise<void> {
       visibility: 1,
     }).catch(() => {});
     await PushNotifications.addListener('registration', async ({ value }) => {
+      if (session.swapped) return;
       const v = await appVersion().catch(() => null);
       for (const home of session.homes.list) {
         try {
