@@ -1,5 +1,6 @@
 /** Logged-in member, family and members, shared by every screen. */
 import type { FamilyDto, MeDto, MemberDto, SessionDto } from '@choreapp/shared';
+import { tick } from 'svelte';
 import { goto } from '$app/navigation';
 import { Preferences } from '@capacitor/preferences';
 import { ApiFailure, api, hasToken, request, setToken, setUnauthorizedHandler } from './api.js';
@@ -206,6 +207,9 @@ class Session {
     this.clockSkew = data.now - Date.now();
     this.refreshedAt = Date.now();
     const saving = this.setHomes(parent);
+    // The child screens react to the adult first (their guard goes to /parent, i.e. Dziś);
+    // navigating after that lands the adult back in Settings, where they started.
+    await tick();
     void goto('/parent/settings', { replace: true });
     await saving;
     await Preferences.remove({ key: SWAP_KEY });
