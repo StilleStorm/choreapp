@@ -31,8 +31,13 @@ try {
   process.exit(0);
 }
 for (const name of ['Zosia', 'Kuba']) {
-  const inv = await call('POST', '/v1/invites', { role: 'child' }, token);
-  await call('POST', '/v1/invites/redeem', { code: inv.code, name });
+  try {
+    await call('POST', '/v1/members', { name }, token); // 1.0.16+: a child without a phone
+  } catch (e) {
+    if (!String(e).includes(': 404')) throw e;
+    const inv = await call('POST', '/v1/invites', { role: 'child' }, token); // older API
+    await call('POST', '/v1/invites/redeem', { code: inv.code, name });
+  }
 }
 const inv = await call('POST', '/v1/invites', { role: 'parent' }, token);
 await call('POST', '/v1/invites/redeem', { code: inv.code, name: 'Tata', email: 'tata@example.com', password: PASSWORD });
