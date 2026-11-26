@@ -68,6 +68,16 @@ export function points(n: number): string {
   return `${n} ${plural(n, 'punkt', 'punkty', 'punktów')}`;
 }
 
+/** "1 urządzenie", "2 urządzenia", "5 urządzeń". */
+export function devices(n: number): string {
+  return `${n} ${plural(n, 'urządzenie', 'urządzenia', 'urządzeń')}`;
+}
+
+/** A child's device status in Settings: "Bez telefonu" or "2 urządzenia". */
+export function deviceStatus(n: number): string {
+  return n > 0 ? devices(n) : 'Bez telefonu';
+}
+
 export function days(n: number): string {
   return `${n} ${plural(n, 'dzień', 'dni', 'dni')}`;
 }

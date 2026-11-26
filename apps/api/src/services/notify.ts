@@ -109,7 +109,10 @@ export async function deliverDue(env: Env, now = Date.now(), memberIds?: string[
 
   const devices = await allIn<{ member_id: string; push_token: string }>(
     env.DB,
-    (ph) => `SELECT member_id, push_token FROM device WHERE member_id IN (${ph})`,
+    // Every logged-in device of the member; a token whose session has ended gets nothing.
+    (ph) =>
+      `SELECT d.member_id, d.push_token FROM device d LEFT JOIN session s ON s.id = d.session_id
+        WHERE d.member_id IN (${ph}) AND (d.session_id IS NULL OR (s.revoked_at IS NULL AND s.kind = 'device'))`,
     [...byMember.keys()],
   );
   let sent = 0;

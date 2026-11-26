@@ -31,8 +31,10 @@ export interface MemberDto {
   frameItemId: string | null;
   theme: string;
   email?: string;
-  /** Whether a phone is currently logged in to this profile. */
+  /** Whether a phone is currently logged in to this profile (own devices only). */
   connected?: boolean;
+  /** Children, for adults: how many of the child's own devices are logged in (an adult's phone switched into the account doesn't count). */
+  devices?: number;
 }
 
 export interface SessionDto {
@@ -55,6 +57,8 @@ export interface InviteDto {
   role: Role;
   memberId: string | null;
   memberName: string | null;
+  /** A child's additional device: the child's other devices stay logged in. */
+  addDevice: boolean;
   code: string;
   token: string;
   /** Payload encoded in the QR code. */
@@ -82,6 +86,8 @@ export interface InviteInfoDto {
   role: Role;
   familyName: string;
   memberName: string | null;
+  /** reconnect: true = another device (the others stay logged in), false = moving to a new phone (the others are logged out). */
+  addDevice?: boolean;
 }
 
 export interface TaskDto {

@@ -4,19 +4,31 @@ import { newId, randomToken, sha256Hex } from './crypto.js';
 import { first, run } from './db.js';
 import { ApiError } from './http.js';
 
-/** Sessions don't expire: a child's phone stays logged in until a new code replaces it. */
+/** Sessions don't expire: a child's phone stays logged in until moved to a new phone or the child is removed. */
 const TOUCH_EVERY_MS = 10 * 60_000;
 
-export async function createSession(db: D1Database, memberId: string, now = Date.now()): Promise<{ token: string; sessionId: string }> {
+/**
+ * `swap`: an adult switched into a child's account on the adult's own phone. Such
+ * sessions don't count as the child's devices and never get push notifications.
+ */
+export type SessionKind = 'device' | 'swap';
+
+export async function createSession(
+  db: D1Database,
+  memberId: string,
+  now = Date.now(),
+  kind: SessionKind = 'device',
+): Promise<{ token: string; sessionId: string }> {
   const token = randomToken();
   const sessionId = await sha256Hex(token);
   await run(
     db,
-    'INSERT INTO session (id, member_id, created_at, last_seen_at) VALUES (?, ?, ?, ?)',
+    'INSERT INTO session (id, member_id, created_at, last_seen_at, kind) VALUES (?, ?, ?, ?, ?)',
     sessionId,
     memberId,
     now,
     now,
+    kind,
   );
   return { token, sessionId };
 }
@@ -45,9 +57,9 @@ export const requireAuth: MiddlewareHandler<AppBindings> = async (c, next) => {
   const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
   if (!token) throw new ApiError(401, 'unauthorized');
   const sessionId = await sha256Hex(token);
-  const row = await first<{ member_id: string; family_id: string; role: 'parent' | 'child'; last_seen_at: number }>(
+  const row = await first<{ member_id: string; family_id: string; role: 'parent' | 'child'; last_seen_at: number; kind: SessionKind }>(
     c.env.DB,
-    `SELECT s.member_id, m.family_id, m.role, s.last_seen_at
+    `SELECT s.member_id, m.family_id, m.role, s.last_seen_at, s.kind
        FROM session s JOIN member m ON m.id = s.member_id
       WHERE s.id = ? AND s.revoked_at IS NULL AND m.removed_at IS NULL`,
     sessionId,
@@ -57,7 +69,7 @@ export const requireAuth: MiddlewareHandler<AppBindings> = async (c, next) => {
   if (now - row.last_seen_at > TOUCH_EVERY_MS) {
     await run(c.env.DB, 'UPDATE session SET last_seen_at = ? WHERE id = ?', now, sessionId);
   }
-  c.set('auth', { memberId: row.member_id, familyId: row.family_id, role: row.role, sessionId });
+  c.set('auth', { memberId: row.member_id, familyId: row.family_id, role: row.role, sessionId, sessionKind: row.kind });
   await next();
 };
 

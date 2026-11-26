@@ -14,6 +14,8 @@ export interface AuthInfo {
   familyId: string;
   role: 'parent' | 'child';
   sessionId: string;
+  /** 'swap': an adult's phone switched into a child's account. */
+  sessionKind: 'device' | 'swap';
 }
 
 export interface AppBindings {

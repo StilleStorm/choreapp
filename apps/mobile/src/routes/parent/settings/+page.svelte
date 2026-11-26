@@ -8,6 +8,7 @@
   import InviteSheet from '#lib/components/InviteSheet.svelte';
   import Sheet from '#lib/components/Sheet.svelte';
   import ThemeAvatarGrid from '#lib/components/ThemeAvatarGrid.svelte';
+  import { deviceStatus, devices } from '#lib/format.js';
   import { errorMessage } from '#lib/messages.js';
   import { session } from '#lib/session.svelte.js';
   import { ADULT_THEMES, NEUTRAL } from '#lib/themes/pickable.js';
@@ -17,11 +18,61 @@
   let inviteOpen = $state(false);
   let inviteRole = $state<Role>('child');
   let inviteMember = $state<MemberDto | null>(null);
-  function openInvite(role: Role, member: MemberDto | null = null) {
+  let inviteAddDevice = $state(false);
+  function openInvite(role: Role, member: MemberDto | null = null, addDevice = false) {
     inviteRole = role;
     inviteMember = member;
+    inviteAddDevice = addDevice;
     memberOpen = false;
+    addChildOpen = false;
     inviteOpen = true;
+  }
+
+  /** The child's own devices (an adult's phone switched into the account doesn't count). */
+  function deviceCount(m: MemberDto): number {
+    return m.devices ?? (m.connected ? 1 : 0);
+  }
+
+  // "Dodaj dziecko": with their own phone (a code) or without one (created right away, uses this phone).
+  let addChildOpen = $state(false);
+  let addChildStep = $state<'choose' | 'name' | 'created'>('choose');
+  let newChildName = $state('');
+  let newChild = $state<MemberDto | null>(null);
+  let addChildError = $state('');
+  let addChildBusy = $state(false);
+  function openAddChild() {
+    addChildStep = 'choose';
+    newChildName = '';
+    newChild = null;
+    addChildError = '';
+    addChildOpen = true;
+  }
+  async function createChild(e: SubmitEvent) {
+    e.preventDefault();
+    addChildError = '';
+    addChildBusy = true;
+    try {
+      newChild = await api.post<MemberDto>('/v1/members', { name: newChildName.trim() });
+      await session.refresh();
+      addChildStep = 'created';
+    } catch (err) {
+      addChildError = errorMessage(err);
+    } finally {
+      addChildBusy = false;
+    }
+  }
+  async function swapToNewChild() {
+    if (!newChild) return;
+    addChildError = '';
+    addChildBusy = true;
+    try {
+      await session.swapToChild(newChild.id);
+      addChildOpen = false;
+    } catch (err) {
+      addChildError = errorMessage(err);
+    } finally {
+      addChildBusy = false;
+    }
   }
 
   // Member sheet
@@ -31,13 +82,21 @@
   let avatarBlob = $state<Blob | null>(null);
   let memberError = $state('');
   let confirmRemove = $state(false);
+  /** "Przenieś na nowy telefon" asks first when the child's other devices would be logged out. */
+  let confirmMove = $state(false);
   function openMember(m: MemberDto) {
     selected = m;
     editName = m.name;
     avatarBlob = null;
     memberError = '';
     confirmRemove = false;
+    confirmMove = false;
     memberOpen = true;
+  }
+  function moveToNewPhone() {
+    if (!selected) return;
+    if (deviceCount(selected) > 0 && !confirmMove) confirmMove = true;
+    else openInvite('child', selected, false);
   }
   const isMe = $derived(selected?.id === session.me?.id);
   /** Children are everyone's; other adults are managed by the family administrator. */
@@ -284,15 +343,15 @@
           <Avatar name={m.name} url={m.avatarUrl} frameUrl={m.frameUrl} />
           <span class="grow">
             <span class="title">{m.name}</span>
-            <span class="meta">{m.connected ? 'Telefon połączony' : 'Brak połączonego telefonu'}</span>
+            <span class="meta">{deviceStatus(deviceCount(m))}</span>
           </span>
           <Icon name="chevron" size={20} />
         </button>
       {:else}
-        <p class="empty">Nie ma jeszcze dzieci. Dodaj pierwsze kodem QR.</p>
+        <p class="empty">Nie ma jeszcze dzieci.</p>
       {/each}
     </div>
-    <button class="btn primary block" onclick={() => openInvite('child')}><Icon name="plus" /> Dodaj dziecko</button>
+    <button class="btn primary block" onclick={openAddChild}><Icon name="plus" /> Dodaj dziecko</button>
   </section>
 
   <section class="section">
@@ -416,7 +475,62 @@
   </section>
 </main>
 
-<InviteSheet bind:open={inviteOpen} role={inviteRole} memberId={inviteMember?.id ?? null} memberName={inviteMember?.name ?? null} />
+<InviteSheet
+  bind:open={inviteOpen}
+  role={inviteRole}
+  memberId={inviteMember?.id ?? null}
+  memberName={inviteMember?.name ?? null}
+  addDevice={inviteAddDevice}
+/>
+
+<Sheet bind:open={addChildOpen} title="Dodaj dziecko">
+  {#if addChildStep === 'choose'}
+    <p class="muted small">Czy dziecko ma swój telefon albo tablet?</p>
+    <div class="list">
+      <button class="row member" onclick={() => openInvite('child')}>
+        <Icon name="qr" />
+        <span class="grow">
+          <span class="title">Ma swój telefon</span>
+          <span class="meta">Połączysz go kodem QR albo 6 cyframi</span>
+        </span>
+        <Icon name="chevron" size={20} />
+      </button>
+      <button class="row member" onclick={() => (addChildStep = 'name')}>
+        <Icon name="user" />
+        <span class="grow">
+          <span class="title">Nie ma telefonu</span>
+          <span class="meta">Będzie korzystać z Twojego telefonu</span>
+        </span>
+        <Icon name="chevron" size={20} />
+      </button>
+    </div>
+  {:else if addChildStep === 'name'}
+    <form class="stack" onsubmit={createChild}>
+      <label class="field">
+        <span>Jak nazywać dziecko?</span>
+        <input type="text" bind:value={newChildName} required maxlength="40" autocomplete="off" />
+        <span class="hint muted small">Może być pseudonim. Nie wpisuj nazwiska.</span>
+      </label>
+      <p class="muted small">Dziecko będzie korzystać z aplikacji na Twoim telefonie („Przełącz na konto dziecka”). Telefon możesz dodać później w jego profilu.</p>
+      {#if addChildError}<div class="error-box" role="alert">{addChildError}</div>{/if}
+      <div class="inline">
+        <button type="button" class="btn grow" onclick={() => (addChildStep = 'choose')}>Wstecz</button>
+        <button class="btn primary grow" disabled={addChildBusy || !newChildName.trim()}>{addChildBusy ? 'Dodawanie…' : 'Dodaj'}</button>
+      </div>
+    </form>
+  {:else if newChild}
+    <div class="created">
+      <Avatar name={newChild.name} url={newChild.avatarUrl} size={72} />
+      <p><strong>{newChild.name}</strong> jest w rodzinie.</p>
+      <p class="muted small">{deviceStatus(0)}. Przełącz telefon na konto dziecka, żeby mogło zobaczyć swoje zadania.</p>
+    </div>
+    {#if addChildError}<div class="error-box" role="alert">{addChildError}</div>{/if}
+    <button class="btn primary block" onclick={swapToNewChild} disabled={addChildBusy}>
+      <Icon name="phone" /> {addChildBusy ? 'Przełączanie…' : 'Przełącz teraz'}
+    </button>
+    <button class="btn block" onclick={() => (addChildOpen = false)}>Zamknij</button>
+  {/if}
+</Sheet>
 
 <Sheet bind:open={memberOpen} title={selected?.name}>
   {#if selected}
@@ -438,10 +552,25 @@
     {#if memberError}<div class="error-box">{memberError}</div>{/if}
 
     {#if selected.role === 'child'}
-      <button class="btn block" onclick={() => openInvite('child', selected)}>
-        <Icon name="phone" /> Połącz na nowym telefonie
+      <p class="device-status"><Icon name="phone" size={18} /> {deviceStatus(deviceCount(selected))}</p>
+      <button class="btn block" onclick={() => openInvite('child', selected, true)}>
+        <Icon name="plus" /> Dodaj kolejne urządzenie
       </button>
-      <p class="hint muted small">Dziecko zachowa punkty, naklejki i historię. Stary telefon zostanie wylogowany.</p>
+      <p class="hint muted small">Telefon albo tablet. Pozostałe urządzenia dziecka zostaną zalogowane.</p>
+      {#if confirmMove}
+        <div class="error-box" role="alert">
+          Wszystkie pozostałe urządzenia {selected.name} zostaną wylogowane (teraz: {devices(deviceCount(selected))}). Punkty, naklejki i zadania zostają.
+        </div>
+        <div class="inline">
+          <button class="btn grow" onclick={() => (confirmMove = false)}>Anuluj</button>
+          <button class="btn primary grow" onclick={moveToNewPhone}>Przenieś</button>
+        </div>
+      {:else}
+        <button class="btn block" onclick={moveToNewPhone}>
+          <Icon name="phone" /> Przenieś na nowy telefon
+        </button>
+        <p class="hint muted small">Dziecko zachowa punkty, naklejki i historię. Wszystkie inne urządzenia zostaną wylogowane.</p>
+      {/if}
     {:else if !isMe && session.isAdmin}
       <button class="btn block" onclick={() => openInvite('parent', selected)}>
         <Icon name="key" /> Kod do zmiany hasła
@@ -452,7 +581,7 @@
       {#if confirmRemove}
         <div class="error-box">
           {#if selected.role === 'child'}
-            Profil {selected.name} zostanie usunięty razem z punktami, naklejkami, historią zadań i zdjęciem. Telefon zostanie wylogowany. Tego nie da się cofnąć.
+            Profil {selected.name} zostanie usunięty razem z punktami, naklejkami, historią zadań i zdjęciem. Wszystkie urządzenia zostaną wylogowane. Tego nie da się cofnąć.
           {:else}
             Konto {selected.name} zostanie usunięte (e-mail, hasło, zdjęcie), a telefon wylogowany. Założone przez tę osobę zadania przejdą na Ciebie.
           {/if}
@@ -635,5 +764,19 @@
   }
   .danger-zone {
     margin-top: 24px;
+  }
+  .device-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 4px 0 0;
+    font-weight: 600;
+  }
+  .created {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
   }
 </style>

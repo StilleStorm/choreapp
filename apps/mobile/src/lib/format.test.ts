@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { capitalize, dayMonth, longDate, parentAccusative, plural, points, relativeDay } from './format.js';
+import { capitalize, dayMonth, deviceStatus, devices, longDate, parentAccusative, plural, points, relativeDay } from './format.js';
 
 describe('Polish formatting', () => {
   it('plural forms', () => {
@@ -8,6 +8,14 @@ describe('Polish formatting', () => {
       '21 punktów', '22 punkty', '25 punktów', '112 punktów', '122 punkty',
     ]);
     expect(plural(0, 'zadanie', 'zadania', 'zadań')).toBe('zadań');
+  });
+
+  it('device counts', () => {
+    expect([0, 1, 2, 3, 4, 5, 11, 12, 13, 21, 22, 24, 25, 102].map(deviceStatus)).toEqual([
+      'Bez telefonu', '1 urządzenie', '2 urządzenia', '3 urządzenia', '4 urządzenia', '5 urządzeń', '11 urządzeń',
+      '12 urządzeń', '13 urządzeń', '21 urządzeń', '22 urządzenia', '24 urządzenia', '25 urządzeń', '102 urządzenia',
+    ]);
+    expect(devices(0)).toBe('0 urządzeń');
   });
 
   it('dates', () => {

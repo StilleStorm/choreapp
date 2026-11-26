@@ -3,12 +3,12 @@
  * to it; the other phone scans or types it. One-time use, valid 15 minutes.
  *
  *  role child,  no member  -> a child joins: name (+ avatar later)
- *  role child,  member     -> a child's new phone: same profile, old phone logged out
+ *  role child,  member     -> a child's new phone: same profile, other devices logged out
+ *                             (add_device: another device, the others stay logged in)
  *  role parent, no member  -> another parent joins: name, e-mail, password
  *  role parent, member     -> password reset for that parent
  */
 import {
-  NEUTRAL_THEME,
   createInviteBody,
   inviteRef,
   redeemInviteBody,
@@ -23,6 +23,7 @@ import { assertFamilyAdmin, clientIp, isFamilyAdmin, createSession, requireParen
 import { hashPassword, newId, randomToken, sha256Hex, sixDigitCode } from '../lib/crypto.js';
 import { all, first, hit, isLimited, isUniqueViolation, run } from '../lib/db.js';
 import { ApiError, badRequest, body, conflict, forbidden, notFound } from '../lib/http.js';
+import { insertMember } from '../lib/rows.js';
 import { sessionResponse } from './account.js';
 
 export const INVITE_TTL_MS = 15 * 60_000;
@@ -45,6 +46,7 @@ interface InviteRow {
   family_id: string;
   role: 'parent' | 'child';
   member_id: string | null;
+  add_device: number;
   expires_at: number;
   used_at: number | null;
   family_name: string;
@@ -90,7 +92,14 @@ export const publicInvites = new Hono<AppBindings>()
   .post('/invites/inspect', async (c) => {
     const ref = await body(c, inviteRef);
     const i = await findInvite(c.env, clientIp(c.req.raw), ref);
-    const dto: InviteInfoDto = { kind: kindOf(i), role: i.role, familyName: i.family_name, memberName: i.member_name };
+    const kind = kindOf(i);
+    const dto: InviteInfoDto = {
+      kind,
+      role: i.role,
+      familyName: i.family_name,
+      memberName: i.member_name,
+      ...(kind === 'reconnect' ? { addDevice: !!i.add_device } : {}),
+    };
     return c.json(dto);
   })
 
@@ -121,16 +130,7 @@ export const publicInvites = new Hono<AppBindings>()
     let memberId: string;
     if (kind === 'join') {
       memberId = newId();
-      const stmts = [
-        c.env.DB.prepare('INSERT INTO member (id, family_id, role, name, theme, created_at) VALUES (?, ?, ?, ?, ?, ?)').bind(
-          memberId,
-          i.family_id,
-          i.role,
-          b.name!,
-          i.role === 'child' ? 'kawaii' : NEUTRAL_THEME,
-          now,
-        ),
-      ];
+      const stmts = [insertMember(c.env.DB, { id: memberId, familyId: i.family_id, role: i.role, name: b.name!, now })];
       if (i.role === 'parent') {
         const pw = await hashPassword(b.password!);
         stmts.push(
@@ -147,7 +147,8 @@ export const publicInvites = new Hono<AppBindings>()
       }
     } else {
       memberId = i.member_id!;
-      await revokeMemberSessions(c.env.DB, memberId, now);
+      // Another device of a child keeps the others; a new phone or a password reset logs them all out.
+      if (!(kind === 'reconnect' && i.add_device)) await revokeMemberSessions(c.env.DB, memberId, now);
       if (kind === 'reset') {
         const pw = await hashPassword(b.password!);
         await run(
@@ -171,6 +172,8 @@ export const invites = new Hono<AppBindings>()
     const { familyId, memberId: createdBy } = auth;
     // Every adult can invite children and adults; another adult's password reset is the administrator's.
     if (b.role === 'parent' && b.memberId && b.memberId !== createdBy) await assertFamilyAdmin(c.env.DB, auth);
+    if (b.addDevice && !(b.role === 'child' && b.memberId)) throw badRequest('add_device_needs_child');
+    const addDevice = b.addDevice ? 1 : 0;
     let memberName: string | null = null;
     if (b.memberId) {
       const m = await first<{ role: string; name: string }>(
@@ -189,11 +192,12 @@ export const invites = new Hono<AppBindings>()
     // Replace this adult's own earlier pending code for the same purpose; other adults' codes stay valid.
     await run(
       c.env.DB,
-      'DELETE FROM invite WHERE family_id = ? AND created_by = ? AND used_at IS NULL AND role = ? AND member_id IS ?',
+      'DELETE FROM invite WHERE family_id = ? AND created_by = ? AND used_at IS NULL AND role = ? AND member_id IS ? AND add_device = ?',
       familyId,
       createdBy,
       b.role,
       b.memberId ?? null,
+      addDevice,
     );
     for (let attempt = 0; ; attempt++) {
       const code = sixDigitCode();
@@ -201,12 +205,13 @@ export const invites = new Hono<AppBindings>()
         const id = newId();
         await run(
           c.env.DB,
-          `INSERT INTO invite (id, family_id, role, member_id, code_hash, token_hash, created_by, created_at, expires_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO invite (id, family_id, role, member_id, add_device, code_hash, token_hash, created_by, created_at, expires_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           id,
           familyId,
           b.role,
           b.memberId ?? null,
+          addDevice,
           await sha256Hex(code),
           tokenHash,
           createdBy,
@@ -218,6 +223,7 @@ export const invites = new Hono<AppBindings>()
           role: b.role,
           memberId: b.memberId ?? null,
           memberName,
+          addDevice: !!addDevice,
           code,
           token,
           qr: `choreapp://join?t=${token}`,

@@ -148,7 +148,7 @@
     {#if alreadyHere}
       <p class="error-box">
         Ten telefon jest już w domu „{info.familyName}”. Dołączenie utworzy tam nowy, pusty profil. Żeby zachować punkty, poproś rodzica o
-        kod „Połącz na nowym telefonie”.
+        kod z Twojego profilu w Ustawieniach: „Dodaj kolejne urządzenie”.
       </p>
     {/if}
 
@@ -180,8 +180,12 @@
           <input type="password" bind:value={password2} required minlength="8" autocomplete="new-password" />
         </label>
       {:else if info.kind === 'reconnect'}
-        <p>Cześć, <strong>{info.memberName}</strong>! Ten telefon zostanie połączony z Twoim profilem. Punkty i naklejki zostają.</p>
-        <p class="muted small">Stary telefon zostanie wylogowany.</p>
+        <p>Cześć, <strong>{info.memberName}</strong>! To urządzenie zostanie połączone z Twoim profilem. Punkty i naklejki zostają.</p>
+        {#if info.addDevice}
+          <p class="muted small">Twoje pozostałe urządzenia zostaną zalogowane.</p>
+        {:else}
+          <p class="muted small">Twoje pozostałe urządzenia zostaną wylogowane.</p>
+        {/if}
       {:else}
         <p>Ustaw nowe hasło dla: <strong>{info.memberName}</strong>.</p>
         <label class="field">
@@ -195,7 +199,7 @@
       {/if}
       {#if error}<div class="error-box" role="alert">{error}</div>{/if}
       <button class="btn primary block" disabled={busy}>
-        {busy ? 'Chwileczkę…' : info.kind === 'reset' ? 'Zapisz hasło' : info.kind === 'reconnect' ? 'Połącz telefon' : 'Dołącz'}
+        {busy ? 'Chwileczkę…' : info.kind === 'reset' ? 'Zapisz hasło' : info.kind === 'reconnect' ? 'Połącz urządzenie' : 'Dołącz'}
       </button>
     </form>
   {/if}

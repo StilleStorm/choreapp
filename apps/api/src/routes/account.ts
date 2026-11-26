@@ -5,8 +5,8 @@ import {
   changeEmailBody,
   changePasswordBody,
   deleteAccountBody,
+  createChildBody,
   loginBody,
-  NEUTRAL_THEME,
   registerBody,
   themeAllowed,
   transferAdminBody,
@@ -25,7 +25,7 @@ import { PASSWORD_ITERATIONS, hashPassword, newId, verifyPassword } from '../lib
 import { first, hit, isLimited, isUniqueViolation, run } from '../lib/db.js';
 import { IMAGE_TYPES, MAX_AVATAR_BYTES } from '../lib/files.js';
 import { ApiError, badRequest, body, conflict, forbidden, notFound } from '../lib/http.js';
-import { familyDto, loadFamily, loadMember, loadMembers, memberDto } from '../lib/rows.js';
+import { familyDto, insertMember, loadFamily, loadMember, loadMembers, memberDto } from '../lib/rows.js';
 import { ACTIVE_PACKS } from '../services/catalog.js';
 import { eraseFamily, eraseMember } from '../services/erase.js';
 import { rescheduleHeld } from '../services/notify.js';
@@ -76,9 +76,7 @@ export const publicAccount = new Hono<AppBindings>()
           b.timezone ?? DEFAULT_TIME_ZONE,
           now,
         ),
-        c.env.DB.prepare(
-          "INSERT INTO member (id, family_id, role, name, theme, created_at) VALUES (?, ?, 'parent', ?, ?, ?)",
-        ).bind(memberId, familyId, b.parentName, NEUTRAL_THEME, now),
+        insertMember(c.env.DB, { id: memberId, familyId, role: 'parent', name: b.parentName, now }),
         c.env.DB.prepare(
           'INSERT INTO parent_login (member_id, email, password_hash, password_salt, password_iterations) VALUES (?, ?, ?, ?, ?)',
         ).bind(memberId, b.email, pw.hash, pw.salt, pw.iterations),
@@ -224,9 +222,10 @@ export const account = new Hono<AppBindings>()
   })
 
   /**
-   * An adult hands their own phone to a child without a phone: a normal session for a child of
-   * their own family (any adult, like inviting children). The app logs it out when the adult
-   * switches back; a new code for the child or removing the child ends it too.
+   * An adult hands their own phone to a child without a phone: a session for a child of
+   * their own family (any adult, like inviting children), marked as a swap so it doesn't count
+   * as the child's device and never gets push notifications. The app logs it out when the adult
+   * switches back; moving the child to a new phone or removing the child ends it too.
    */
   .post('/members/:id/session', requireParent, async (c) => {
     const { familyId } = c.get('auth');
@@ -237,8 +236,21 @@ export const account = new Hono<AppBindings>()
       familyId,
     );
     if (!m) throw notFound('member_not_found');
-    const { token } = await createSession(c.env.DB, m.id);
+    const { token } = await createSession(c.env.DB, m.id, Date.now(), 'swap');
     return c.json(await sessionResponse(c.env, new URL(c.req.url).origin, m.id, token), 201);
+  })
+
+  /**
+   * An adult adds a child who has no phone of their own (any adult, like inviting children).
+   * Only a nickname; the child uses the adult's phone (switch into the account) or gets a
+   * device later from their profile in Settings.
+   */
+  .post('/members', requireParent, async (c) => {
+    const b = await body(c, createChildBody);
+    const { familyId } = c.get('auth');
+    const id = newId();
+    await insertMember(c.env.DB, { id, familyId, role: 'child', name: b.name, now: Date.now() }).run();
+    return c.json(await memberDto(c.env, new URL(c.req.url).origin, (await loadMember(c.env, id))!, true), 201);
   })
 
   /** Raw image body; the app resizes to 256 px WebP before upload. Adults only: children use avatars (Google Play Families). */
@@ -296,7 +308,9 @@ export const account = new Hono<AppBindings>()
 
   .post('/devices', async (c) => {
     const b = await body(c, registerDeviceBody);
-    const { memberId, sessionId } = c.get('auth');
+    const { memberId, sessionId, sessionKind } = c.get('auth');
+    // An adult's phone switched into a child's account must not get the child's notifications.
+    if (sessionKind === 'swap') return c.json({ ok: true });
     const now = Date.now();
     // One row per phone and member: a child's phone in two families gets
     // notifications from both. Re-registering refreshes the session link.
