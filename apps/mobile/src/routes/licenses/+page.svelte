@@ -3,6 +3,7 @@
   import { api } from '#lib/api.js';
   import BackHeader from '#lib/components/BackHeader.svelte';
   import { errorMessage } from '#lib/messages.js';
+  import { session } from '#lib/session.svelte.js';
 
   let list = $state<LicenseDto[]>([]);
   let error = $state('');
@@ -28,7 +29,7 @@
         <strong>{l.pack}</strong>
         <span class="small">Licencja: {l.license === 'private' ? 'prywatna (własne grafiki)' : l.license}</span>
         {#if l.attribution}<span class="small muted">{l.attribution}</span>{/if}
-        {#if l.source.startsWith('http')}<a class="small" href={l.source} target="_blank" rel="noopener">{l.source}</a>{:else}<span class="small muted">{l.source}</span>{/if}
+        {#if session.isParent && l.source.startsWith('http')}<a class="small" href={l.source} target="_blank" rel="noopener">{l.source}</a>{:else}<span class="small muted">{l.source}</span>{/if}
       </div>
     {/each}
   </div>
