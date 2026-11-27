@@ -108,7 +108,7 @@ export async function balances(db: D1Database, memberId: string): Promise<{ bala
   const r = await first<{ balance: number; earned: number; spent: number }>(
     db,
     `SELECT COALESCE(SUM(amount), 0) AS balance,
-            COALESCE(SUM(CASE WHEN reason IN ('task', 'drop_fallback', 'streak_fallback') THEN amount ELSE 0 END), 0) AS earned,
+            COALESCE(SUM(CASE WHEN reason IN ('task', 'drop_fallback', 'streak_fallback', 'bonus') THEN amount ELSE 0 END), 0) AS earned,
             COALESCE(-SUM(CASE WHEN reason IN ('shop', 'reward', 'reward_refund') THEN amount ELSE 0 END), 0) AS spent
        FROM points_ledger WHERE member_id = ?`,
     memberId,
@@ -122,12 +122,13 @@ export async function ledger(db: D1Database, memberId: string, limit = 50): Prom
     amount: number;
     reason: string;
     created_at: number;
+    note: string | null;
     task_title: string | null;
     reward_name: string | null;
     item_name: string | null;
   }>(
     db,
-    `SELECT l.id, l.amount, l.reason, l.created_at,
+    `SELECT l.id, l.amount, l.reason, l.created_at, l.note,
             t.title AS task_title, rw.name AS reward_name, i.name AS item_name
        FROM points_ledger l
        LEFT JOIN completion c ON c.id = l.completion_id
@@ -143,13 +144,31 @@ export async function ledger(db: D1Database, memberId: string, limit = 50): Prom
     memberId,
     limit,
   );
-  return rows.map((r) => ({
+  return rows.map(ledgerEntry);
+}
+
+type LedgerRow = {
+  id: string;
+  amount: number;
+  reason: string;
+  created_at: number;
+  note: string | null;
+  task_title?: string | null;
+  reward_name?: string | null;
+  item_name?: string | null;
+};
+
+export function ledgerEntry(r: LedgerRow): LedgerEntryDto {
+  return {
     id: r.id,
     amount: r.amount,
     reason: r.reason,
     createdAt: r.created_at,
+    ...(r.reason === 'bonus' ? { note: r.note } : {}),
     label:
-      r.reason === 'task'
+      r.reason === 'bonus'
+        ? `Bonus od rodzica: ${r.note ?? ''}`
+        : r.reason === 'task'
         ? (r.task_title ?? 'Zadanie')
         : r.reason === 'drop_fallback'
           ? 'Bonus: wszystkie naklejki zebrane'
@@ -160,7 +179,7 @@ export async function ledger(db: D1Database, memberId: string, limit = 50): Prom
               : r.reason === 'reward'
                 ? `Nagroda: ${r.reward_name ?? ''}`
                 : `Zwrot: ${r.reward_name ?? ''}`,
-  }));
+  };
 }
 
 /** Last `days` days of tasks for the parent's history view, newest first. */

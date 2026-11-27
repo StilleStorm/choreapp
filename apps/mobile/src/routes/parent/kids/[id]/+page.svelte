@@ -1,9 +1,11 @@
 <script lang="ts">
-  import type { HistoryEntryDto, PointsDto, StatsDto } from '@choreapp/shared';
+  import { BONUS_MAX, BONUS_REASON_MAX, type BonusResultDto, type HistoryEntryDto, type PointsDto, type StatsDto } from '@choreapp/shared';
   import { page } from '$app/state';
   import { api } from '#lib/api.js';
   import Avatar from '#lib/components/Avatar.svelte';
   import BackHeader from '#lib/components/BackHeader.svelte';
+  import Icon from '#lib/components/Icon.svelte';
+  import Sheet from '#lib/components/Sheet.svelte';
   import TaskIcon from '#lib/components/TaskIcon.svelte';
   import { dateTime, dayMonth } from '#lib/format.js';
   import { errorMessage } from '#lib/messages.js';
@@ -15,15 +17,70 @@
   let error = $state('');
   let tab = $state<'tasks' | 'points'>('tasks');
 
-  $effect(() => {
-    const id = page.params.id;
-    Promise.all([api.get<StatsDto>(`/v1/members/${id}/stats`), api.get<PointsDto>(`/v1/members/${id}/points`)])
+  function load(id: string) {
+    return Promise.all([api.get<StatsDto>(`/v1/members/${id}/stats`), api.get<PointsDto>(`/v1/members/${id}/points`)])
       .then(([s, p]) => {
         stats = s;
         points = p;
       })
       .catch((e) => (error = errorMessage(e)));
+  }
+
+  $effect(() => {
+    void load(page.params.id!);
   });
+
+  // "Daj punkty": only adding. Form first, then a summary to confirm.
+  const QUICK = [5, 10, 20, 50];
+  let bonusOpen = $state(false);
+  let bonusStep = $state<'form' | 'confirm'>('form');
+  let bonusAmount = $state<number | null>(null);
+  let bonusReason = $state('');
+  let bonusError = $state('');
+  let bonusBusy = $state(false);
+  let bonusOpId = '';
+  let toast = $state('');
+
+  const amountOk = $derived(Number.isInteger(bonusAmount) && bonusAmount! >= 1 && bonusAmount! <= BONUS_MAX);
+  const reasonOk = $derived(bonusReason.trim().length > 0 && bonusReason.trim().length <= BONUS_REASON_MAX);
+
+  function openBonus() {
+    bonusStep = 'form';
+    bonusAmount = null;
+    bonusReason = '';
+    bonusError = '';
+    bonusOpen = true;
+  }
+
+  function toConfirm(e: SubmitEvent) {
+    e.preventDefault();
+    if (!amountOk) return void (bonusError = `Wpisz liczbę punktów od 1 do ${BONUS_MAX}.`);
+    if (!reasonOk) return void (bonusError = 'Wpisz, za co są punkty.');
+    bonusError = '';
+    bonusOpId = crypto.randomUUID();
+    bonusStep = 'confirm';
+  }
+
+  async function giveBonus() {
+    if (bonusBusy || !child) return;
+    bonusBusy = true;
+    try {
+      await api.post<BonusResultDto>(`/v1/members/${child.id}/bonus`, {
+        amount: bonusAmount,
+        reason: bonusReason.trim(),
+        clientOpId: bonusOpId,
+      });
+      bonusOpen = false;
+      toast = `${child.name}: +${bonusAmount} pkt`;
+      setTimeout(() => (toast = ''), 3000);
+      tab = 'points';
+      await load(child.id);
+    } catch (e) {
+      bonusError = errorMessage(e);
+    } finally {
+      bonusBusy = false;
+    }
+  }
 
   const STATUS: Record<HistoryEntryDto['status'], [string, string]> = {
     approved: ['Zrobione', 'success'],
@@ -63,6 +120,8 @@
         <div><span class="num">{stats.stickersOwned}/{stats.stickersTotal}</span><span class="muted small">naklejki</span></div>
       </div>
     </section>
+
+    <button class="btn primary block" onclick={openBonus}><Icon name="plus" size={20} /> Daj punkty</button>
 
     <div class="segmented" role="tablist">
       <button aria-pressed={tab === 'tasks'} onclick={() => (tab = 'tasks')}>Zadania (30 dni)</button>
@@ -110,7 +169,65 @@
   {/if}
 </main>
 
+<Sheet bind:open={bonusOpen} title="Daj punkty">
+  {#if bonusStep === 'form'}
+    <form class="stack" onsubmit={toConfirm}>
+      <div class="field">
+        <span>Ile punktów?</span>
+        <div class="chips">
+          {#each QUICK as q (q)}
+            <button type="button" class="chip" aria-pressed={bonusAmount === q} onclick={() => (bonusAmount = q)}>+{q}</button>
+          {/each}
+        </div>
+        <input type="number" inputmode="numeric" min="1" max={BONUS_MAX} step="1" bind:value={bonusAmount} placeholder="albo wpisz liczbę" />
+        <span class="hint">Od 1 do {BONUS_MAX}. Punkty można tylko dodać.</span>
+      </div>
+      <label class="field">
+        <span>Za co?</span>
+        <input type="text" bind:value={bonusReason} maxlength={BONUS_REASON_MAX} required placeholder="np. pomoc babci" />
+        <span class="hint">{child?.name ?? 'Dziecko'} zobaczy to w historii punktów.</span>
+      </label>
+      {#if bonusError}<div class="error-box">{bonusError}</div>{/if}
+      <button class="btn primary block">Dalej</button>
+    </form>
+  {:else}
+    <div class="stack">
+      <div class="card summary">
+        <p class="big"><strong>{child?.name}</strong> dostanie <strong class="plus">+{bonusAmount} pkt</strong></p>
+        <p>za: {bonusReason.trim()}</p>
+      </div>
+      {#if bonusError}<div class="error-box">{bonusError}</div>{/if}
+      <button class="btn success block" disabled={bonusBusy} onclick={giveBonus}>Tak, daj +{bonusAmount} pkt</button>
+      <button class="btn ghost block" disabled={bonusBusy} onclick={() => (bonusStep = 'form')}>Wróć i popraw</button>
+    </div>
+  {/if}
+</Sheet>
+
+{#if toast}<div class="toast" role="status">{toast}</div>{/if}
+
 <style>
+  .toast {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 12px);
+    z-index: 30;
+    background: #20242b;
+    color: #fff;
+    border-radius: 14px;
+    padding: 12px 16px;
+    text-align: center;
+    font-weight: 600;
+  }
+  .summary {
+    text-align: center;
+  }
+  .summary .big {
+    font-size: 1.15rem;
+  }
+  .plus {
+    color: var(--success);
+  }
   .head {
     display: flex;
     flex-direction: column;

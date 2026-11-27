@@ -250,3 +250,62 @@ describe('stats', () => {
     expect(s.body.stickersTotal).toBe(4);
   });
 });
+
+describe('bonus points from a parent ("Daj punkty")', () => {
+  const give = (fam: Family, memberId: string, json: Record<string, unknown>, token = fam.parentToken) =>
+    call('POST', `/v1/members/${memberId}/bonus`, { token, json: { clientOpId: opId(), ...json } });
+
+  it('adds the points with the reason, shows it in the history and notifies the child', async () => {
+    const fam = await registerFamily();
+    const kid = await addChild(fam, 'Zosia');
+    const r = await give(fam, kid.id, { amount: 20, reason: '  pomoc babci ' });
+    expect(r.status).toBe(201);
+    expect(r.body.balance).toBe(20);
+    expect(r.body.entry).toMatchObject({ amount: 20, reason: 'bonus', note: 'pomoc babci', label: 'Bonus od rodzica: pomoc babci' });
+    const p = await call('GET', '/v1/members/me/points', { token: kid.token });
+    expect(p.body.balance).toBe(20);
+    expect(p.body.earnedTotal).toBe(20);
+    expect(p.body.ledger[0]).toMatchObject({ reason: 'bonus', label: 'Bonus od rodzica: pomoc babci', amount: 20 });
+    const n = await env.DB.prepare("SELECT title, body FROM notification_outbox WHERE member_id = ? AND type = 'bonus'").bind(kid.id).first<any>();
+    expect(n).toMatchObject({ title: 'Bonus! +20 pkt', body: 'Za: pomoc babci' });
+  });
+
+  it('is idempotent per key', async () => {
+    const fam = await registerFamily();
+    const kid = await addChild(fam);
+    const key = opId();
+    const [a, b] = await Promise.all([
+      give(fam, kid.id, { amount: 5, reason: 'x', clientOpId: key }),
+      give(fam, kid.id, { amount: 5, reason: 'x', clientOpId: key }),
+    ]);
+    expect([a.status, b.status].sort()).toEqual([200, 201]);
+    expect(a.body.entry.id).toBe(b.body.entry.id);
+    const p = await call('GET', `/v1/members/${kid.id}/points`, { token: fam.parentToken });
+    expect(p.body.balance).toBe(5);
+  });
+
+  it('never subtracts and validates amount and reason', async () => {
+    const fam = await registerFamily();
+    const kid = await addChild(fam);
+    for (const json of [
+      { amount: -5, reason: 'kara' },
+      { amount: 0, reason: 'nic' },
+      { amount: 501, reason: 'dużo' },
+      { amount: 2.5, reason: 'pół' },
+      { amount: 10, reason: '   ' },
+      { amount: 10, reason: 'x'.repeat(61) },
+    ]) {
+      expect((await give(fam, kid.id, json)).status).toBe(400);
+    }
+    expect((await give(fam, kid.id, { amount: 500, reason: 'x'.repeat(60) })).status).toBe(201);
+  });
+
+  it('only parents, only own family children', async () => {
+    const fam = await registerFamily();
+    const kid = await addChild(fam);
+    const other = await registerFamily('Inni');
+    expect((await give(fam, kid.id, { amount: 5, reason: 'x' }, kid.token)).status).toBe(403);
+    expect((await give(other, kid.id, { amount: 5, reason: 'x' })).status).toBe(404);
+    expect((await give(fam, fam.parentId, { amount: 5, reason: 'x' })).status).toBe(404);
+  });
+});

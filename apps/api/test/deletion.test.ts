@@ -33,6 +33,7 @@ async function busyFamily() {
   const reward = (await call('POST', '/v1/rewards', { token: fam.parentToken, json: { name: 'Lody', icon: 'gift', cost: 5 } })).body;
   const red = await call('POST', `/v1/rewards/${reward.id}/redeem`, { token: kid.token });
   await call('POST', `/v1/redemptions/${red.body.redemptionId}/deliver`, { token: dad.token });
+  await call('POST', `/v1/members/${kid.id}/bonus`, { token: dad.token, json: { amount: 3, reason: 'pomoc', clientOpId: `d-${Date.now()}-${op++}` } });
   await legacyChildPhoto(fam, kid);
   await call('PUT', '/v1/me/avatar', { token: dad.token, raw: new Uint8Array([4, 5, 6]), contentType: 'image/png' });
   await call('POST', '/v1/devices', { token: kid.token, json: { pushToken: `tok-${Date.now()}-${op++}` } });
@@ -52,7 +53,7 @@ async function leftovers(memberId: string): Promise<Record<string, number>> {
     completion: 'SELECT COUNT(*) AS n FROM completion WHERE member_id = ?1 OR reviewed_by = ?1',
     redemption: 'SELECT COUNT(*) AS n FROM redemption WHERE member_id = ?1 OR resolved_by = ?1',
     member_item: 'SELECT COUNT(*) AS n FROM member_item WHERE member_id = ?1',
-    points_ledger: 'SELECT COUNT(*) AS n FROM points_ledger WHERE member_id = ?1',
+    points_ledger: 'SELECT COUNT(*) AS n FROM points_ledger WHERE member_id = ?1 OR created_by = ?1',
     streak_award: 'SELECT COUNT(*) AS n FROM streak_award WHERE member_id = ?1',
     notification_outbox: 'SELECT COUNT(*) AS n FROM notification_outbox WHERE member_id = ?1',
     password_reset: 'SELECT COUNT(*) AS n FROM password_reset WHERE member_id = ?1',
@@ -102,7 +103,7 @@ describe('an adult deletes their own account', () => {
     const { fam, dad, kid } = await busyFamily();
     const photo = await avatarPath(dad.token);
     expect(Object.keys(await leftovers(dad.id))).toEqual(
-      expect.arrayContaining(['member', 'parent_login', 'session', 'task', 'completion', 'redemption']),
+      expect.arrayContaining(['member', 'parent_login', 'session', 'task', 'completion', 'redemption', 'points_ledger']),
     );
     const r = await call('POST', '/v1/me/delete', { token: dad.token, json: { currentPassword: 'haslo-taty-123' } });
     expect(r.status).toBe(200);

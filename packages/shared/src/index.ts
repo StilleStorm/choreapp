@@ -207,6 +207,19 @@ export const parentCompleteBody = z.object({
   clientOpId: z.string().min(8).max(64),
 });
 
+/** Biggest single bonus a parent can give ("Daj punkty"). */
+export const BONUS_MAX = 500;
+/** Longest reason for a bonus, shown in the child's points history. */
+export const BONUS_REASON_MAX = 60;
+
+/** Bonus points from a parent: only ever added (taking points away is not offered). */
+export const bonusBody = z.object({
+  amount: z.number().int().min(1).max(BONUS_MAX),
+  reason: z.string().trim().min(1).max(BONUS_REASON_MAX),
+  /** Idempotency key generated when the confirmation opens, so a double tap pays once. */
+  clientOpId: z.string().min(8).max(64),
+});
+
 export const rejectBody = z.object({ comment: z.string().trim().max(300).nullable().optional() });
 
 // ---------------------------------------------------------------------------

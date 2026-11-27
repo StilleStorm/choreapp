@@ -203,9 +203,18 @@ export interface PointsDto {
 export interface LedgerEntryDto {
   id: string;
   amount: number;
+  /** task, drop_fallback, streak_fallback, shop, reward, reward_refund, bonus */
   reason: string;
   label: string;
   createdAt: number;
+  /** bonus only: the parent's reason (also part of label). */
+  note?: string | null;
+}
+
+/** A parent's bonus was added. */
+export interface BonusResultDto {
+  entry: LedgerEntryDto;
+  balance: number;
 }
 
 export interface StatsDto {
