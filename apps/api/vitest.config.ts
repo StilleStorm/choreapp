@@ -1,4 +1,5 @@
 import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-plugin';
+import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig(async () => {
@@ -8,7 +9,12 @@ export default defineConfig(async () => {
       cloudflareTest({
         wrangler: { configPath: './wrangler.jsonc' },
         miniflare: {
-          bindings: { TEST_MIGRATIONS: migrations, FILE_SIGNING_KEY: 'test-signing-key' },
+          bindings: {
+            TEST_MIGRATIONS: migrations,
+            // The generated built-in seed, so tests can check what it adds.
+            TEST_BUILTIN_SEED: readFileSync('./seed/builtin.sql', 'utf8'),
+            FILE_SIGNING_KEY: 'test-signing-key',
+          },
         },
       }),
     ],
