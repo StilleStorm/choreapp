@@ -235,6 +235,18 @@
 
   // An adult deletes their own account; the administrator can only delete the whole family
   // (or hand the role on first, in its own sheet, and then delete their account).
+  let logoutOpen = $state(false);
+  let logoutBusy = $state(false);
+  async function logout() {
+    logoutBusy = true;
+    try {
+      await session.signOut();
+    } finally {
+      logoutBusy = false;
+      logoutOpen = false;
+    }
+  }
+
   let deleteOpen = $state(false);
   let deleteMode = $state<'me' | 'family'>('me');
   let deletePassword = $state('');
@@ -457,7 +469,13 @@
         <span class="grow title">O aplikacji</span>
         <Icon name="chevron" size={20} />
       </a>
-      <button class="row member" onclick={() => session.signOut()}>
+    </div>
+  </section>
+
+  <!-- Logout has its own spot away from the other rows and asks first: it used to get tapped by accident. -->
+  <section class="section separate">
+    <div class="list">
+      <button class="row member" onclick={() => (logoutOpen = true)}>
         <Icon name="logout" />
         <span class="grow title">Wyloguj się</span>
       </button>
@@ -686,6 +704,18 @@
   </form>
 </Sheet>
 
+<Sheet bind:open={logoutOpen} title="Wylogować się?">
+  <div class="stack">
+    <p class="muted">Żeby wrócić, zalogujesz się ponownie e-mailem i hasłem. Zadania, punkty i nagrody zostają bez zmian.</p>
+    <div class="inline">
+      <button type="button" class="btn grow" onclick={() => (logoutOpen = false)}>Anuluj</button>
+      <button type="button" class="btn danger grow" disabled={logoutBusy} onclick={logout}>
+        {logoutBusy ? 'Wylogowywanie…' : 'Wyloguj się'}
+      </button>
+    </div>
+  </div>
+</Sheet>
+
 <Sheet bind:open={deleteOpen} title={deleteMode === 'family' ? 'Usuń całą rodzinę' : 'Usuń konto'}>
   <form class="stack" onsubmit={deleteAccount}>
     <div class="error-box">
@@ -762,6 +792,7 @@
   .danger-text {
     color: var(--danger);
   }
+  .separate,
   .danger-zone {
     margin-top: 24px;
   }

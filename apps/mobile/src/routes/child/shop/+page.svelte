@@ -111,6 +111,7 @@
             <button class="card reward" onclick={() => pickReward(r)}>
               <TaskIcon icon={r.icon} size={48} />
               <span class="name">{r.name}</span>
+              {#if r.oneTime}<span class="badge">jednorazowa</span>{/if}
               <span class="price" class:short={shop.balance < r.cost}>{r.cost} pkt</span>
             </button>
           {/each}
@@ -161,6 +162,7 @@
     {#if reward}
       <TaskIcon icon={reward.icon} size={88} />
       <h2>{reward.name}</h2>
+      {#if reward.oneTime}<p class="muted small">Jednorazowa: po wybraniu zniknie ze sklepu.</p>{/if}
     {:else if item}
       <ItemImage url={item.imageUrl} name={item.name} rarity={item.rarity} size={120} />
       <h2>{item.name}</h2>

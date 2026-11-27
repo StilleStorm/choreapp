@@ -211,6 +211,8 @@ export const rewardInput = z.object({
   icon: z.string().min(1).max(60),
   cost: z.number().int().min(1).max(100_000),
   active: z.boolean().default(true),
+  /** One-time reward. Omitted (older apps) = permanent on create, unchanged on edit. */
+  oneTime: z.boolean().optional(),
 });
 
 export const packInput = z.object({

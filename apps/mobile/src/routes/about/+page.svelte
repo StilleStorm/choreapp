@@ -41,18 +41,15 @@
       <span class="grow title">Licencje i autorzy grafik</span>
       <Icon name="chevron" size={20} />
     </a>
-    <a class="row" href={PRIVACY_URL} target="_blank" rel="noopener">
-      <Icon name="info" />
-      <span class="grow title">Polityka prywatności</span>
-      <Icon name="chevron" size={20} />
-    </a>
+    {#if session.isParent}
+      <!-- Children never get links out of the app (Families policy). -->
+      <a class="row" href={PRIVACY_URL} target="_blank" rel="noopener">
+        <Icon name="info" />
+        <span class="grow title">Polityka prywatności</span>
+        <Icon name="chevron" size={20} />
+      </a>
+    {/if}
   </div>
-
-  {#if !session.isParent}
-    <p class="small muted links">
-      <a href={WEBSITE} target="_blank" rel="noopener">stillestormstudio.com</a> · <a href="mailto:{EMAIL}">kontakt</a>
-    </p>
-  {/if}
 </main>
 
 <style>
@@ -70,8 +67,5 @@
   a.row {
     color: inherit;
     text-decoration: none;
-  }
-  .links {
-    text-align: center;
   }
 </style>

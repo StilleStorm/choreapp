@@ -246,6 +246,10 @@ export interface RewardDto {
   icon: string;
   cost: number;
   active: boolean;
+  /** One-time reward: disappears from the shop once a child chooses it (older APIs omit it = permanent). */
+  oneTime?: boolean;
+  /** One-time reward that a child has already chosen (switched off until a refund or until the parent re-enables it). */
+  used?: boolean;
 }
 
 export interface RedemptionDto {
