@@ -15,6 +15,8 @@ class PackQueue {
   /** Server stickers shown but not yet marked as seen. */
   private unseen = false;
   private checking = false;
+  /** "Seen" request in flight: a check must wait for it, or it gets the same stickers again. */
+  private marking: Promise<void> | null = null;
 
   get current(): Pack | undefined {
     return this.queue[0];
@@ -25,6 +27,7 @@ class PackQueue {
     if (this.checking || this.queue.some((p) => p.fromServer)) return;
     this.checking = true;
     try {
+      if (this.marking) await this.marking;
       const fresh = await api.get<NewItemDto[]>('/v1/collection/new');
       if (fresh.length === 0) return;
       this.unseen = true;
@@ -46,11 +49,12 @@ class PackQueue {
     this.queue = this.queue.slice(1);
     if (this.unseen && !this.queue.some((p) => p.fromServer)) {
       this.unseen = false;
-      try {
-        await api.post('/v1/collection/seen');
-      } catch {
-        /* shown again next time */
-      }
+      this.marking = api.post('/v1/collection/seen').then(
+        () => {},
+        () => {}, // shown again next time
+      );
+      await this.marking;
+      this.marking = null;
     }
   }
 }
