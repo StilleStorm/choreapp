@@ -8,6 +8,7 @@
   import { plural } from '#lib/format.js';
   import { errorMessage } from '#lib/messages.js';
   import { KIND_LABEL, RARITY_LABEL } from '#lib/rarity.js';
+  import { packs } from '#lib/packs.svelte.js';
   import { session } from '#lib/session.svelte.js';
 
   let shop = $state<ShopDto | null>(null);
@@ -60,7 +61,11 @@
         result = `Wybrane! ${session.parents.length > 1 ? 'Rodzice dostali' : 'Rodzic dostał'} powiadomienie.`;
       } else if (item) {
         await api.post(`/v1/shop/items/${item.id}/buy`);
-        result = item.kind === 'sticker' ? 'Naklejka jest już w Twoim albumie!' : 'Masz to! Ustawisz w Profilu.';
+        if (item.kind === 'sticker') {
+          // A bought sticker comes as a pack to open, like the earned ones.
+          packs.showPurchase(item);
+          open = false;
+        } else result = 'Masz to! Ustawisz w Profilu.';
       }
       await load();
     } catch (e) {
