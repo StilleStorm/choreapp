@@ -32,7 +32,7 @@ describe('Android back', () => {
     back({ canGoBack: false });
     expect(backNotice.shown).toBe(true);
     expect(deps.exit).not.toHaveBeenCalled();
-    advance(1500);
+    advance(1000);
     back({ canGoBack: false });
     expect(deps.exit).toHaveBeenCalledOnce();
     expect(backNotice.shown).toBe(false);
@@ -60,5 +60,19 @@ describe('Android back', () => {
     b.back({ canGoBack: false });
     expect(b.deps.goBack).not.toHaveBeenCalled();
     expect(b.deps.exit).not.toHaveBeenCalled();
+  });
+
+  it('the notice stays for the whole window and disappears when it ends', () => {
+    vi.useFakeTimers();
+    try {
+      const { back } = setup();
+      back({ canGoBack: false });
+      vi.advanceTimersByTime(EXIT_WINDOW_MS - 1);
+      expect(backNotice.shown).toBe(true);
+      vi.advanceTimersByTime(1);
+      expect(backNotice.shown).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

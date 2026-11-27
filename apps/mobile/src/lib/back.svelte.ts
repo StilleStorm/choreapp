@@ -2,13 +2,14 @@
  * Android back button / back gesture. Order: an open sheet closes first;
  * during a pack opening nothing happens; inside the app it goes back; on a
  * root screen (nothing to go back to) the first press only shows a notice and
- * a second press within EXIT_WINDOW_MS leaves the app, so a stray back
+ * a second press within EXIT_WINDOW_MS leaves the app (the notice stays
+ * exactly that long, with a bar showing the time left), so a stray back
  * gesture doesn't close it by accident.
  */
-export const EXIT_WINDOW_MS = 3000;
+export const EXIT_WINDOW_MS = 2000;
 
 /** The "press again to exit" notice (BackNotice.svelte shows it). */
-export const backNotice = $state({ shown: false });
+export const backNotice = $state({ shown: false, key: 0 });
 
 export interface BackDeps {
   now: () => number;
@@ -42,6 +43,7 @@ export function createBackHandler(deps: BackDeps): (e: { canGoBack: boolean }) =
     }
     armedAt = now;
     backNotice.shown = true;
+    backNotice.key++; // restarts the countdown bar
     clearTimeout(hide);
     hide = setTimeout(disarm, EXIT_WINDOW_MS);
   };
