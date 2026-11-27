@@ -19,10 +19,13 @@ apk=apps/mobile/android/app/build/outputs/apk/release/app-release.apk
 [ -f "$apk" ] || { echo "APK not found (is keystore.properties set up?)"; exit 1; }
 
 key="releases/choreapp-${code}.apk"
+size=$(stat -c %s "$apk")
+sha=$(sha256sum "$apk" | cut -d' ' -f1)
 (cd apps/api && pnpm exec wrangler r2 object put "choreapp-files/${key}" --file "../../${apk}" --content-type application/vnd.android.package-archive --remote)
 esc=${notes//\'/\'\'}
 (cd apps/api && pnpm exec wrangler d1 execute choreapp --remote --command \
-  "INSERT INTO app_release (version_code, version_name, apk_key, notes, created_at) VALUES (${code}, '${name}', '${key}', '${esc}', $(date +%s)000)
-   ON CONFLICT(version_code) DO UPDATE SET version_name = excluded.version_name, apk_key = excluded.apk_key, notes = excluded.notes")
+  "INSERT INTO app_release (version_code, version_name, apk_key, notes, created_at, apk_size, apk_sha256) VALUES (${code}, '${name}', '${key}', '${esc}', $(date +%s)000, ${size}, '${sha}')
+   ON CONFLICT(version_code) DO UPDATE SET version_name = excluded.version_name, apk_key = excluded.apk_key, notes = excluded.notes,
+     apk_size = excluded.apk_size, apk_sha256 = excluded.apk_sha256")
 cp "$apk" "choreapp-${name}.apk"
 echo "Done: choreapp-${name}.apk (also on R2 as ${key})"

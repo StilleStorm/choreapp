@@ -325,4 +325,8 @@ export interface AppReleaseDto {
   versionName: string;
   url: string;
   notes: string | null;
+  /** APK size in bytes, checked after the download (older APIs omit it). */
+  size?: number | null;
+  /** SHA-256 of the APK (hex), checked after the download when known. */
+  sha256?: string | null;
 }
