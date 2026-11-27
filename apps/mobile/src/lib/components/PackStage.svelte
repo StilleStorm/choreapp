@@ -27,6 +27,26 @@
     return `left:${l * 100}%;width:${(r - l) * 100}%;top:${bodyTop + t * h}%;height:${(b - t) * h}%`;
   });
 
+  /**
+   * Pacing (ms). Calm on purpose: the child should have time to enjoy each
+   * beat. Tune here; reduced motion skips all of this (short fades only).
+   */
+  const T = {
+    packIn: 700, // pack arrives on screen
+    stripOff: 1100, // torn strip flies away
+    glowBeat: 400, // light from the opening before the sticker moves
+    burst: 1100, // the glow burst from the opening
+    legendaryPreGlow: 800, // legendary: extra glow and tremble before the rise
+    /** Sticker rising out of the pack, then flip and land (rise + flip). */
+    rise: { common: 550, rare: 650, legendary: 700 } as Record<Rarity, number>,
+    flip: { common: 750, rare: 950, legendary: 900 } as Record<Rarity, number>,
+    hold: 600, // landed sticker alone before the caption and buttons
+    captionIn: 400,
+    nextOut: 600, // streak pack: current sticker leaves
+    nextIn: 700, // streak pack: the open pack comes back
+  };
+  const timingVars = `--t-pack-in:${T.packIn}ms;--t-burst:${T.burst}ms;--t-hold:${T.hold}ms;--t-caption-in:${T.captionIn}ms`;
+
   const reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const caption = $derived(REASON_CAPTION[pack.reason](pack.streakDays));
 
@@ -113,11 +133,16 @@
       burst = true;
       if (reduce) await tween(stripEl, [{ opacity: 1 }, { opacity: 0 }], { duration: 200 });
       else
-        void tween(stripEl, [{ transform: 'none', opacity: 1 }, { transform: 'translate(70%, -160%) rotate(32deg)', opacity: 0 }], {
-          duration: 650,
-          easing: 'cubic-bezier(.4,0,.8,.6)',
-        });
-      await wait(reduce ? 0 : 250);
+        void tween(
+          stripEl,
+          [
+            { transform: 'none', opacity: 1 },
+            { transform: 'translate(25%, -70%) rotate(14deg)', opacity: 1, offset: 0.45 },
+            { transform: 'translate(70%, -160%) rotate(32deg)', opacity: 0 },
+          ],
+          { duration: T.stripOff, easing: 'cubic-bezier(.3,0,.6,1)' },
+        );
+      await wait(reduce ? 0 : T.glowBeat);
       await reveal();
     } catch {
       /* skipped or closed */
@@ -137,23 +162,45 @@
     }
     const ph = p.clientHeight;
     s.style.zIndex = '1';
-    // Behind the pack front, then up and out of the open top.
+    if (r === 'legendary') {
+      // Something big is coming: the open pack glows and trembles first.
+      burst = false;
+      await wait(20);
+      burst = true;
+      await tween(
+        p,
+        [
+          { transform: 'none' },
+          { transform: 'rotate(-1.5deg) translateX(-2px)', offset: 0.2 },
+          { transform: 'rotate(1.5deg) translateX(2px) scale(1.02)', offset: 0.45 },
+          { transform: 'rotate(-1.5deg) translateX(-2px) scale(1.03)', offset: 0.7 },
+          { transform: 'none' },
+        ],
+        { duration: T.legendaryPreGlow, easing: 'ease-in-out' },
+      );
+    }
+    // Behind the pack front, then slowly up and out of the open top.
     await tween(s, [{ opacity: 1, transform: `translateY(${ph * 0.12}px) scale(.72)` }, { opacity: 1, transform: `translateY(${-ph * 0.5}px) scale(.72)` }], {
-      duration: r === 'legendary' ? 900 : 650,
-      easing: 'cubic-bezier(.2,.7,.3,1)',
+      duration: T.rise[r],
+      easing: 'cubic-bezier(.25,.6,.3,1)',
     });
     s.style.zIndex = '3';
-    void tween(p, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateY(${ph * 0.35}px) scale(.9)` }], { duration: 450, easing: 'ease-in' });
+    void tween(p, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateY(${ph * 0.35}px) scale(.9)` }], {
+      duration: Math.round(T.flip[r] * 0.6),
+      easing: 'ease-in',
+    });
     const turns = r === 'legendary' ? 2 : 1;
     if (r === 'legendary') fx = { key: Date.now(), rarity: r }; // white flash as it spins
+    // Flip, a gentle overshoot and settle.
     await tween(
       s,
       [
         { transform: `translateY(${-ph * 0.5}px) scale(.72) rotateY(0deg)` },
-        { transform: `translateY(${-ph * 0.1}px) scale(1.12) rotateY(${turns * 360 - 30}deg)`, offset: 0.8 },
+        { transform: `translateY(${-ph * 0.08}px) scale(1.08) rotateY(${turns * 360 - 20}deg)`, offset: 0.72 },
+        { transform: `translateY(${ph * 0.01}px) scale(.98) rotateY(${turns * 360 + 4}deg)`, offset: 0.88 },
         { transform: `translateY(0) scale(1) rotateY(${turns * 360}deg)` },
       ],
-      { duration: r === 'legendary' ? 1700 : r === 'rare' ? 950 : 750, easing: 'cubic-bezier(.3,.6,.3,1)' },
+      { duration: T.flip[r], easing: 'cubic-bezier(.33,.6,.35,1)' },
     );
     s.style.transform = 'none';
     landed(r);
@@ -174,13 +221,13 @@
     fx = null;
     try {
       const away = reduce ? 'none' : 'translateY(-30%) scale(.6)';
-      await tween(stickerEl, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: away }], { duration: 300, easing: 'ease-in' });
+      await tween(stickerEl, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: away }], { duration: reduce ? 200 : T.nextOut, easing: 'ease-in' });
       index++;
       stickerEl!.style.zIndex = '1';
       stickerEl!.style.opacity = '0';
       // The open pack comes back for the next sticker.
       const from = reduce ? 'none' : 'translateY(30%) scale(.9)';
-      await tween(packEl, [{ opacity: 0, transform: from }, { opacity: 1, transform: 'none' }], { duration: 400, easing: 'ease-out' });
+      await tween(packEl, [{ opacity: 0, transform: from }, { opacity: 1, transform: 'none' }], { duration: reduce ? 200 : T.nextIn, easing: 'cubic-bezier(.2,.9,.3,1)' });
       await reveal();
     } catch {
       /* skipped or closed */
@@ -214,7 +261,7 @@
   const SPARKS: Record<Rarity, ReturnType<typeof sparks>> = { common: sparks(6), rare: sparks(12), legendary: sparks(16) };
 </script>
 
-<div class="overlay" data-rarity={pack.rarity} class:reduce>
+<div class="overlay" data-rarity={pack.rarity} class:reduce style={timingVars}>
   <p class="why">{caption}</p>
 
   <div class="stage">
@@ -290,7 +337,7 @@
     {#if stage === 'closed'}
       <p class="hint">Przesuń palcem po górnym pasku paczki<br /><small>albo stuknij w nią kilka razy</small></p>
     {:else if stage === 'shown'}
-      <div class="card result">
+      <div class="card result landed">
         <h2>{pack.items.length > 1 ? `Naklejka ${index + 1} z ${pack.items.length}` : 'Nowa naklejka!'}</h2>
         <p class="name">{item.name}</p>
         <p class="muted small">{RARITY_LABEL[item.rarity]} · album {item.album}</p>
@@ -389,7 +436,7 @@
   .pack-wrap {
     position: relative;
     z-index: 2;
-    animation: pack-in 0.6s cubic-bezier(0.2, 1.2, 0.4, 1) both;
+    animation: pack-in var(--t-pack-in) cubic-bezier(0.2, 1.15, 0.4, 1) both;
   }
   .pack-wrap.hide {
     visibility: hidden;
@@ -475,7 +522,7 @@
     background: radial-gradient(closest-side, #fff 0%, rgb(255 250 220 / 80%) 35%, transparent 100%);
     z-index: 4;
     pointer-events: none;
-    animation: burst 0.7s ease-out forwards;
+    animation: burst var(--t-burst) ease-out forwards;
   }
   /* Legendary: holographic shimmer over the foil, glow and tremble before opening. */
   .holo {
@@ -648,7 +695,15 @@
     gap: 4px;
     padding: 14px 16px 16px;
     text-align: center;
-    animation: drop-in 0.4s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+    animation: drop-in var(--t-caption-in) cubic-bezier(0.2, 1.3, 0.4, 1) both;
+  }
+  /* The landed sticker gets a moment on its own before the caption. */
+  .result.landed {
+    animation-delay: var(--t-hold);
+  }
+  .reduce .result {
+    animation-duration: 0.2s;
+    animation-delay: 0s;
   }
   .result h2 {
     margin: 0;
@@ -734,8 +789,8 @@
   @media (prefers-reduced-motion: no-preference) {
     .overlay[data-rarity='legendary'] .pack-wrap {
       animation:
-        pack-in 0.6s cubic-bezier(0.2, 1.2, 0.4, 1) both,
-        tremble 0.5s ease-in-out 0.8s infinite;
+        pack-in var(--t-pack-in) cubic-bezier(0.2, 1.15, 0.4, 1) both,
+        tremble 0.6s ease-in-out 1s infinite;
     }
     .holo i {
       animation: shimmer 2.6s ease-in-out infinite;
