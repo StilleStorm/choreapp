@@ -12,6 +12,6 @@
 
 {#if packs.current}
   {#key packs.current.key}
-    <PackStage pack={packs.current} ondone={done} />
+    <PackStage pack={packs.current} waiting={packs.queue.length - 1} ondone={done} />
   {/key}
 {/if}

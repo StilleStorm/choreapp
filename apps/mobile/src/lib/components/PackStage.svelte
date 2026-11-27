@@ -11,7 +11,18 @@
   import { REASON_CAPTION, type Pack } from '../packGroups.js';
   import { RARITY_LABEL } from '../rarity.js';
 
-  let { pack, ondone }: { pack: Pack; ondone: (album: string | null) => void } = $props();
+  let {
+    pack,
+    waiting = 0,
+    ondone,
+  }: {
+    pack: Pack;
+    /** Packs still queued after this one. */
+    waiting?: number;
+    ondone: (album: string | null) => void;
+  } = $props();
+  /** The primary button: on to the next pack, or done. */
+  const primaryLabel = $derived(waiting > 0 ? `Następna paczka (${waiting})` : 'Super!');
 
   /** Layer geometry from packages/seed/booster-packs.py (720 px tall art). */
   const ART: Record<Rarity, { strip: number; body: number; title: [number, number, number, number]; ink: string }> = {
@@ -344,7 +355,7 @@
         {#if last && pack.items.length === 1}
           <div class="actions">
             <button class="btn" onclick={() => ondone(item.album)}>Do albumu</button>
-            <button class="btn primary" onclick={() => ondone(null)}>Dalej</button>
+            <button class="btn primary" onclick={() => ondone(null)}>{primaryLabel}</button>
           </div>
         {:else}
           <button class="btn primary block" onclick={nextSticker}>{last ? 'Gotowe!' : 'Następna!'}</button>
@@ -363,7 +374,7 @@
         </div>
         <div class="actions">
           <button class="btn" onclick={() => ondone(pack.items[pack.items.length - 1]!.album)}>Do albumu</button>
-          <button class="btn primary" onclick={() => ondone(null)}>Dalej</button>
+          <button class="btn primary" onclick={() => ondone(null)}>{primaryLabel}</button>
         </div>
       </div>
     {/if}
