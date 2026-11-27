@@ -38,13 +38,21 @@ export async function scanQr(): Promise<string | null> {
 export async function installNativeHandlers(onInviteLink: (token: string) => void): Promise<void> {
   if (!isNative) return;
   const { App } = await import('@capacitor/app');
-  await App.addListener('backButton', ({ canGoBack }) => {
-    // Close an open sheet first.
-    const dialog = document.querySelector('dialog[open]') as HTMLDialogElement | null;
-    if (dialog) return dialog.close();
-    if (canGoBack) history.back();
-    else void App.minimizeApp();
+  const { createBackHandler } = await import('./back.svelte.js');
+  const { packs } = await import('./packs.svelte.js');
+  const onBack = createBackHandler({
+    now: Date.now,
+    closeDialog: () => {
+      const open = document.querySelectorAll('dialog[open]');
+      const dialog = open[open.length - 1] as HTMLDialogElement | undefined;
+      dialog?.close();
+      return !!dialog;
+    },
+    packOpen: () => !!packs.current,
+    goBack: () => history.back(),
+    exit: () => void App.minimizeApp(),
   });
+  await App.addListener('backButton', onBack);
   await App.addListener('appUrlOpen', ({ url }) => {
     const token = inviteTokenFrom(url);
     if (token) onInviteLink(token);
