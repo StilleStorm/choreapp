@@ -1,10 +1,13 @@
 <script lang="ts">
-  import { TASK_ICON_GROUPS, TASK_ICONS } from '../taskIcons.js';
+  import { REWARD_ICON_GROUPS, REWARD_ICONS, TASK_ICON_GROUPS, TASK_ICONS } from '../taskIcons.js';
   import Sheet from './Sheet.svelte';
   import TaskIcon from './TaskIcon.svelte';
 
-  let { value = $bindable(), label = 'Ikonka' }: { value: string; label?: string } = $props();
+  /** forRewards: the "Nagrody" group first, pocket money at the top. */
+  let { value = $bindable(), label = 'Ikonka', forRewards = false }: { value: string; label?: string; forRewards?: boolean } = $props();
   let open = $state(false);
+  const groups = $derived(forRewards ? REWARD_ICON_GROUPS : TASK_ICON_GROUPS);
+  const icons = $derived(forRewards ? REWARD_ICONS : TASK_ICONS);
   const current = $derived(TASK_ICONS.find((i) => i.id === value));
 </script>
 
@@ -18,11 +21,11 @@
 </div>
 
 <Sheet bind:open title="Wybierz ikonkę">
-  {#each TASK_ICON_GROUPS as group (group)}
+  {#each groups as group (group)}
     <section class="group">
       <h3 class="section-title">{group}</h3>
       <div class="grid">
-        {#each TASK_ICONS.filter((i) => i.group === group) as icon (icon.id)}
+        {#each icons.filter((i) => i.group === group) as icon (icon.id)}
           <button
             type="button"
             class="icon-cell"

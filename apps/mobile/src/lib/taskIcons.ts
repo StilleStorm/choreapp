@@ -109,6 +109,7 @@ export const TASK_ICONS: TaskIcon[] = [
   { id: 'popcorn', label: 'Kino', group: 'Nagrody' },
   { id: 'ticket', label: 'Wyjście', group: 'Nagrody' },
   { id: 'money', label: 'Kieszonkowe', group: 'Nagrody' },
+  { id: 'coin', label: 'Moneta', group: 'Nagrody' },
   { id: 'mobile', label: 'Telefon', group: 'Nagrody' },
   { id: 'tv', label: 'Bajka', group: 'Nagrody' },
   { id: 'balloon', label: 'Atrakcja', group: 'Nagrody' },
@@ -131,6 +132,14 @@ export const TASK_ICONS: TaskIcon[] = [
 
 export const DEFAULT_TASK_ICON = 'sparkles';
 export const DEFAULT_REWARD_ICON = 'gift';
+
+/** Icons in picker order for rewards: the "Nagrody" group first, pocket money at the very top. */
+export const REWARD_ICON_GROUPS = ['Nagrody', ...TASK_ICON_GROUPS.filter((g) => g !== 'Nagrody')];
+const REWARD_FIRST = ['money', 'coin'];
+export const REWARD_ICONS: TaskIcon[] = [
+  ...REWARD_FIRST.map((id) => TASK_ICONS.find((i) => i.id === id)!),
+  ...TASK_ICONS.filter((i) => !REWARD_FIRST.includes(i.id)),
+];
 
 export function taskIconUrl(id: string): string {
   return `/icons/tasks/${TASK_ICONS.some((i) => i.id === id) ? id : DEFAULT_TASK_ICON}.webp`;

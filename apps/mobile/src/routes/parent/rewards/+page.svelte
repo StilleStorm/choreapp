@@ -59,6 +59,7 @@
   let rIcon = $state(DEFAULT_REWARD_ICON);
   let rCost = $state(100);
   let rActive = $state(true);
+  let rOneTime = $state(false);
   let rError = $state('');
   function openReward(r: RewardDto | null) {
     editing = r;
@@ -66,13 +67,14 @@
     rIcon = r?.icon ?? DEFAULT_REWARD_ICON;
     rCost = r?.cost ?? 100;
     rActive = r?.active ?? true;
+    rOneTime = r?.oneTime ?? false;
     rError = '';
     rewardOpen = true;
   }
   async function saveReward(e: SubmitEvent) {
     e.preventDefault();
     rError = '';
-    const json = { name: rName.trim(), icon: rIcon, cost: Number(rCost), active: rActive };
+    const json = { name: rName.trim(), icon: rIcon, cost: Number(rCost), active: rActive, oneTime: rOneTime };
     try {
       if (editing) await api.patch(`/v1/rewards/${editing.id}`, json);
       else await api.post('/v1/rewards', json);
@@ -82,6 +84,17 @@
       rError = errorMessage(err);
     }
   }
+  /** Puts a used one-time reward back on the shelf. */
+  async function reenable(r: RewardDto) {
+    try {
+      await api.patch(`/v1/rewards/${r.id}`, { name: r.name, icon: r.icon, cost: r.cost, active: true, oneTime: true });
+      flash(`${r.name} znowu jest w sklepie.`);
+      await load();
+    } catch (e) {
+      flash(errorMessage(e));
+    }
+  }
+
   async function deleteReward() {
     if (!editing) return;
     await api.del(`/v1/rewards/${editing.id}`);
@@ -170,12 +183,20 @@
     </div>
     <div class="list">
       {#each rewards as r (r.id)}
-        <button class="row plain" onclick={() => openReward(r)}>
-          <TaskIcon icon={r.icon} size={36} />
-          <span class="grow title">{r.name}</span>
-          {#if !r.active}<span class="badge">ukryta</span>{/if}
-          <span class="badge accent">{r.cost} pkt</span>
-        </button>
+        <div class="row reward-row" class:used={r.used}>
+          <button class="plain reward-main" onclick={() => openReward(r)}>
+            <TaskIcon icon={r.icon} size={36} />
+            <span class="grow">
+              <span class="title">{r.name}</span>
+              {#if r.oneTime}<span class="meta">{r.used ? 'jednorazowa · wykorzystana' : 'jednorazowa'}</span>{/if}
+            </span>
+            {#if !r.active && !r.used}<span class="badge">ukryta</span>{/if}
+            <span class="badge accent">{r.cost} pkt</span>
+          </button>
+          {#if r.used}
+            <button class="btn small" onclick={() => reenable(r)}>Przywróć</button>
+          {/if}
+        </div>
       {:else}
         <p class="empty small">Półka z nagrodami jest u dzieci ukryta, dopóki nie dodasz pierwszej nagrody.</p>
       {/each}
@@ -236,12 +257,26 @@
       <span>Nazwa</span>
       <input type="text" bind:value={rName} maxlength="60" required placeholder="np. Godzina na konsoli" />
     </label>
-    <IconPicker bind:value={rIcon} />
+    <IconPicker bind:value={rIcon} forRewards />
     <label class="field">
       <span>Koszt w punktach</span>
       <input type="number" min="1" max="100000" bind:value={rCost} required />
       <span class="hint">Dzień zadań to zwykle około 30 punktów.</span>
     </label>
+    <fieldset class="field kind">
+      <span>Rodzaj nagrody</span>
+      <div class="segmented">
+        <button type="button" aria-pressed={!rOneTime} onclick={() => (rOneTime = false)}>Stała</button>
+        <button type="button" aria-pressed={rOneTime} onclick={() => (rOneTime = true)}>Jednorazowa</button>
+      </div>
+      <span class="hint">
+        {#if rOneTime}
+          Znika ze sklepu, gdy któreś dziecko ją wybierze (np. wyjście do kina). Wraca, jeśli anulujesz i zwrócisz punkty.
+        {:else}
+          Dziecko może ją kupować wielokrotnie, np. 10 zł na tablet za 100 pkt.
+        {/if}
+      </span>
+    </fieldset>
     <label class="inline"><input type="checkbox" bind:checked={rActive} /> <span>Widoczna w sklepie</span></label>
     {#if rError}<div class="error-box">{rError}</div>{/if}
     <button class="btn primary block">Zapisz</button>
@@ -301,6 +336,29 @@
     color: inherit;
     text-align: left;
     cursor: pointer;
+  }
+  .reward-row {
+    gap: 8px;
+  }
+  .reward-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+  }
+  .reward-row.used .reward-main {
+    opacity: 0.6;
+  }
+  .reward-main .title,
+  .reward-main .meta {
+    display: block;
+  }
+  .kind {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
   }
   .prices {
     display: grid;
