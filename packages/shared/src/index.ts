@@ -200,6 +200,13 @@ export const reportBody = z.object({
   reportedAt: z.number().int().positive().optional(),
 });
 
+/** A parent ticks a task off for a child (child without a phone, or done together): approved right away. */
+export const parentCompleteBody = z.object({
+  memberId: id,
+  /** Idempotency key generated when the sheet opens, so a double tap or a retry pays once. */
+  clientOpId: z.string().min(8).max(64),
+});
+
 export const rejectBody = z.object({ comment: z.string().trim().max(300).nullable().optional() });
 
 // ---------------------------------------------------------------------------

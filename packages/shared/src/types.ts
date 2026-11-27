@@ -179,6 +179,13 @@ export interface ApproveResultDto {
   drop: DropResultDto;
 }
 
+/** A parent marked a task done for a child. drop is null when a retried request found the earlier completion. */
+export interface ParentCompleteResultDto {
+  completionId: string;
+  status: 'approved';
+  drop: DropResultDto | null;
+}
+
 export interface StreakDto {
   current: number;
   longest: number;

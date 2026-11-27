@@ -1,6 +1,6 @@
 /** Reporting "Zrobiłem", the approvals queue, approve and reject. */
 import { childState, dueInstant, type CompletionRecord } from '@choreapp/core';
-import { rejectBody, reportBody, type ApprovalDto, type ApproveResultDto } from '@choreapp/shared';
+import { parentCompleteBody, rejectBody, reportBody, type ApprovalDto, type ApproveResultDto, type ParentCompleteResultDto } from '@choreapp/shared';
 import { Hono } from 'hono';
 import type { AppBindings } from '../env.js';
 import { requireChild, requireParent } from '../lib/auth.js';
@@ -74,6 +74,101 @@ export const reviews = new Hono<AppBindings>()
     }
     await background(c, notifyParentsOfReport(c.env, family, memberId, occ.title, id, now));
     return c.json({ completionId: id, status: 'reported' }, 201);
+  })
+
+  /**
+   * "Zrobione" from the parent's occurrence sheet: the parent ticks the task off
+   * for a child (with or without a phone). The completion is created and then
+   * approved through the same path as a normal approve, so points, stickers,
+   * streaks and the child's notification behave the same. A report already
+   * waiting for review is simply approved.
+   */
+  .post('/occurrences/:id/complete', requireParent, async (c) => {
+    const b = await body(c, parentCompleteBody);
+    const { familyId, memberId: parentId } = c.get('auth');
+
+    const occ = await first<{ id: string; date: string; due_time: string | null; shared_mode: 'each' | 'any' }>(
+      c.env.DB,
+      `SELECT o.id, o.date, t.due_time, t.shared_mode FROM occurrence o JOIN task t ON t.id = o.task_id
+        WHERE o.id = ? AND t.family_id = ? AND o.cancelled_at IS NULL AND t.archived_at IS NULL`,
+      c.req.param('id'),
+      familyId,
+    );
+    if (!occ) throw notFound('occurrence_not_found');
+
+    // Retry or double tap with the same key: answer with the earlier result.
+    const existing = await first<{ id: string; status: string; occurrence_id: string }>(
+      c.env.DB,
+      'SELECT id, status, occurrence_id FROM completion WHERE client_op_id = ?',
+      b.clientOpId,
+    );
+    if (existing) {
+      if (existing.occurrence_id !== occ.id || existing.status !== 'approved') throw new ApiError(409, 'already_done');
+      const dto: ParentCompleteResultDto = { completionId: existing.id, status: 'approved', drop: null };
+      return c.json(dto);
+    }
+
+    const assigned = await first(
+      c.env.DB,
+      `SELECT 1 FROM task_assignee ta JOIN occurrence o ON o.task_id = ta.task_id JOIN member m ON m.id = ta.member_id
+        WHERE o.id = ? AND ta.member_id = ? AND m.role = 'child' AND m.removed_at IS NULL`,
+      occ.id,
+      b.memberId,
+    );
+    if (!assigned) throw new ApiError(403, 'not_assigned');
+
+    const family = await loadFamily(c.env, familyId);
+    const now = Date.now();
+    const rows = await all<CompletionRow>(c.env.DB, 'SELECT * FROM completion WHERE occurrence_id = ?', occ.id);
+    const own: CompletionRecord[] = rows
+      .filter((r) => r.member_id === b.memberId)
+      .map((r) => ({ memberId: r.member_id, status: r.status, reportedAt: r.reported_at, reviewedAt: r.reviewed_at, comment: r.comment }));
+    const closedBySibling = occ.shared_mode === 'any' && rows.some((r) => r.member_id !== b.memberId && r.status === 'approved');
+    const state = childState({ date: occ.date, dueTime: occ.due_time, tz: family.timezone, now, own, closedBySibling });
+    if (state.state === 'upcoming') throw new ApiError(409, 'future_task');
+    if (state.state === 'approved' || state.state === 'closed') throw new ApiError(409, 'already_done');
+
+    let completionId: string;
+    if (state.state === 'reported') {
+      // The child already reported it: "Zrobione" approves that report.
+      completionId = rows.filter((r) => r.member_id === b.memberId && r.status === 'reported').sort((x, y) => y.reported_at - x.reported_at)[0]!.id;
+    } else {
+      completionId = newId();
+      // One statement, so two parents tapping at once can't create two completions
+      // (nor one for a sibling of an already finished "one of" task).
+      const ins = await run(
+        c.env.DB,
+        `INSERT INTO completion (id, occurrence_id, member_id, status, reported_at, client_op_id)
+         SELECT ?, ?, ?, 'reported', ?, ?
+          WHERE NOT EXISTS (
+            SELECT 1 FROM completion WHERE occurrence_id = ?
+               AND ((member_id = ? AND status IN ('reported', 'approved', 'closed')) OR (? = 'any' AND status = 'approved')))`,
+        completionId,
+        occ.id,
+        b.memberId,
+        now,
+        b.clientOpId,
+        occ.id,
+        b.memberId,
+        occ.shared_mode,
+      ).catch((e: unknown) => {
+        if (isUniqueViolation(e)) throw new ApiError(409, 'already_done');
+        throw e;
+      });
+      if (ins.meta.changes !== 1) throw new ApiError(409, 'already_done');
+    }
+
+    const pending = await loadPendingCompletion(c.env, familyId, completionId).catch((e: unknown) => {
+      if (e instanceof ApiError && e.code === 'not_pending') throw new ApiError(409, 'already_done');
+      throw e;
+    });
+    const drop = await approve(c.env, family, pending, parentId, new URL(c.req.url).origin, now).catch((e: unknown) => {
+      if (e instanceof ApiError && e.code === 'not_pending') throw new ApiError(409, 'already_done');
+      throw e;
+    });
+    await background(c, notifyReviewed(c.env, family, pending, true, null, drop));
+    const dto: ParentCompleteResultDto = { completionId, status: 'approved', drop };
+    return c.json(dto, 201);
   })
 
   .get('/approvals', requireParent, async (c) => {
