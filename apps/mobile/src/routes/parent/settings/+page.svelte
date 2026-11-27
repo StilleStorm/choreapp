@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { SUPPORT_URL, showSupport } from '#lib/support.js';
+  import { SUPPORT_LABEL, SUPPORT_URL, showSupport } from '#lib/support.js';
   import type { FamilyDto, ItemDto, MemberDto, Role } from '@choreapp/shared';
   import { api } from '#lib/api.js';
   import Avatar from '#lib/components/Avatar.svelte';
@@ -459,8 +459,8 @@
       {/if}
       {#if showSupport}
         <a class="row member" href={SUPPORT_URL} target="_blank" rel="noopener">
-          <Icon name="coffee" />
-          <span class="grow title">Postaw twórcy kawę<span class="muted small support-sub">Aplikacja jest darmowa i bez reklam</span></span>
+          <Icon name="heart" />
+          <span class="grow title">{SUPPORT_LABEL}<span class="muted small support-sub">Aplikacja jest darmowa i bez reklam</span></span>
           <Icon name="chevron" size={20} />
         </a>
       {/if}
