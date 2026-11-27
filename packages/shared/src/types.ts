@@ -166,6 +166,19 @@ export interface ItemDto {
   theme?: string;
 }
 
+/** Why the child got a sticker, shown on the pack the child opens. */
+export type RevealReason = 'first_task' | 'bonus_task' | 'streak' | 'shop';
+
+/** A sticker the child has not opened yet (GET /v1/collection/new). */
+export interface NewItemDto extends ItemDto {
+  how: 'drop' | 'streak' | 'shop';
+  reason: RevealReason;
+  /** Streak packs: the streak length (days) that earned the pack. */
+  streakDays: number | null;
+  /** Stickers with the same bundle come out of one pack (a streak pack holds 3). */
+  bundle: string;
+}
+
 export interface DropResultDto {
   points: number;
   items: ItemDto[];
