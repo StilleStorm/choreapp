@@ -1,6 +1,6 @@
 import { localDateAt } from '@choreapp/core';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { addChild, call, env, legacyChildPhoto, registerFamily, uniqueEmail, type Family } from './helpers.js';
+import { addChild, call, env, legacyChildPhoto, registerFamily, uniqueEmail, withCustomPacks, type Family } from './helpers.js';
 
 const PW = 'tajne-haslo-123';
 let op = 0;
@@ -147,13 +147,16 @@ describe('the administrator deletes the family', () => {
     const { fam, dad, kid } = await busyFamily();
     const other = await busyFamily();
     // A family pack with an uploaded image.
-    const pack = await call('POST', '/v1/packs', { token: fam.parentToken, json: { name: 'Nasze', source: 'własne', license: 'private' } });
+    const { pack, up } = await withCustomPacks(async () => {
+      const pack = await call('POST', '/v1/packs', { token: fam.parentToken, json: { name: 'Nasze', source: 'własne', license: 'private' } });
+      const up = await call(
+        'POST',
+        `/v1/packs/${pack.body.id}/items?kind=sticker&name=Kot&album=Zwierz%C4%99ta&rarity=common&availability=both`,
+        { token: fam.parentToken, raw: new Uint8Array([7, 8, 9]), contentType: 'image/png' },
+      );
+      return { pack, up };
+    });
     expect(pack.status).toBe(201);
-    const up = await call(
-      'POST',
-      `/v1/packs/${pack.body.id}/items?kind=sticker&name=Kot&album=Zwierz%C4%99ta&rarity=common&availability=both`,
-      { token: fam.parentToken, raw: new Uint8Array([7, 8, 9]), contentType: 'image/png' },
-    );
     expect(up.status).toBe(201);
     await call('PATCH', '/v1/family', { token: fam.parentToken, json: { reminderTime: '17:00' } });
     const before = await env.FILES.list({ prefix: `families/${fam.familyId}/` });

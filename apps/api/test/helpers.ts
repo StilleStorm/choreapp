@@ -1,5 +1,6 @@
 import { env } from 'cloudflare:workers';
 import { app } from '../src/index.js';
+import { features } from '../src/lib/features.js';
 
 export { env };
 
@@ -83,4 +84,15 @@ export async function legacyChildPhoto(fam: Family, kid: { id: string; token: st
   await env.DB.prepare('UPDATE member SET avatar_key = ? WHERE id = ?').bind(key, kid.id).run();
   const me = await call('GET', '/v1/me', { token: kid.token });
   return (me.body.me.avatarUrl as string).replace(/^https?:\/\/[^/]+/, '');
+}
+
+/** Turns on the family's own packs (off in the free version) for one test. */
+export async function withCustomPacks<T>(fn: () => Promise<T>): Promise<T> {
+  const was = features.customPacks;
+  features.customPacks = true;
+  try {
+    return await fn();
+  } finally {
+    features.customPacks = was;
+  }
 }

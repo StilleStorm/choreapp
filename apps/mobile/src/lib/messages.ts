@@ -52,6 +52,8 @@ const MESSAGES: Record<string, string> = {
   not_for_sale: 'Tego nie da się kupić.',
   reward_inactive: 'Ta nagroda jest teraz niedostępna.',
   pack_builtin: 'Wbudowanej paczki nie można edytować, można ją tylko wyłączyć.',
+  feature_disabled: 'Ta funkcja jest wyłączona w darmowej wersji.',
+  conflict: 'To już zostało zapisane.',
 };
 
 export function errorMessage(e: unknown): string {

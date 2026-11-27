@@ -22,6 +22,7 @@ import type { AppBindings, AuthInfo, Env } from '../env.js';
 import { requireChild, requireParent } from '../lib/auth.js';
 import { newId } from '../lib/crypto.js';
 import { all, first, isUniqueViolation, run } from '../lib/db.js';
+import { requireCustomPacks } from '../lib/features.js';
 import { IMAGE_TYPES, MAX_ITEM_BYTES } from '../lib/files.js';
 import { ApiError, background, badRequest, body, conflict, forbidden, notFound, query } from '../lib/http.js';
 import { itemDto, loadFamily, priceOf, type ItemRow } from '../lib/rows.js';
@@ -507,6 +508,7 @@ export const shop = new Hono<AppBindings>()
   })
 
   .post('/packs', requireParent, async (c) => {
+    requireCustomPacks();
     const b = await body(c, packInput);
     const id = newId();
     await run(
@@ -565,6 +567,7 @@ export const shop = new Hono<AppBindings>()
 
   /** One image per request; the panel uploads a batch one by one. */
   .post('/packs/:id/items', requireParent, async (c) => {
+    requireCustomPacks();
     const family = await loadFamily(c.env, c.get('auth').familyId);
     const p = await loadPack(c.env, family.id, c.req.param('id'));
     if (p.family_id === null) throw forbidden('pack_builtin');

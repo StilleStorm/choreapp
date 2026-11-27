@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { CUSTOM_PACKS_ENABLED } from '@choreapp/shared';
   import type { Rarity } from '@choreapp/core';
   import type { ItemDto, PackDto } from '@choreapp/shared';
   import { page } from '$app/state';
@@ -108,7 +109,7 @@
       {pack.builtIn ? ' · paczka wbudowana (można ją tylko włączyć lub wyłączyć)' : ''}
     </p>
 
-    {#if !pack.builtIn}
+    {#if !pack.builtIn && CUSTOM_PACKS_ENABLED}
       <form class="card stack" onsubmit={upload}>
         <h2>Dodaj obrazki</h2>
         <input type="file" accept="image/png,image/webp,image/jpeg,image/svg+xml" multiple onchange={(e) => (files = e.currentTarget.files)} />

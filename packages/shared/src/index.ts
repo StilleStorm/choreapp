@@ -235,6 +235,14 @@ export const rewardInput = z.object({
   oneTime: z.boolean().optional(),
 });
 
+/**
+ * Families' own sticker packs ("Własna paczka" + adding images). Off in the free
+ * version: the app hides the buttons and the API refuses creating packs and
+ * uploading images (feature_disabled). Packs made earlier keep working. The one
+ * switch to turn it back on (e.g. as a premium feature).
+ */
+export const CUSTOM_PACKS_ENABLED = false;
+
 export const packInput = z.object({
   name: z.string().trim().min(1).max(60),
   source: z.string().trim().min(1).max(300),

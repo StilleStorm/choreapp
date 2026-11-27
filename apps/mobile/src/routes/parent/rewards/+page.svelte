@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { CUSTOM_PACKS_ENABLED } from '@choreapp/shared';
   import type { FamilyDto, PackDto, RedemptionDto, RewardDto } from '@choreapp/shared';
   import { goto } from '$app/navigation';
   import { api } from '#lib/api.js';
@@ -231,7 +232,9 @@
   <section class="section">
     <div class="inline">
       <h2 class="section-title grow">Paczki naklejek</h2>
-      <button class="btn small" onclick={() => (packOpen = true)}><Icon name="plus" size={18} /> Własna paczka</button>
+      {#if CUSTOM_PACKS_ENABLED}
+        <button class="btn small" onclick={() => (packOpen = true)}><Icon name="plus" size={18} /> Własna paczka</button>
+      {/if}
     </div>
     <div class="list">
       {#each packs as p (p.id)}
