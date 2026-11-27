@@ -146,12 +146,15 @@ describe('one-time rewards', () => {
     const k = await call('POST', `/v1/rewards/${reward.id}/redeem`, { token: kuba.token });
     expect(k.status).toBe(409);
     expect(await balance(kuba.token)).toBe(60);
-    expect((await call('GET', '/v1/rewards', { token: fam.parentToken })).body).toMatchObject([{ id: reward.id, oneTime: true, active: false, used: true }]);
+    expect((await call('GET', '/v1/rewards', { token: fam.parentToken })).body).toMatchObject([{ id: reward.id, oneTime: true, active: true, used: true }]);
     // Delivering keeps it gone.
     await call('POST', `/v1/redemptions/${r.body.redemptionId}/deliver`, { token: fam.parentToken });
     expect((await call('GET', '/v1/shop', { token: kuba.token })).body.rewards).toEqual([]);
-    // The parent may put it back on the shelf.
+    // An edit (also from an older app) does not bring it back.
     await call('PATCH', `/v1/rewards/${reward.id}`, { token: fam.parentToken, json: { name: 'Wycieczka', icon: 'money', cost: 50, active: true } });
+    expect((await call('GET', '/v1/shop', { token: kuba.token })).body.rewards).toEqual([]);
+    // "Przywróć" puts it back on the shelf.
+    expect((await call('POST', `/v1/rewards/${reward.id}/restore`, { token: fam.parentToken })).body).toMatchObject({ active: true, used: false });
     expect((await call('GET', '/v1/rewards', { token: fam.parentToken })).body).toMatchObject([{ active: true, used: false }]);
     expect((await call('POST', `/v1/rewards/${reward.id}/redeem`, { token: kuba.token })).status).toBe(201);
   });
@@ -179,6 +182,47 @@ describe('one-time rewards', () => {
     expect(await balance(ola.token)).toBe(50);
     expect((await call('GET', '/v1/shop', { token: kuba.token })).body.rewards).toMatchObject([{ id: reward.id, oneTime: true }]);
     expect((await call('GET', '/v1/rewards', { token: fam.parentToken })).body).toMatchObject([{ active: true, used: false }]);
+  });
+
+  it('hidden by the parent after an earlier redemption: shown as hidden, not as used', async () => {
+    const { fam, ola } = await setup();
+    const reward = await addOneTime(fam, 'Kino', 50);
+    await give(ola.id, 50);
+    const r = await call('POST', `/v1/rewards/${reward.id}/redeem`, { token: ola.token });
+    await call('POST', `/v1/redemptions/${r.body.redemptionId}/cancel`, { token: fam.parentToken });
+    await call('PATCH', `/v1/rewards/${reward.id}`, { token: fam.parentToken, json: { name: 'Kino', icon: 'gift', cost: 50, active: false } });
+    expect((await call('GET', '/v1/rewards', { token: fam.parentToken })).body).toMatchObject([{ active: false, used: false, oneTime: true }]);
+    expect((await call('GET', '/v1/shop', { token: ola.token })).body.rewards).toEqual([]);
+  });
+
+  it('a refund does not show a reward the parent hid in the meantime', async () => {
+    const { fam, ola } = await setup();
+    const reward = await addOneTime(fam, 'Kino', 50);
+    await give(ola.id, 50);
+    const r = await call('POST', `/v1/rewards/${reward.id}/redeem`, { token: ola.token });
+    await call('PATCH', `/v1/rewards/${reward.id}`, { token: fam.parentToken, json: { name: 'Kino', icon: 'gift', cost: 50, active: false } });
+    await call('POST', `/v1/redemptions/${r.body.redemptionId}/cancel`, { token: fam.parentToken });
+    expect(await balance(ola.token)).toBe(50);
+    expect((await call('GET', '/v1/rewards', { token: fam.parentToken })).body).toMatchObject([{ active: false, used: false }]);
+    expect((await call('GET', '/v1/shop', { token: ola.token })).body.rewards).toEqual([]);
+    expect((await call('POST', `/v1/rewards/${reward.id}/redeem`, { token: ola.token })).status).toBe(409);
+  });
+
+  it('restoring a hidden used reward keeps it hidden; switching to permanent clears used', async () => {
+    const { fam, ola } = await setup();
+    const reward = await addOneTime(fam, 'Kino', 10);
+    await give(ola.id, 50);
+    await call('POST', `/v1/rewards/${reward.id}/redeem`, { token: ola.token });
+    await call('PATCH', `/v1/rewards/${reward.id}`, { token: fam.parentToken, json: { name: 'Kino', icon: 'gift', cost: 10, active: false } });
+    expect((await call('GET', '/v1/rewards', { token: fam.parentToken })).body).toMatchObject([{ active: false, used: true }]);
+    expect((await call('POST', `/v1/rewards/${reward.id}/restore`, { token: fam.parentToken })).body).toMatchObject({ active: false, used: false });
+    expect((await call('GET', '/v1/shop', { token: ola.token })).body.rewards).toEqual([]);
+    expect((await call('POST', `/v1/rewards/${reward.id}/redeem`, { token: ola.token })).status).toBe(409);
+    const other = await addOneTime(fam, 'Lody', 10);
+    await call('POST', `/v1/rewards/${other.id}/redeem`, { token: ola.token });
+    const p = await call('PATCH', `/v1/rewards/${other.id}`, { token: fam.parentToken, json: { name: 'Lody', icon: 'gift', cost: 10, active: true, oneTime: false } });
+    expect(p.body).toMatchObject({ oneTime: false, used: false, active: true });
+    expect((await call('GET', '/v1/shop', { token: ola.token })).body.rewards).toMatchObject([{ id: other.id }]);
   });
 
   it('not enough points: the one-time reward stays available', async () => {

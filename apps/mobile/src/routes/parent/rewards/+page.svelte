@@ -87,8 +87,8 @@
   /** Puts a used one-time reward back on the shelf. */
   async function reenable(r: RewardDto) {
     try {
-      await api.patch(`/v1/rewards/${r.id}`, { name: r.name, icon: r.icon, cost: r.cost, active: true, oneTime: true });
-      flash(`${r.name} znowu jest w sklepie.`);
+      await api.post(`/v1/rewards/${r.id}/restore`);
+      flash(r.active ? `${r.name} znowu jest w sklepie.` : `${r.name} znowu do wzięcia (gdy ją pokażesz w sklepie).`);
       await load();
     } catch (e) {
       flash(errorMessage(e));
@@ -190,7 +190,7 @@
               <span class="title">{r.name}</span>
               {#if r.oneTime}<span class="meta">{r.used ? 'jednorazowa · wykorzystana' : 'jednorazowa'}</span>{/if}
             </span>
-            {#if !r.active && !r.used}<span class="badge">ukryta</span>{/if}
+            {#if !r.active}<span class="badge">ukryta</span>{/if}
             <span class="badge accent">{r.cost} pkt</span>
           </button>
           {#if r.used}

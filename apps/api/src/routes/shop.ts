@@ -37,9 +37,9 @@ interface RewardRow {
   cost: number;
   active: number;
   one_time: number;
+  /** When a child took this one-time reward (NULL = available). */
+  used_at: number | null;
   deleted_at: number | null;
-  /** Only in the parent list: a requested or delivered redemption exists. */
-  redeemed?: number;
 }
 
 interface PackRow {
@@ -60,12 +60,8 @@ const rewardDto = (r: RewardRow): RewardDto => ({
   cost: r.cost,
   active: !!r.active,
   oneTime: !!r.one_time,
-  used: !!r.one_time && !r.active && !!r.redeemed,
+  used: !!r.one_time && r.used_at !== null,
 });
-
-/** Parent view of rewards, with whether a one-time reward was already chosen. */
-const REWARD_WITH_USE = `SELECT rw.*, EXISTS (SELECT 1 FROM redemption rd WHERE rd.reward_id = rw.id AND rd.status IN ('requested', 'delivered')) AS redeemed
-  FROM reward rw`;
 
 /**
  * Spends points atomically: the ledger row is only written while the balance
@@ -170,7 +166,7 @@ export const shop = new Hono<AppBindings>()
     const family = await loadFamily(c.env, auth.familyId);
     const origin = new URL(c.req.url).origin;
     const [rewards, items, owned, b, pending] = await Promise.all([
-      all<RewardRow>(c.env.DB, 'SELECT * FROM reward WHERE family_id = ? AND active = 1 AND deleted_at IS NULL ORDER BY cost', family.id),
+      all<RewardRow>(c.env.DB, 'SELECT * FROM reward WHERE family_id = ? AND active = 1 AND deleted_at IS NULL AND (one_time = 0 OR used_at IS NULL) ORDER BY cost', family.id),
       activeItems(c.env.DB, family.id),
       ownedIds(c.env, memberId),
       balances(c.env.DB, memberId),
@@ -228,7 +224,7 @@ export const shop = new Hono<AppBindings>()
   .get('/rewards', requireParent, async (c) => {
     const rows = await all<RewardRow>(
       c.env.DB,
-      `${REWARD_WITH_USE} WHERE rw.family_id = ? AND rw.deleted_at IS NULL ORDER BY rw.active DESC, rw.cost`,
+      'SELECT * FROM reward WHERE family_id = ? AND deleted_at IS NULL ORDER BY active DESC, cost',
       c.get('auth').familyId,
     );
     return c.json(rows.map(rewardDto));
@@ -249,7 +245,7 @@ export const shop = new Hono<AppBindings>()
       b.oneTime ? 1 : 0,
       Date.now(),
     );
-    return c.json(rewardDto((await first<RewardRow>(c.env.DB, `${REWARD_WITH_USE} WHERE rw.id = ?`, id))!), 201);
+    return c.json(rewardDto((await first<RewardRow>(c.env.DB, 'SELECT * FROM reward WHERE id = ?', id))!), 201);
   })
 
   .patch('/rewards/:id', requireParent, async (c) => {
@@ -257,7 +253,10 @@ export const shop = new Hono<AppBindings>()
     const res = await run(
       c.env.DB,
       // Older apps don't send oneTime: the reward keeps its type.
-      'UPDATE reward SET name = ?, icon = ?, cost = ?, active = ?, one_time = COALESCE(?, one_time) WHERE id = ? AND family_id = ? AND deleted_at IS NULL',
+      // A permanent reward is never "used": switching to permanent clears used_at.
+      `UPDATE reward SET name = ?1, icon = ?2, cost = ?3, active = ?4, one_time = COALESCE(?5, one_time),
+              used_at = CASE WHEN COALESCE(?5, one_time) = 1 THEN used_at END
+        WHERE id = ?6 AND family_id = ?7 AND deleted_at IS NULL`,
       b.name,
       b.icon,
       b.cost,
@@ -267,7 +266,19 @@ export const shop = new Hono<AppBindings>()
       c.get('auth').familyId,
     );
     if (res.meta.changes !== 1) throw notFound();
-    return c.json(rewardDto((await first<RewardRow>(c.env.DB, `${REWARD_WITH_USE} WHERE rw.id = ?`, c.req.param('id')))!));
+    return c.json(rewardDto((await first<RewardRow>(c.env.DB, 'SELECT * FROM reward WHERE id = ?', c.req.param('id')))!));
+  })
+
+  /** Puts a used one-time reward back on the shelf ("Przywróć"); visibility (active) stays as the parent set it. */
+  .post('/rewards/:id/restore', requireParent, async (c) => {
+    const res = await run(
+      c.env.DB,
+      'UPDATE reward SET used_at = NULL WHERE id = ? AND family_id = ? AND deleted_at IS NULL',
+      c.req.param('id'),
+      c.get('auth').familyId,
+    );
+    if (res.meta.changes !== 1) throw notFound();
+    return c.json(rewardDto((await first<RewardRow>(c.env.DB, 'SELECT * FROM reward WHERE id = ?', c.req.param('id')))!));
   })
 
   .delete('/rewards/:id', requireParent, async (c) => {
@@ -280,15 +291,20 @@ export const shop = new Hono<AppBindings>()
     const family = await loadFamily(c.env, familyId);
     const reward = await first<RewardRow>(c.env.DB, 'SELECT * FROM reward WHERE id = ? AND family_id = ? AND deleted_at IS NULL', c.req.param('id'), familyId);
     if (!reward) throw notFound();
-    if (!reward.active) throw conflict('reward_inactive');
+    if (!reward.active || (reward.one_time && reward.used_at !== null)) throw conflict('reward_inactive');
     if (reward.one_time) {
       // Take a one-time reward off the shelf first: of two children choosing it
       // at once only one switches it off, the other gets a conflict before any points move.
-      const claim = await run(c.env.DB, 'UPDATE reward SET active = 0 WHERE id = ? AND active = 1 AND deleted_at IS NULL', reward.id);
+      const claim = await run(
+        c.env.DB,
+        'UPDATE reward SET used_at = ? WHERE id = ? AND one_time = 1 AND active = 1 AND used_at IS NULL AND deleted_at IS NULL',
+        Date.now(),
+        reward.id,
+      );
       if (claim.meta.changes !== 1) throw conflict('reward_inactive');
     }
     const putBack = async () => {
-      if (reward.one_time) await run(c.env.DB, 'UPDATE reward SET active = 1 WHERE id = ? AND deleted_at IS NULL', reward.id);
+      if (reward.one_time) await run(c.env.DB, 'UPDATE reward SET used_at = NULL WHERE id = ?', reward.id);
     };
     const redemptionId = newId();
     try {
@@ -379,8 +395,8 @@ export const shop = new Hono<AppBindings>()
     // A refunded one-time reward goes back on the shelf (unless another child's choice of it is still waiting).
     await run(
       c.env.DB,
-      `UPDATE reward SET active = 1
-        WHERE id = ?1 AND one_time = 1 AND deleted_at IS NULL
+      `UPDATE reward SET used_at = NULL
+        WHERE id = ?1 AND one_time = 1
           AND NOT EXISTS (SELECT 1 FROM redemption WHERE reward_id = ?1 AND status = 'requested')`,
       r.reward_id,
     );
