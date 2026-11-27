@@ -281,6 +281,6 @@ describe('daily reminder', () => {
   });
 
   it('the cron runs end to end', async () => {
-    await expect(runCron(testEnv, Date.now())).resolves.toBeUndefined();
+    await expect(runCron(testEnv, Date.now())).resolves.toMatchObject({ failed: 0 });
   });
 });

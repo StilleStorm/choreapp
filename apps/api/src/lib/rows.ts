@@ -19,6 +19,10 @@ export interface FamilyRow {
   price_legendary: number;
   admin_member_id: string | null;
   created_at: number;
+  /** Cron marker: local day the occurrence horizon was last topped up. */
+  occ_through_date?: string | null;
+  /** Cron marker: local day the reminder pass completed. */
+  reminder_date?: string | null;
 }
 
 export interface MemberRow {

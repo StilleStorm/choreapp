@@ -85,6 +85,9 @@ export function composeForMember(rows: OutboxRow[]): PushMessage {
   };
 }
 
+/** Rows the cron delivers per run; the rest goes out on the next run. */
+export const DELIVER_BATCH = 500;
+
 /** Delivers due outbox rows (optionally only for some members). */
 export async function deliverDue(env: Env, now = Date.now(), memberIds?: string[]): Promise<number> {
   const rows = memberIds
@@ -94,7 +97,12 @@ export async function deliverDue(env: Env, now = Date.now(), memberIds?: string[
         memberIds,
         now,
       )
-    : await all<OutboxRow>(env.DB, 'SELECT * FROM notification_outbox WHERE sent_at IS NULL AND deliver_after <= ? ORDER BY created_at', now);
+    : await all<OutboxRow>(
+        env.DB,
+        'SELECT * FROM notification_outbox WHERE sent_at IS NULL AND deliver_after <= ? ORDER BY created_at LIMIT ?',
+        now,
+        DELIVER_BATCH,
+      );
   if (rows.length === 0) return 0;
 
   const byMember = new Map<string, OutboxRow[]>();
