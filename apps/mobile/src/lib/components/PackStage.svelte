@@ -377,6 +377,9 @@
     flex: 1;
     width: 100%;
     display: grid;
+    /* Fixed track: the effects layer is wider than the screen and must overflow
+       around the centre, not widen the column (that pushed the sticker right). */
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
     place-items: center;
     min-height: 0;
   }
