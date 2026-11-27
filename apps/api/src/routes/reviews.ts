@@ -82,6 +82,12 @@ export const reviews = new Hono<AppBindings>()
    * approved through the same path as a normal approve, so points, stickers,
    * streaks and the child's notification behave the same. A report already
    * waiting for review is simply approved.
+   *
+   * The parent vouches that the child did it, so a past day's task counts as
+   * done on that day (on time): the completion's report time is capped at the
+   * occurrence's due instant, and a late report waiting for review is moved
+   * back the same way. Streaks don't break and history doesn't show it late.
+   * Normal child reports and approvals keep the usual timing rules.
    */
   .post('/occurrences/:id/complete', requireParent, async (c) => {
     const b = await body(c, parentCompleteBody);
@@ -128,10 +134,16 @@ export const reviews = new Hono<AppBindings>()
     if (state.state === 'upcoming') throw new ApiError(409, 'future_task');
     if (state.state === 'approved' || state.state === 'closed') throw new ApiError(409, 'already_done');
 
+    // On time as vouched by the parent: never later than the occurrence's due instant.
+    const vouchedAt = Math.min(now, dueInstant(occ.date, occ.due_time, family.timezone));
     let completionId: string;
     if (state.state === 'reported') {
       // The child already reported it: "Zrobione" approves that report.
-      completionId = rows.filter((r) => r.member_id === b.memberId && r.status === 'reported').sort((x, y) => y.reported_at - x.reported_at)[0]!.id;
+      const waiting = rows.filter((r) => r.member_id === b.memberId && r.status === 'reported').sort((x, y) => y.reported_at - x.reported_at)[0]!;
+      completionId = waiting.id;
+      if (waiting.reported_at > vouchedAt) {
+        await run(c.env.DB, "UPDATE completion SET reported_at = ? WHERE id = ? AND status = 'reported'", vouchedAt, completionId);
+      }
     } else {
       completionId = newId();
       // One statement, so two parents tapping at once can't create two completions
@@ -146,7 +158,7 @@ export const reviews = new Hono<AppBindings>()
         completionId,
         occ.id,
         b.memberId,
-        now,
+        vouchedAt,
         b.clientOpId,
         occ.id,
         b.memberId,

@@ -24,10 +24,17 @@ export function dueInstant(date: LocalDate, dueTime: LocalTime | null, tz: strin
   return dueTime ? zonedToEpoch(date, dueTime, tz) : startOfLocalDay(addDays(date, 1), tz);
 }
 
-/** Most recent completion first (by report time; reviews never reorder). */
+/**
+ * The completion that decides the state: an approved one if there is one (it is
+ * final; a parent's "Zrobione" may carry an earlier, vouched report time than a
+ * rejected late report), otherwise the most recent by report time.
+ */
 export function latestCompletion<T extends CompletionRecord>(completions: readonly T[]): T | null {
   let best: T | null = null;
-  for (const c of completions) if (!best || c.reportedAt >= best.reportedAt) best = c;
+  for (const c of completions) {
+    if (best?.status === 'approved' && c.status !== 'approved') continue;
+    if (!best || (c.status === 'approved' && best.status !== 'approved') || c.reportedAt >= best.reportedAt) best = c;
+  }
   return best;
 }
 

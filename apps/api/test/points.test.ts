@@ -131,6 +131,70 @@ describe('streak', () => {
     expect(p.body.streak.current).toBe(0);
     expect(p.body.streak.longest).toBe(2);
   });
+
+  describe('parent "Zrobione" for a past day counts on time (the parent vouches)', () => {
+    /** Daily task with 3 good days, then yesterday's completion removed (overdue). */
+    async function yesterdayOverdue() {
+      const { fam, ola } = await setup();
+      const task = await createTask(fam, [ola.id], { recurrence: { kind: 'daily' }, startDate: addDays(today(), -3), points: 20 });
+      await backfillDays(task.id, ola.id, fam.parentId, 3);
+      await env.DB.prepare('DELETE FROM completion WHERE occurrence_id = (SELECT id FROM occurrence WHERE task_id = ? AND date = ?)')
+        .bind(task.id, addDays(today(), -1))
+        .run();
+      const overdue = (await call('GET', '/v1/agenda?overdue=1', { token: ola.token })).body.items.find((i: any) => i.date < today());
+      return { fam, ola, occurrenceId: overdue.occurrenceId as string };
+    }
+    const complete = (fam: Family, occurrenceId: string, memberId: string) =>
+      call('POST', `/v1/occurrences/${occurrenceId}/complete`, { token: fam.parentToken, json: { memberId, clientOpId: opId() } });
+    async function expectOnTime(fam: Family, ola: { id: string }) {
+      const s = (await call('GET', `/v1/members/${ola.id}/stats`, { token: fam.parentToken })).body;
+      expect(s.streak.current).toBe(3);
+      expect(s.onTimeRate30).toBe(1);
+      const y = s.history.find((h: any) => h.date === addDays(today(), -1));
+      expect(y).toMatchObject({ status: 'approved', late: false, points: 20 });
+    }
+
+    it('next-morning tick for a phoneless chore keeps the streak and is not late', async () => {
+      const { fam, ola, occurrenceId } = await yesterdayOverdue();
+      expect((await complete(fam, occurrenceId, ola.id)).status).toBe(201);
+      await expectOnTime(fam, ola);
+    });
+
+    it('a late report approved via "Zrobione" counts on time; a normal approve stays late', async () => {
+      const a = await yesterdayOverdue();
+      await call('POST', `/v1/occurrences/${a.occurrenceId}/report`, { token: a.ola.token, json: { clientOpId: opId() } });
+      expect((await complete(a.fam, a.occurrenceId, a.ola.id)).status).toBe(201);
+      await expectOnTime(a.fam, a.ola);
+
+      const b = await yesterdayOverdue();
+      await reportAndApprove(b.fam, b.ola, b.occurrenceId);
+      const s = (await call('GET', `/v1/members/${b.ola.id}/stats`, { token: b.fam.parentToken })).body;
+      expect(s.streak.current).toBe(0);
+      expect(s.history.find((h: any) => h.date === addDays(today(), -1)).late).toBe(true);
+    });
+
+    it('after a rejected late report, "Zrobione" still shows done on time', async () => {
+      const { fam, ola, occurrenceId } = await yesterdayOverdue();
+      const rep = await call('POST', `/v1/occurrences/${occurrenceId}/report`, { token: ola.token, json: { clientOpId: opId() } });
+      await call('POST', `/v1/completions/${rep.body.completionId}/reject`, { token: fam.parentToken, json: { comment: 'Jeszcze raz' } });
+      expect((await complete(fam, occurrenceId, ola.id)).status).toBe(201);
+      await expectOnTime(fam, ola);
+      const item = (await call('GET', `/v1/agenda?from=${addDays(today(), -1)}`, { token: ola.token })).body.items.find(
+        (i: any) => i.occurrenceId === occurrenceId,
+      );
+      expect(item.children[0].state).toBe('approved');
+    });
+
+    it('today, before the due time, the real time is kept', async () => {
+      const { fam, ola } = await setup();
+      await createTask(fam, [ola.id]);
+      const item = (await call('GET', '/v1/agenda', { token: ola.token })).body.items[0];
+      const before = Date.now();
+      const r = await complete(fam, item.occurrenceId, ola.id);
+      const row = await env.DB.prepare('SELECT reported_at FROM completion WHERE id = ?').bind(r.body.completionId).first<any>();
+      expect(row.reported_at).toBeGreaterThanOrEqual(before);
+    });
+  });
 });
 
 describe('random stickers', () => {

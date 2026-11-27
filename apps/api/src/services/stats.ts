@@ -7,6 +7,7 @@ import {
   computeStreak,
   dueInstant,
   guaranteedRarityFor,
+  latestCompletion,
   localDateAt,
   type CompletionRecord,
   type LocalDate,
@@ -188,7 +189,7 @@ export function historyEntries(h: MemberHistory, today: LocalDate, now: number, 
   const out: HistoryEntryDto[] = [];
   for (const o of h.occurrences) {
     if (o.date < from || o.cancelled_at !== null) continue;
-    const latest = [...o.own].sort((a, b) => b.reported_at - a.reported_at)[0];
+    const latest = latestCompletion(o.own.map(toRecord));
     const siblingDone = o.shared_mode === 'any' && o.others.some((c) => c.status === 'approved');
     let status: HistoryEntryDto['status'];
     if (latest?.status === 'approved') status = 'approved';
@@ -203,8 +204,8 @@ export function historyEntries(h: MemberHistory, today: LocalDate, now: number, 
       icon: o.icon,
       status,
       points: status === 'approved' ? o.points : 0,
-      late: !!latest && latest.reported_at > o.due,
-      at: latest?.reported_at ?? null,
+      late: !!latest && latest.reportedAt > o.due,
+      at: latest?.reportedAt ?? null,
     });
   }
   return out.reverse();
