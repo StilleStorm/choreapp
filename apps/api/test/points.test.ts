@@ -158,6 +158,21 @@ describe('random stickers', () => {
     expect(results).toEqual([1, 0, 0]);
   });
 
+  it('tells the child why each new sticker came (first task of the day, bonus)', async () => {
+    const { fam, ola } = await setup();
+    await seedPack(fam.familyId, { common: 10 });
+    for (let i = 0; i < 2; i++) await createTask(fam, [ola.id], { title: `T${i}` });
+    const items = (await call('GET', '/v1/agenda', { token: ola.token })).body.items;
+    rewardRng.rng = () => 0.1; // always drop
+    for (const i of items) await reportAndApprove(fam, ola, i.occurrenceId);
+    const fresh = (await call('GET', '/v1/collection/new', { token: ola.token })).body;
+    expect(fresh.map((f: any) => [f.how, f.reason, f.streakDays])).toEqual([
+      ['drop', 'first_task', null],
+      ['drop', 'bonus_task', null],
+    ]);
+    expect(new Set(fresh.map((f: any) => f.bundle)).size).toBe(2);
+  });
+
   it('pays 5 points when every sticker is collected', async () => {
     const { fam, ola } = await setup();
     await seedPack(fam.familyId, { common: 1 });
@@ -207,6 +222,12 @@ describe('streak packs', () => {
     expect(all.c).toBe(4);
     const awards = await env.DB.prepare('SELECT * FROM streak_award WHERE member_id = ?').bind(ola.id).all();
     expect(awards.results).toHaveLength(1);
+    // The reveal shows the pack with its reason; the 3 stickers share one pack.
+    const fresh = (await call('GET', '/v1/collection/new', { token: ola.token })).body;
+    const pack = fresh.filter((f: any) => f.reason === 'streak');
+    expect(pack).toHaveLength(3);
+    expect(pack.every((f: any) => f.streakDays === 7 && f.bundle === pack[0].bundle)).toBe(true);
+    expect(fresh.filter((f: any) => f.reason === 'first_task')).toHaveLength(1);
   });
 
   it('30 days give a guaranteed legendary', async () => {

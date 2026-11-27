@@ -19,7 +19,7 @@ import {
   startOfLocalDay,
   type Rng,
 } from '@choreapp/core';
-import type { DropResultDto } from '@choreapp/shared';
+import type { DropResultDto, NewItemDto } from '@choreapp/shared';
 import type { Env } from '../env.js';
 import { newId } from '../lib/crypto.js';
 import { all, first } from '../lib/db.js';
@@ -124,4 +124,57 @@ export async function rollRewards(
     fallbackPoints,
     streakPack,
   };
+}
+
+export interface NewItemRow {
+  how: 'drop' | 'streak' | 'shop';
+  completion_id: string | null;
+  member_item_id: string;
+}
+
+/**
+ * Why each unseen sticker was given, derived from existing data so the pack
+ * can tell the child what earned it: a drop from the first approved task of
+ * that day (always drops) or a later one (bonus), a streak pack (its length
+ * from streak_award), or a purchase.
+ */
+export async function revealReasons(
+  env: Env,
+  family: FamilyRow,
+  memberId: string,
+  rows: readonly NewItemRow[],
+): Promise<Pick<NewItemDto, 'reason' | 'streakDays' | 'bundle'>[]> {
+  const ids = [...new Set(rows.map((r) => r.completion_id).filter((id): id is string => id !== null))];
+  const firstOfDay = new Map<string, boolean>();
+  const streakDays = new Map<string, number>();
+  for (const id of ids) {
+    const done = await first<{ reviewed_at: number | null; threshold: number | null }>(
+      env.DB,
+      `SELECT c.reviewed_at, (SELECT MAX(threshold) FROM streak_award sa WHERE sa.completion_id = c.id) AS threshold
+         FROM completion c WHERE c.id = ? AND c.member_id = ?`,
+      id,
+      memberId,
+    );
+    if (done?.threshold) streakDays.set(id, done.threshold);
+    if (rows.some((r) => r.completion_id === id && r.how === 'drop') && done?.reviewed_at) {
+      const dayStart = startOfLocalDay(localDateAt(done.reviewed_at, family.timezone), family.timezone);
+      const earlier = await first<{ n: number }>(
+        env.DB,
+        `SELECT COUNT(*) AS n FROM completion WHERE member_id = ?1 AND status = 'approved' AND id != ?4 AND reviewed_at >= ?2
+           AND (reviewed_at < ?3 OR (reviewed_at = ?3 AND rowid < (SELECT rowid FROM completion WHERE id = ?4)))`,
+        memberId,
+        dayStart,
+        done.reviewed_at,
+        id,
+      );
+      firstOfDay.set(id, (earlier?.n ?? 0) === 0);
+    }
+  }
+  return rows.map((r) => {
+    const key = r.completion_id ?? r.member_item_id;
+    if (r.how === 'streak') return { reason: 'streak', streakDays: (r.completion_id && streakDays.get(r.completion_id)) || null, bundle: `streak:${key}` };
+    if (r.how === 'shop') return { reason: 'shop', streakDays: null, bundle: `shop:${r.member_item_id}` };
+    const isFirst = r.completion_id ? firstOfDay.get(r.completion_id) : undefined;
+    return { reason: isFirst === false ? 'bonus_task' : 'first_task', streakDays: null, bundle: `drop:${r.member_item_id}` };
+  });
 }

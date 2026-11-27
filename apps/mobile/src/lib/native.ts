@@ -60,3 +60,18 @@ export async function appVersion(): Promise<{ name: string; code: number }> {
   const info = await App.getInfo();
   return { name: info.version, code: Number(info.build) || 0 };
 }
+
+let haptics: Promise<typeof import('@capacitor/haptics')> | null = null;
+
+/** A short vibration (sticker packs). Does nothing in a desktop browser. */
+export async function haptic(kind: 'light' | 'medium' | 'heavy' | 'success'): Promise<void> {
+  if (!isNative) return;
+  try {
+    haptics ??= import('@capacitor/haptics');
+    const { Haptics, ImpactStyle, NotificationType } = await haptics;
+    if (kind === 'success') await Haptics.notification({ type: NotificationType.Success });
+    else await Haptics.impact({ style: { light: ImpactStyle.Light, medium: ImpactStyle.Medium, heavy: ImpactStyle.Heavy }[kind] });
+  } catch {
+    /* no vibration motor or plugin: fine */
+  }
+}
