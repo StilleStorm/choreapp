@@ -106,7 +106,17 @@ if (!skipFonts) {
 // Theme CSS
 // ---------------------------------------------------------------------------
 // Light tints keep the coloured badge and button text near WCAG AA.
-const soft = (c, pct = 16) => `color-mix(in srgb, ${c} ${pct}%, var(--surface))`;
+// Precomputed (same result as `color-mix(in srgb, c pct%, surface)`) because
+// color-mix needs Chrome 111 and children's phones can have an older WebView.
+const hex = (c) => {
+  if (!/^#[0-9a-f]{6}$/i.test(c)) throw new Error(`soft(): expected #rrggbb, got ${c}`);
+  return [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
+};
+const soft = (c, pct, surface) => {
+  const a = hex(c);
+  const b = hex(surface);
+  return `#${a.map((v, i) => Math.round((v * pct + b[i] * (100 - pct)) / 100).toString(16).padStart(2, '0')).join('').toUpperCase()}`;
+};
 const blocks = [];
 const list = [];
 for (const raw of themes) {
@@ -121,13 +131,13 @@ for (const raw of themes) {
     border: t.border,
     accent: t.accent,
     'accent-text': t.accentText,
-    'accent-soft': soft(t.accent, t.dark ? 18 : 12),
+    'accent-soft': soft(t.accent, t.dark ? 18 : 12, t.surface),
     success: t.success,
-    'success-soft': soft(t.success, t.dark ? 18 : 12),
+    'success-soft': soft(t.success, t.dark ? 18 : 12, t.surface),
     warning: t.warning,
-    'warning-soft': soft(t.warning, t.dark ? 18 : 12),
+    'warning-soft': soft(t.warning, t.dark ? 18 : 12, t.surface),
     danger: t.danger,
-    'danger-soft': soft(t.danger, t.dark ? 18 : 10),
+    'danger-soft': soft(t.danger, t.dark ? 18 : 10, t.surface),
     points: t.points,
     'card-bg': t.cardBg,
     'card-text': t.cardText,

@@ -64,6 +64,7 @@
     --cream: #fff6ea;
     --brown: #5b3416;
     --brown-soft: #8a5a32;
+    min-height: 100vh;
     min-height: 100dvh;
     background: var(--cream);
     color: var(--brown);

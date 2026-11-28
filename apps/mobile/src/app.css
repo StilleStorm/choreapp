@@ -81,6 +81,7 @@ img {
 /* Screens ------------------------------------------------------------------ */
 
 .screen {
+  min-height: 100vh;
   min-height: 100dvh;
   padding: calc(var(--safe-top) + 16px) 16px calc(var(--safe-bottom) + var(--tabbar-h) + 24px);
   display: flex;
@@ -548,7 +549,8 @@ html:not([data-theme]) {
 }
 :where(html:not([data-theme])) :is(input, textarea, select):focus {
   border-color: var(--outline);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 45%, transparent);
+  /* = color-mix(in srgb, var(--accent) 45%, transparent) with --accent #fa901d; color-mix needs Chrome 111. */
+  box-shadow: 0 0 0 3px rgba(250, 144, 29, 0.45);
 }
 :where(html:not([data-theme])) .segmented {
   border: 2px solid var(--outline);
