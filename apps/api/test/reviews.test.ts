@@ -175,3 +175,105 @@ describe('approving and rejecting', () => {
     expect((await call('GET', '/v1/approvals', { token: ola.token })).status).toBe(403);
   });
 });
+
+describe('parent marks a task done ("Zrobione")', () => {
+  const complete = (fam: Family, occurrenceId: string, memberId: string, clientOpId = opId(), token = fam.parentToken) =>
+    call('POST', `/v1/occurrences/${occurrenceId}/complete`, { token, json: { memberId, clientOpId } });
+  const taskRows = async (memberId: string) =>
+    (await env.DB.prepare("SELECT COUNT(*) AS n FROM points_ledger WHERE member_id = ? AND reason = 'task'").bind(memberId).first<any>()).n;
+
+  it('creates an approved completion and pays like a normal approve', async () => {
+    const { fam, ola } = await setup();
+    await makeTask(fam, [ola.id], { points: 20 });
+    const item = await occurrenceFor(ola.token);
+    const r = await complete(fam, item.occurrenceId, ola.id);
+    expect(r.status).toBe(201);
+    expect(r.body).toMatchObject({ status: 'approved' });
+    expect(r.body.drop.points).toBe(20);
+    expect(await balance(ola.id)).toBeGreaterThanOrEqual(20);
+    expect((await occurrenceFor(ola.token, '')).children[0].state).toBe('approved');
+    const row = await env.DB.prepare('SELECT status, reviewed_by FROM completion WHERE id = ?').bind(r.body.completionId).first<any>();
+    expect(row).toMatchObject({ status: 'approved', reviewed_by: fam.parentId });
+    const n = await env.DB.prepare("SELECT title FROM notification_outbox WHERE member_id = ? AND type = 'approved'").bind(ola.id).first<any>();
+    expect(n.title).toBe('Zatwierdzone! +20 pkt');
+  });
+
+  it('is idempotent: a double tap with the same key pays once; another key is refused', async () => {
+    const { fam, ola } = await setup();
+    await makeTask(fam, [ola.id]);
+    const item = await occurrenceFor(ola.token);
+    const key = opId();
+    const [a, b] = await Promise.all([complete(fam, item.occurrenceId, ola.id, key), complete(fam, item.occurrenceId, ola.id, key)]);
+    expect([a.status, b.status]).toContain(201);
+    const again = await complete(fam, item.occurrenceId, ola.id, key);
+    expect(again.status).toBe(200);
+    expect(again.body.drop).toBeNull();
+    const other = await complete(fam, item.occurrenceId, ola.id);
+    expect(other.status).toBe(409);
+    expect(other.body.error).toBe('already_done');
+    expect(await taskRows(ola.id)).toBe(1);
+  });
+
+  it('two parents with different keys at once pay only once', async () => {
+    const { fam, ola } = await setup();
+    await makeTask(fam, [ola.id]);
+    const item = await occurrenceFor(ola.token);
+    const [a, b] = await Promise.all([complete(fam, item.occurrenceId, ola.id), complete(fam, item.occurrenceId, ola.id)]);
+    expect([a.status, b.status].sort()).toEqual([201, 409]);
+    expect(await taskRows(ola.id)).toBe(1);
+  });
+
+  it('approves a report that is already waiting', async () => {
+    const { fam, ola } = await setup();
+    await makeTask(fam, [ola.id]);
+    const item = await occurrenceFor(ola.token);
+    const rep = await call('POST', `/v1/occurrences/${item.occurrenceId}/report`, { token: ola.token, json: { clientOpId: opId() } });
+    const r = await complete(fam, item.occurrenceId, ola.id);
+    expect(r.status).toBe(201);
+    expect(r.body.completionId).toBe(rep.body.completionId);
+    expect((await call('GET', '/v1/approvals', { token: fam.parentToken })).body).toHaveLength(0);
+  });
+
+  it('works for a child without a phone and for overdue days; refuses future days', async () => {
+    const { fam } = await setup();
+    const kid = (await call('POST', '/v1/members', { token: fam.parentToken, json: { name: 'Zosia' } })).body;
+    await makeTask(fam, [kid.id], { startDate: addDays(today(), -1) });
+    const agenda = (await call('GET', '/v1/agenda?overdue=1', { token: fam.parentToken })).body;
+    const r = await complete(fam, agenda.items[0].occurrenceId, kid.id);
+    expect(r.status).toBe(201);
+    expect(await balance(kid.id)).toBeGreaterThanOrEqual(10);
+
+    await makeTask(fam, [kid.id], { startDate: addDays(today(), 1), title: 'Jutro' });
+    const fut = (await call('GET', `/v1/agenda?from=${addDays(today(), 1)}`, { token: fam.parentToken })).body.items.find(
+      (i: any) => i.title === 'Jutro',
+    );
+    const f = await complete(fam, fut.occurrenceId, kid.id);
+    expect(f.status).toBe(409);
+    expect(f.body.error).toBe('future_task');
+  });
+
+  it('"any" mode: done for one child closes it for the siblings', async () => {
+    const { fam, ola, kuba } = await setup();
+    await makeTask(fam, [ola.id, kuba.id], { sharedMode: 'any' });
+    const item = await occurrenceFor(ola.token);
+    await call('POST', `/v1/occurrences/${item.occurrenceId}/report`, { token: kuba.token, json: { clientOpId: opId() } });
+    expect((await complete(fam, item.occurrenceId, ola.id)).status).toBe(201);
+    expect((await occurrenceFor(kuba.token, '')).children[0].state).toBe('closed');
+    expect((await call('GET', '/v1/approvals', { token: fam.parentToken })).body).toHaveLength(0);
+    const sib = await complete(fam, item.occurrenceId, kuba.id);
+    expect(sib.status).toBe(409);
+    expect(sib.body.error).toBe('already_done');
+    expect(await balance(kuba.id)).toBe(0);
+  });
+
+  it('only parents, only assigned children, only own family', async () => {
+    const { fam, ola, kuba } = await setup();
+    const other = await registerFamily('Inni');
+    await makeTask(fam, [ola.id]);
+    const item = await occurrenceFor(ola.token);
+    expect((await complete(fam, item.occurrenceId, ola.id, opId(), ola.token)).status).toBe(403);
+    expect((await complete(fam, item.occurrenceId, kuba.id)).body.error).toBe('not_assigned');
+    expect((await complete(fam, item.occurrenceId, fam.parentId)).body.error).toBe('not_assigned');
+    expect((await complete(other, item.occurrenceId, ola.id)).status).toBe(404);
+  });
+});

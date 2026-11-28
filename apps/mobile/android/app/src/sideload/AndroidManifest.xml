@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sideloaded (GitHub/R2) build only, merged over the main manifest by
+  app/build.gradle. The Google Play build never gets this permission or the
+  self-updater (Play policy: apps update only through the store).
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- AppUpdaterPlugin: hands the downloaded APK to the system installer. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+</manifest>

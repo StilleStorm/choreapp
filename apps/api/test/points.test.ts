@@ -131,6 +131,70 @@ describe('streak', () => {
     expect(p.body.streak.current).toBe(0);
     expect(p.body.streak.longest).toBe(2);
   });
+
+  describe('parent "Zrobione" for a past day counts on time (the parent vouches)', () => {
+    /** Daily task with 3 good days, then yesterday's completion removed (overdue). */
+    async function yesterdayOverdue() {
+      const { fam, ola } = await setup();
+      const task = await createTask(fam, [ola.id], { recurrence: { kind: 'daily' }, startDate: addDays(today(), -3), points: 20 });
+      await backfillDays(task.id, ola.id, fam.parentId, 3);
+      await env.DB.prepare('DELETE FROM completion WHERE occurrence_id = (SELECT id FROM occurrence WHERE task_id = ? AND date = ?)')
+        .bind(task.id, addDays(today(), -1))
+        .run();
+      const overdue = (await call('GET', '/v1/agenda?overdue=1', { token: ola.token })).body.items.find((i: any) => i.date < today());
+      return { fam, ola, occurrenceId: overdue.occurrenceId as string };
+    }
+    const complete = (fam: Family, occurrenceId: string, memberId: string) =>
+      call('POST', `/v1/occurrences/${occurrenceId}/complete`, { token: fam.parentToken, json: { memberId, clientOpId: opId() } });
+    async function expectOnTime(fam: Family, ola: { id: string }) {
+      const s = (await call('GET', `/v1/members/${ola.id}/stats`, { token: fam.parentToken })).body;
+      expect(s.streak.current).toBe(3);
+      expect(s.onTimeRate30).toBe(1);
+      const y = s.history.find((h: any) => h.date === addDays(today(), -1));
+      expect(y).toMatchObject({ status: 'approved', late: false, points: 20 });
+    }
+
+    it('next-morning tick for a phoneless chore keeps the streak and is not late', async () => {
+      const { fam, ola, occurrenceId } = await yesterdayOverdue();
+      expect((await complete(fam, occurrenceId, ola.id)).status).toBe(201);
+      await expectOnTime(fam, ola);
+    });
+
+    it('a late report approved via "Zrobione" counts on time; a normal approve stays late', async () => {
+      const a = await yesterdayOverdue();
+      await call('POST', `/v1/occurrences/${a.occurrenceId}/report`, { token: a.ola.token, json: { clientOpId: opId() } });
+      expect((await complete(a.fam, a.occurrenceId, a.ola.id)).status).toBe(201);
+      await expectOnTime(a.fam, a.ola);
+
+      const b = await yesterdayOverdue();
+      await reportAndApprove(b.fam, b.ola, b.occurrenceId);
+      const s = (await call('GET', `/v1/members/${b.ola.id}/stats`, { token: b.fam.parentToken })).body;
+      expect(s.streak.current).toBe(0);
+      expect(s.history.find((h: any) => h.date === addDays(today(), -1)).late).toBe(true);
+    });
+
+    it('after a rejected late report, "Zrobione" still shows done on time', async () => {
+      const { fam, ola, occurrenceId } = await yesterdayOverdue();
+      const rep = await call('POST', `/v1/occurrences/${occurrenceId}/report`, { token: ola.token, json: { clientOpId: opId() } });
+      await call('POST', `/v1/completions/${rep.body.completionId}/reject`, { token: fam.parentToken, json: { comment: 'Jeszcze raz' } });
+      expect((await complete(fam, occurrenceId, ola.id)).status).toBe(201);
+      await expectOnTime(fam, ola);
+      const item = (await call('GET', `/v1/agenda?from=${addDays(today(), -1)}`, { token: ola.token })).body.items.find(
+        (i: any) => i.occurrenceId === occurrenceId,
+      );
+      expect(item.children[0].state).toBe('approved');
+    });
+
+    it('today, before the due time, the real time is kept', async () => {
+      const { fam, ola } = await setup();
+      await createTask(fam, [ola.id]);
+      const item = (await call('GET', '/v1/agenda', { token: ola.token })).body.items[0];
+      const before = Date.now();
+      const r = await complete(fam, item.occurrenceId, ola.id);
+      const row = await env.DB.prepare('SELECT reported_at FROM completion WHERE id = ?').bind(r.body.completionId).first<any>();
+      expect(row.reported_at).toBeGreaterThanOrEqual(before);
+    });
+  });
 });
 
 describe('random stickers', () => {
@@ -156,6 +220,21 @@ describe('random stickers', () => {
     const results = [];
     for (const i of items) results.push((await reportAndApprove(fam, ola, i.occurrenceId)).body.drop.items.length);
     expect(results).toEqual([1, 0, 0]);
+  });
+
+  it('tells the child why each new sticker came (first task of the day, bonus)', async () => {
+    const { fam, ola } = await setup();
+    await seedPack(fam.familyId, { common: 10 });
+    for (let i = 0; i < 2; i++) await createTask(fam, [ola.id], { title: `T${i}` });
+    const items = (await call('GET', '/v1/agenda', { token: ola.token })).body.items;
+    rewardRng.rng = () => 0.1; // always drop
+    for (const i of items) await reportAndApprove(fam, ola, i.occurrenceId);
+    const fresh = (await call('GET', '/v1/collection/new', { token: ola.token })).body;
+    expect(fresh.map((f: any) => [f.how, f.reason, f.streakDays])).toEqual([
+      ['drop', 'first_task', null],
+      ['drop', 'bonus_task', null],
+    ]);
+    expect(new Set(fresh.map((f: any) => f.bundle)).size).toBe(2);
   });
 
   it('pays 5 points when every sticker is collected', async () => {
@@ -207,6 +286,12 @@ describe('streak packs', () => {
     expect(all.c).toBe(4);
     const awards = await env.DB.prepare('SELECT * FROM streak_award WHERE member_id = ?').bind(ola.id).all();
     expect(awards.results).toHaveLength(1);
+    // The reveal shows the pack with its reason; the 3 stickers share one pack.
+    const fresh = (await call('GET', '/v1/collection/new', { token: ola.token })).body;
+    const pack = fresh.filter((f: any) => f.reason === 'streak');
+    expect(pack).toHaveLength(3);
+    expect(pack.every((f: any) => f.streakDays === 7 && f.bundle === pack[0].bundle)).toBe(true);
+    expect(fresh.filter((f: any) => f.reason === 'first_task')).toHaveLength(1);
   });
 
   it('30 days give a guaranteed legendary', async () => {
@@ -248,5 +333,64 @@ describe('stats', () => {
     expect(s.body.approvedCount30).toBe(3);
     expect(s.body.history.map((h: any) => h.status)).toEqual(['approved', 'missed', 'approved', 'approved']);
     expect(s.body.stickersTotal).toBe(4);
+  });
+});
+
+describe('bonus points from a parent ("Daj punkty")', () => {
+  const give = (fam: Family, memberId: string, json: Record<string, unknown>, token = fam.parentToken) =>
+    call('POST', `/v1/members/${memberId}/bonus`, { token, json: { clientOpId: opId(), ...json } });
+
+  it('adds the points with the reason, shows it in the history and notifies the child', async () => {
+    const fam = await registerFamily();
+    const kid = await addChild(fam, 'Zosia');
+    const r = await give(fam, kid.id, { amount: 20, reason: '  pomoc babci ' });
+    expect(r.status).toBe(201);
+    expect(r.body.balance).toBe(20);
+    expect(r.body.entry).toMatchObject({ amount: 20, reason: 'bonus', note: 'pomoc babci', label: 'Bonus od rodzica: pomoc babci' });
+    const p = await call('GET', '/v1/members/me/points', { token: kid.token });
+    expect(p.body.balance).toBe(20);
+    expect(p.body.earnedTotal).toBe(20);
+    expect(p.body.ledger[0]).toMatchObject({ reason: 'bonus', label: 'Bonus od rodzica: pomoc babci', amount: 20 });
+    const n = await env.DB.prepare("SELECT title, body FROM notification_outbox WHERE member_id = ? AND type = 'bonus'").bind(kid.id).first<any>();
+    expect(n).toMatchObject({ title: 'Bonus! +20 pkt', body: 'Za: pomoc babci' });
+  });
+
+  it('is idempotent per key', async () => {
+    const fam = await registerFamily();
+    const kid = await addChild(fam);
+    const key = opId();
+    const [a, b] = await Promise.all([
+      give(fam, kid.id, { amount: 5, reason: 'x', clientOpId: key }),
+      give(fam, kid.id, { amount: 5, reason: 'x', clientOpId: key }),
+    ]);
+    expect([a.status, b.status].sort()).toEqual([200, 201]);
+    expect(a.body.entry.id).toBe(b.body.entry.id);
+    const p = await call('GET', `/v1/members/${kid.id}/points`, { token: fam.parentToken });
+    expect(p.body.balance).toBe(5);
+  });
+
+  it('never subtracts and validates amount and reason', async () => {
+    const fam = await registerFamily();
+    const kid = await addChild(fam);
+    for (const json of [
+      { amount: -5, reason: 'kara' },
+      { amount: 0, reason: 'nic' },
+      { amount: 501, reason: 'dużo' },
+      { amount: 2.5, reason: 'pół' },
+      { amount: 10, reason: '   ' },
+      { amount: 10, reason: 'x'.repeat(61) },
+    ]) {
+      expect((await give(fam, kid.id, json)).status).toBe(400);
+    }
+    expect((await give(fam, kid.id, { amount: 500, reason: 'x'.repeat(60) })).status).toBe(201);
+  });
+
+  it('only parents, only own family children', async () => {
+    const fam = await registerFamily();
+    const kid = await addChild(fam);
+    const other = await registerFamily('Inni');
+    expect((await give(fam, kid.id, { amount: 5, reason: 'x' }, kid.token)).status).toBe(403);
+    expect((await give(other, kid.id, { amount: 5, reason: 'x' })).status).toBe(404);
+    expect((await give(fam, fam.parentId, { amount: 5, reason: 'x' })).status).toBe(404);
   });
 });

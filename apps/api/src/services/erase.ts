@@ -45,6 +45,7 @@ export async function eraseMember(env: Env, memberId: string): Promise<void> {
     s('DELETE FROM parent_login WHERE member_id = ?', memberId),
     s('UPDATE completion SET reviewed_by = NULL WHERE reviewed_by = ?', memberId),
     s('UPDATE redemption SET resolved_by = NULL WHERE resolved_by = ?', memberId),
+    s('UPDATE points_ledger SET created_by = NULL WHERE created_by = ?', memberId),
     s('UPDATE task SET created_by = (SELECT admin_member_id FROM family WHERE id = ?) WHERE created_by = ?', m.family_id, memberId),
     s(`DELETE FROM rate_limit WHERE key IN (${keys.map(() => '?').join(', ')})`, ...keys),
     s('DELETE FROM member WHERE id = ?', memberId),

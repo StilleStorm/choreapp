@@ -14,7 +14,7 @@ import type { FamilyRow } from '../lib/rows.js';
 import type { PendingCompletion } from './approval.js';
 import { sendPush, type PushMessage } from './fcm.js';
 
-export type NotificationType = 'task_new' | 'reminder' | 'report' | 'approved' | 'rejected' | 'reward';
+export type NotificationType = 'task_new' | 'reminder' | 'report' | 'approved' | 'rejected' | 'reward' | 'bonus';
 
 export interface Notification {
   type: NotificationType;
@@ -193,6 +193,10 @@ export async function notifyRewardChosen(env: Env, family: FamilyRow, childId: s
     { type: 'reward', title: `${name} wybiera nagrodę`, body: `${reward} (${cost} pkt). Oznacz, gdy ją wydasz.`, data: { screen: 'rewards' } },
     now,
   );
+}
+
+export async function notifyBonus(env: Env, family: FamilyRow, childId: string, amount: number, reason: string, now = Date.now()): Promise<void> {
+  await enqueue(env, family, [childId], { type: 'bonus', title: `Bonus! +${amount} pkt`, body: `Za: ${reason}`, data: { screen: 'points' } }, now);
 }
 
 export async function notifyReminder(env: Env, family: FamilyRow, childId: string, left: number, now = Date.now()): Promise<void> {

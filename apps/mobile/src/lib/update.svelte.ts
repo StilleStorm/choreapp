@@ -8,6 +8,7 @@ import type { AppReleaseDto } from '@choreapp/shared';
 import { api } from './api.js';
 import { appVersion, isNative } from './native.js';
 import { notices } from './notices.svelte.js';
+import { session } from './session.svelte.js';
 
 export const selfUpdates = !['play', 'staging'].includes(import.meta.env.VITE_DISTRIBUTION ?? '');
 
@@ -25,7 +26,17 @@ class Update {
       if (!selfUpdates) return;
       this.latest = await api.get<AppReleaseDto | null>('/v1/app/latest');
       this.available = isNative && !!this.latest && this.latest.versionCode > this.installed.code;
-      if (this.available) notices.show('Nowa wersja aplikacji', `Wersja ${this.latest!.versionName} czeka. Dotknij, żeby pobrać.`, '/update');
+      if (!this.available) return;
+      // A child on a parent's phone can't open the update screen (adult screens
+      // are out of reach); the parent gets the notice after switching back.
+      if (session.swapped) {
+        this.checked = false;
+        return;
+      }
+      // A child stays with the notice until tapped or closed (not 6 s); it also waits for any pack being opened.
+      notices.show('Nowa wersja aplikacji', `Wersja ${this.latest!.versionName} czeka. Dotknij, żeby pobrać.`, '/update', {
+        sticky: !session.isParent,
+      });
     } catch {
       this.checked = false;
     }

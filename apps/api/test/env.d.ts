@@ -9,6 +9,7 @@ declare global {
       FILE_SIGNING_KEY: string;
       FCM_SERVICE_ACCOUNT?: string;
       TEST_MIGRATIONS: D1Migration[];
+      TEST_BUILTIN_SEED: string;
     }
   }
 }

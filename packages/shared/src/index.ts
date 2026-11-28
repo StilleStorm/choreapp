@@ -200,6 +200,26 @@ export const reportBody = z.object({
   reportedAt: z.number().int().positive().optional(),
 });
 
+/** A parent ticks a task off for a child (child without a phone, or done together): approved right away. */
+export const parentCompleteBody = z.object({
+  memberId: id,
+  /** Idempotency key generated when the sheet opens, so a double tap or a retry pays once. */
+  clientOpId: z.string().min(8).max(64),
+});
+
+/** Biggest single bonus a parent can give ("Daj punkty"). */
+export const BONUS_MAX = 500;
+/** Longest reason for a bonus, shown in the child's points history. */
+export const BONUS_REASON_MAX = 60;
+
+/** Bonus points from a parent: only ever added (taking points away is not offered). */
+export const bonusBody = z.object({
+  amount: z.number().int().min(1).max(BONUS_MAX),
+  reason: z.string().trim().min(1).max(BONUS_REASON_MAX),
+  /** Idempotency key generated when the confirmation opens, so a double tap pays once. */
+  clientOpId: z.string().min(8).max(64),
+});
+
 export const rejectBody = z.object({ comment: z.string().trim().max(300).nullable().optional() });
 
 // ---------------------------------------------------------------------------
@@ -214,6 +234,14 @@ export const rewardInput = z.object({
   /** One-time reward. Omitted (older apps) = permanent on create, unchanged on edit. */
   oneTime: z.boolean().optional(),
 });
+
+/**
+ * Families' own sticker packs ("Własna paczka" + adding images). Off in the free
+ * version: the app hides the buttons and the API refuses creating packs and
+ * uploading images (feature_disabled). Packs made earlier keep working. The one
+ * switch to turn it back on (e.g. as a premium feature).
+ */
+export const CUSTOM_PACKS_ENABLED = false;
 
 export const packInput = z.object({
   name: z.string().trim().min(1).max(60),

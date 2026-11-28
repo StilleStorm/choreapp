@@ -166,6 +166,19 @@ export interface ItemDto {
   theme?: string;
 }
 
+/** Why the child got a sticker, shown on the pack the child opens. */
+export type RevealReason = 'first_task' | 'bonus_task' | 'streak' | 'shop';
+
+/** A sticker the child has not opened yet (GET /v1/collection/new). */
+export interface NewItemDto extends ItemDto {
+  how: 'drop' | 'streak' | 'shop';
+  reason: RevealReason;
+  /** Streak packs: the streak length (days) that earned the pack. */
+  streakDays: number | null;
+  /** Stickers with the same bundle come out of one pack (a streak pack holds 3). */
+  bundle: string;
+}
+
 export interface DropResultDto {
   points: number;
   items: ItemDto[];
@@ -177,6 +190,13 @@ export interface DropResultDto {
 export interface ApproveResultDto {
   completionId: string;
   drop: DropResultDto;
+}
+
+/** A parent marked a task done for a child. drop is null when a retried request found the earlier completion. */
+export interface ParentCompleteResultDto {
+  completionId: string;
+  status: 'approved';
+  drop: DropResultDto | null;
 }
 
 export interface StreakDto {
@@ -196,9 +216,18 @@ export interface PointsDto {
 export interface LedgerEntryDto {
   id: string;
   amount: number;
+  /** task, drop_fallback, streak_fallback, shop, reward, reward_refund, bonus */
   reason: string;
   label: string;
   createdAt: number;
+  /** bonus only: the parent's reason (also part of label). */
+  note?: string | null;
+}
+
+/** A parent's bonus was added. */
+export interface BonusResultDto {
+  entry: LedgerEntryDto;
+  balance: number;
 }
 
 export interface StatsDto {
@@ -309,4 +338,8 @@ export interface AppReleaseDto {
   versionName: string;
   url: string;
   notes: string | null;
+  /** APK size in bytes, checked after the download (older APIs omit it). */
+  size?: number | null;
+  /** SHA-256 of the APK (hex), checked after the download when known. */
+  sha256?: string | null;
 }

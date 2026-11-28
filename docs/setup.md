@@ -70,7 +70,7 @@ Skrypt buduje podpisany APK, wysyła go do R2 i rejestruje wersję. Telefony w r
 cd apps/mobile && pnpm run aab
 ```
 
-Buduje wersję bez samodzielnych aktualizacji (`VITE_DISTRIBUTION=play`), z linkiem „Postaw twórcy kawę” w ustawieniach rodzica (`VITE_SHOW_SUPPORT=1`) i podpisany pakiet `android/app/build/outputs/bundle/release/app-release.aab` (tym samym kluczem z `keystore.properties`; w Play Console można go zarejestrować jako klucz przesyłania). W Play Console podaj politykę prywatności `https://<adres Workera>/privacy` i stronę usuwania konta `https://<adres Workera>/delete-account`.
+Buduje wersję bez samodzielnych aktualizacji (`VITE_DISTRIBUTION=play`), z linkiem „Wesprzyj twórcę (Suppi)” w ustawieniach rodzica (`VITE_SHOW_SUPPORT=1`) i podpisany pakiet `android/app/build/outputs/bundle/release/app-release.aab` (tym samym kluczem z `keystore.properties`; w Play Console można go zarejestrować jako klucz przesyłania). W Play Console podaj politykę prywatności `https://<adres Workera>/privacy` i stronę usuwania konta `https://<adres Workera>/delete-account`.
 
 ## Zdjęcia dzieci (migracja 0007, wersja 1.0.9)
 
@@ -153,7 +153,7 @@ pnpm run deploy:staging && pnpm run db:migrate:staging && pnpm run db:seed:stagi
 node ../../scripts/demo-family.mjs https://choreapp-api-staging.<subdomena>.workers.dev
 ```
 
-Aplikacja testowa: `apps/mobile/.env.staging` z `VITE_API_URL=https://choreapp-api-staging.<subdomena>.workers.dev`, potem `cd apps/mobile && pnpm run apk:staging`. Powstaje podpisany APK `app.choreapp.family.staging` („Zadania TEST”), który instaluje się obok prawdziwej aplikacji, nigdy nie proponuje aktualizacji i pokazuje link „Postaw twórcy kawę”. Push działa dopiero, gdy w Firebase dodasz aplikację Android `app.choreapp.family.staging` i pobierzesz nowy `google-services.json` (bez tego build testowy po prostu nie rejestruje powiadomień).
+Aplikacja testowa: `apps/mobile/.env.staging` z `VITE_API_URL=https://choreapp-api-staging.<subdomena>.workers.dev`, potem `cd apps/mobile && pnpm run apk:staging`. Powstaje podpisany APK `app.choreapp.family.staging` („Zadania TEST”), który instaluje się obok prawdziwej aplikacji, nigdy nie proponuje aktualizacji i pokazuje link „Wesprzyj twórcę (Suppi)”. Push działa dopiero, gdy w Firebase dodasz aplikację Android `app.choreapp.family.staging` i pobierzesz nowy `google-services.json` (bez tego build testowy po prostu nie rejestruje powiadomień).
 
 ## Praca lokalna
 

@@ -6,6 +6,7 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { installNativeHandlers } from '#lib/native.js';
+  import BackNotice from '#lib/components/BackNotice.svelte';
   import NoticeBanner from '#lib/components/NoticeBanner.svelte';
   import { setupPush } from '#lib/push.js';
   import { update } from '#lib/update.svelte.js';
@@ -50,6 +51,7 @@
 {#if session.ready && !swapTarget}
   {@render children()}
   <NoticeBanner />
+  <BackNotice />
 {:else}
   <div class="splash" aria-busy="true"></div>
 {/if}

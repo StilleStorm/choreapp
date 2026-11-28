@@ -221,9 +221,12 @@ describe('app releases', () => {
         .run();
     }
     const r = await call('GET', '/v1/app/latest', { token: fam.parentToken });
-    expect(r.body).toMatchObject({ versionCode: 3, versionName: '1.2.0', notes: 'Poprawki' });
+    // No stored size: the R2 object's size; no checksum.
+    expect(r.body).toMatchObject({ versionCode: 3, versionName: '1.2.0', notes: 'Poprawki', size: 4, sha256: null });
     const url = new URL(r.body.url);
     expect((await call('GET', url.pathname + url.search)).status).toBe(200);
+    await env.DB.prepare('UPDATE app_release SET apk_size = 4, apk_sha256 = ? WHERE version_code = 3').bind('ab'.repeat(32)).run();
+    expect((await call('GET', '/v1/app/latest', { token: fam.parentToken })).body).toMatchObject({ size: 4, sha256: 'ab'.repeat(32) });
   });
 });
 

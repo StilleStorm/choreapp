@@ -1,6 +1,6 @@
 import { localDateAt } from '@choreapp/core';
 import { describe, expect, it } from 'vitest';
-import { addChild, call, env, registerFamily, type Family } from './helpers.js';
+import { addChild, call, env, registerFamily, withCustomPacks, type Family } from './helpers.js';
 
 async function setup() {
   const fam = await registerFamily();
@@ -394,14 +394,17 @@ describe('packs panel', () => {
 
   it('a parent adds a private pack and uploads stickers into albums', async () => {
     const { fam, ola } = await setup();
-    const pack = await call('POST', '/v1/packs', { token: fam.parentToken, json: { name: 'Rysunki Oli', source: 'własne', license: 'private' } });
-    expect(pack.status).toBe(201);
     const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>';
-    const up = await call('POST', `/v1/packs/${pack.body.id}/items?name=Kotek&album=Domowe&rarity=rare&availability=both`, {
-      token: fam.parentToken,
-      raw: svg,
-      contentType: 'image/svg+xml',
+    const { pack, up } = await withCustomPacks(async () => {
+      const pack = await call('POST', '/v1/packs', { token: fam.parentToken, json: { name: 'Rysunki Oli', source: 'własne', license: 'private' } });
+      const up = await call('POST', `/v1/packs/${pack.body.id}/items?name=Kotek&album=Domowe&rarity=rare&availability=both`, {
+        token: fam.parentToken,
+        raw: svg,
+        contentType: 'image/svg+xml',
+      });
+      return { pack, up };
     });
+    expect(pack.status).toBe(201);
     expect(up.status).toBe(201);
     expect(up.body).toMatchObject({ name: 'Kotek', album: 'Domowe', rarity: 'rare', price: 80, droppable: true });
     const img = new URL(up.body.imageUrl);
@@ -414,6 +417,37 @@ describe('packs panel', () => {
     expect(items.body).toHaveLength(1);
     await call('PATCH', `/v1/items/${up.body.id}`, { token: fam.parentToken, json: { price: null } });
     expect((await call('GET', '/v1/shop', { token: ola.token })).body.items.some((i: any) => i.name === 'Kotek')).toBe(false);
+  });
+
+  it('free version: new packs and uploads are refused, existing packs keep working', async () => {
+    const { fam, ola } = await setup();
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>';
+    const packId = await withCustomPacks(async () => {
+      const pack = await call('POST', '/v1/packs', { token: fam.parentToken, json: { name: 'Stara', source: 'własne', license: 'private' } });
+      await call('POST', `/v1/packs/${pack.body.id}/items?name=Piesek&album=Domowe&rarity=common&availability=both`, {
+        token: fam.parentToken,
+        raw: svg,
+        contentType: 'image/svg+xml',
+      });
+      return pack.body.id as string;
+    });
+    const create = await call('POST', '/v1/packs', { token: fam.parentToken, json: { name: 'Nowa', source: 'własne', license: 'private' } });
+    expect(create.status).toBe(403);
+    expect(create.body.error).toBe('feature_disabled');
+    expect(create.body.message).toMatch(/wyłączone/);
+    const up = await call('POST', `/v1/packs/${packId}/items?name=Kot&album=Domowe&rarity=common`, {
+      token: fam.parentToken,
+      raw: svg,
+      contentType: 'image/svg+xml',
+    });
+    expect(up.status).toBe(403);
+    expect(up.body.error).toBe('feature_disabled');
+    // The old pack and its image stay: listed, editable, in the child's shop.
+    expect((await call('GET', '/v1/packs', { token: fam.parentToken })).body.some((p: any) => p.id === packId)).toBe(true);
+    const items = (await call('GET', `/v1/packs/${packId}/items`, { token: fam.parentToken })).body;
+    expect(items).toHaveLength(1);
+    expect((await call('PATCH', `/v1/items/${items[0].id}`, { token: fam.parentToken, json: { name: 'Piesek 2' } })).status).toBe(200);
+    expect((await call('GET', '/v1/shop', { token: ola.token })).body.items.some((i: any) => i.name === 'Piesek 2')).toBe(true);
   });
 
   it('children cannot manage packs', async () => {

@@ -1,10 +1,11 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import Icon from '#lib/components/Icon.svelte';
-  import RevealSheet from '#lib/components/RevealSheet.svelte';
+  import PackOpening from '#lib/components/PackOpening.svelte';
   import TabBar, { type Tab } from '#lib/components/TabBar.svelte';
   import { doneLabel } from '#lib/doneLabel.svelte.js';
   import { offline } from '#lib/offline.svelte.js';
+  import { packs } from '#lib/packs.svelte.js';
   import { session } from '#lib/session.svelte.js';
   import type { LayoutProps } from './$types';
 
@@ -14,8 +15,6 @@
     if (!session.me) void goto('/welcome', { replace: true });
     else if (session.isParent) void goto('/parent', { replace: true });
   });
-
-  let reveal: RevealSheet | undefined = $state();
 
   // The whole page (body, sheets, tab bar) follows the child's theme.
   $effect(() => {
@@ -30,11 +29,11 @@
     void doneLabel.load();
   });
 
-  // New stickers (approved tasks, streak packs) are revealed when the app is opened.
+  // New stickers (approved tasks, streak packs) come as packs to open when the app is opened.
   $effect(() => {
-    if (!reveal) return;
-    void reveal.check();
-    const onVisible = () => document.visibilityState === 'visible' && void reveal?.check();
+    if (!session.me || session.isParent) return;
+    void packs.check();
+    const onVisible = () => document.visibilityState === 'visible' && void packs.check();
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
   });
@@ -56,7 +55,7 @@
     {/if}
     {@render children()}
     <TabBar {tabs} />
-    <RevealSheet bind:this={reveal} />
+    <PackOpening />
   </div>
 {/if}
 

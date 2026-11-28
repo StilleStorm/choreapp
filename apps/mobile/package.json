@@ -17,7 +17,7 @@
     "test": "vitest run",
     "cap:sync": "vite build && cap sync android",
     "apk": "vite build && cap sync android && cd android && ./gradlew assembleRelease",
-    "aab": "VITE_DISTRIBUTION=play VITE_SHOW_SUPPORT=1 vite build && cap sync android && cd android && ./gradlew bundleRelease",
+    "aab": "VITE_DISTRIBUTION=play VITE_SHOW_SUPPORT=1 vite build && cap sync android && cd android && ./gradlew bundleRelease -Pplay",
     "apk:staging": "VITE_DISTRIBUTION=staging VITE_SHOW_SUPPORT=1 vite build --mode staging && cap sync android && cd android && ./gradlew assembleRelease -Pstaging"
   },
   "dependencies": {
@@ -26,6 +26,7 @@
     "@capacitor/android": "^8.6.2",
     "@capacitor/app": "^8.0.0",
     "@capacitor/core": "^8.6.2",
+    "@capacitor/haptics": "^8.0.2",
     "@capacitor/network": "^8.0.1",
     "@capacitor/preferences": "^8.0.1",
     "@capacitor/push-notifications": "^8.1.3",

@@ -1,0 +1,74 @@
+[
+  {
+    "id": "v2_flower_wreath",
+    "name": "Wianek z kwiatów",
+    "rarity": "common",
+    "file": "flower_wreath.webp"
+  },
+  {
+    "id": "v2_wooden_leaves",
+    "name": "Drewniany pierścień",
+    "rarity": "common",
+    "file": "wooden_leaves.webp"
+  },
+  {
+    "id": "v2_candy_ring",
+    "name": "Cukierkowy pierścień",
+    "rarity": "common",
+    "file": "candy_ring.webp"
+  },
+  {
+    "id": "v2_cloud_ring",
+    "name": "Chmurkowy pierścień",
+    "rarity": "common",
+    "file": "cloud_ring.webp"
+  },
+  {
+    "id": "v2_golden_laurel",
+    "name": "Złoty laur",
+    "rarity": "rare",
+    "file": "golden_laurel.webp"
+  },
+  {
+    "id": "v2_starry_night",
+    "name": "Gwiaździsta noc",
+    "rarity": "rare",
+    "file": "starry_night.webp"
+  },
+  {
+    "id": "v2_crystal_ice",
+    "name": "Kryształowy lód",
+    "rarity": "rare",
+    "file": "crystal_ice.webp"
+  },
+  {
+    "id": "v2_coral_shells",
+    "name": "Rafa i muszelki",
+    "rarity": "rare",
+    "file": "coral_shells.webp"
+  },
+  {
+    "id": "v2_dragon_coil",
+    "name": "Smocza spirala",
+    "rarity": "legendary",
+    "file": "dragon_coil.webp"
+  },
+  {
+    "id": "v2_phoenix_flames",
+    "name": "Płomienie feniksa",
+    "rarity": "legendary",
+    "file": "phoenix_flames.webp"
+  },
+  {
+    "id": "v2_rainbow_halo",
+    "name": "Tęczowa korona",
+    "rarity": "legendary",
+    "file": "rainbow_halo.webp"
+  },
+  {
+    "id": "v2_celestial_moon",
+    "name": "Niebiański księżyc",
+    "rarity": "legendary",
+    "file": "celestial_moon.webp"
+  }
+]

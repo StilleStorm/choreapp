@@ -5,6 +5,11 @@ apply plugin: 'com.android.application'
 // Test-server build (`pnpm apk:staging`, gradle -Pstaging): installs next to the
 // real app as app.choreapp.family.staging, named "Zadania TEST".
 def staging = project.hasProperty('staging')
+// Google Play build (`pnpm aab`: gradle -Pplay; any bundle task counts as Play
+// too): no self-updater and no REQUEST_INSTALL_PACKAGES (Play policy). Only the
+// sideloaded APK (`pnpm apk`, scripts/release-apk.sh, debug) gets src/sideload.
+def play = project.hasProperty('play') || gradle.startParameter.taskNames.any { it.toLowerCase().contains('bundle') }
+def sideload = !play && !staging
 
 def keystoreProps = new Properties()
 def keystoreFile = rootProject.file('keystore.properties')
@@ -18,8 +23,8 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Bump both for every APK you hand out; the app compares versionCode with the API.
-        versionCode 18
-        versionName "1.0.17"
+        versionCode 19
+        versionName "1.0.18"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -38,6 +43,11 @@ android {
         }
     }
     if (staging) sourceSets.release.res.srcDirs += 'src/staging/res'
+    if (sideload) {
+        sourceSets.main.java.srcDirs += 'src/sideload/java'
+        sourceSets.debug.manifest.srcFile 'src/sideload/AndroidManifest.xml'
+        sourceSets.release.manifest.srcFile 'src/sideload/AndroidManifest.xml'
+    }
     buildTypes {
         release {
             if (keystoreFile.exists()) signingConfig signingConfigs.release

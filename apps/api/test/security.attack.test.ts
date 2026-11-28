@@ -11,7 +11,7 @@
 import { env as cfEnv } from 'cloudflare:workers';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../src/index.js';
-import { addChild, call, env, legacyChildPhoto, registerFamily } from './helpers.js';
+import { addChild, call, env, legacyChildPhoto, registerFamily, withCustomPacks } from './helpers.js';
 
 async function give(memberId: string, amount: number, reason = 'task') {
   await env.DB.prepare('INSERT INTO points_ledger (id, member_id, amount, reason, created_at) VALUES (?, ?, ?, ?, ?)')
@@ -205,15 +205,17 @@ describe('X1 signed URL survives member removal', () => {
 describe('X2 SVG pack upload served safely', () => {
   it('uploaded SVG is served with nosniff + locked-down CSP', async () => {
     const fam = await registerFamily();
-    const pack = await call('POST', '/v1/packs', {
-      token: fam.parentToken,
-      json: { name: 'Custom', source: 'https://ex.org', license: 'CC0-1.0', active: true },
-    });
     const svg = '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>';
-    const up = await call('POST', `/v1/packs/${pack.body.id}/items?name=S&album=A&rarity=common`, {
-      token: fam.parentToken,
-      raw: svg,
-      contentType: 'image/svg+xml',
+    const up = await withCustomPacks(async () => {
+      const pack = await call('POST', '/v1/packs', {
+        token: fam.parentToken,
+        json: { name: 'Custom', source: 'https://ex.org', license: 'CC0-1.0', active: true },
+      });
+      return call('POST', `/v1/packs/${pack.body.id}/items?name=S&album=A&rarity=common`, {
+        token: fam.parentToken,
+        raw: svg,
+        contentType: 'image/svg+xml',
+      });
     });
     expect(up.status).toBe(201); // SVG is accepted (S7: upload allowed)
     const url: string = up.body.imageUrl;
