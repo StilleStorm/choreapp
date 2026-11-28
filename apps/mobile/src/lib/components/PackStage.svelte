@@ -75,6 +75,12 @@
   let packEl: HTMLDivElement | undefined = $state();
   let stripEl: HTMLImageElement | undefined = $state();
   let stickerEl: HTMLDivElement | undefined = $state();
+  let overlayEl: HTMLDivElement | undefined = $state();
+  let openBtn: HTMLButtonElement | undefined = $state();
+  // Focus moves into the pack (screen readers land on "Otwórz paczkę").
+  $effect(() => {
+    (openBtn ?? overlayEl)?.focus({ preventScroll: true });
+  });
   let alive = true;
   onDestroy(() => (alive = false));
 
@@ -272,7 +278,17 @@
   const SPARKS: Record<Rarity, ReturnType<typeof sparks>> = { common: sparks(6), rare: sparks(12), legendary: sparks(16) };
 </script>
 
-<div class="overlay" data-rarity={pack.rarity} class:reduce style={timingVars}>
+<div
+  class="overlay"
+  data-rarity={pack.rarity}
+  class:reduce
+  style={timingVars}
+  role="dialog"
+  aria-modal="true"
+  aria-label="Paczka z naklejkami. {caption}"
+  tabindex="-1"
+  bind:this={overlayEl}
+>
   <p class="why">{caption}</p>
 
   <div class="stage">
@@ -311,14 +327,11 @@
       <div
         class="pack"
         bind:this={packEl}
-        role="button"
-        tabindex="0"
-        aria-label="Otwórz paczkę: przesuń palcem po górnym pasku albo stuknij kilka razy"
+        aria-hidden="true"
         onpointerdown={down}
         onpointermove={move}
         onpointerup={up}
         onpointercancel={() => (lastX = null)}
-        onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && add(0.2)}
       >
         <img class="body" src="/packs/{pack.rarity}-body.webp" alt="" draggable="false" style:top="{bodyTop}%" style:height="{(art.body / 720) * 100}%" />
         {#if pack.rarity === 'legendary'}
@@ -344,9 +357,11 @@
     </div>
   </div>
 
-  <div class="bottom">
+  <div class="bottom" aria-live="polite">
     {#if stage === 'closed'}
-      <p class="hint">Przesuń palcem po górnym pasku paczki<br /><small>albo stuknij w nią kilka razy</small></p>
+      <p class="hint" aria-hidden="true">Przesuń palcem po górnym pasku paczki<br /><small>albo stuknij w nią kilka razy</small></p>
+      <!-- For TalkBack and keyboards: the swipe/taps above have no other way in. -->
+      <button class="sr-open" bind:this={openBtn} onclick={() => stage === 'closed' && ((progress = 1), void open())}>Otwórz paczkę</button>
     {:else if stage === 'shown'}
       <div class="card result landed">
         <h2>{pack.items.length > 1 ? `Naklejka ${index + 1} z ${pack.items.length}` : 'Nowa naklejka!'}</h2>
@@ -354,8 +369,8 @@
         <p class="muted small">{RARITY_LABEL[item.rarity]} · album {item.album}</p>
         {#if last && pack.items.length === 1}
           <div class="actions">
-            <button class="btn" onclick={() => ondone(item.album)}>Do albumu</button>
             <button class="btn primary" onclick={() => ondone(null)}>{primaryLabel}</button>
+            <button class="btn" onclick={() => ondone(item.album)}>Do albumu</button>
           </div>
         {:else}
           <button class="btn primary block" onclick={nextSticker}>{last ? 'Gotowe!' : 'Następna!'}</button>
@@ -373,8 +388,8 @@
           {/each}
         </div>
         <div class="actions">
-          <button class="btn" onclick={() => ondone(pack.items[pack.items.length - 1]!.album)}>Do albumu</button>
           <button class="btn primary" onclick={() => ondone(null)}>{primaryLabel}</button>
+          <button class="btn" onclick={() => ondone(pack.items[pack.items.length - 1]!.album)}>Do albumu</button>
         </div>
       </div>
     {/if}
@@ -390,7 +405,8 @@
       onpointercancel={holdEnd}
       onpointerleave={holdEnd}
       oncontextmenu={(e) => e.preventDefault()}
-      aria-label="Pomiń (przytrzymaj)"
+      onclick={(e) => e.detail === 0 && skip()}
+      aria-label="Pomiń (przytrzymaj albo aktywuj czytnikiem ekranu)"
     >
       <svg viewBox="0 0 36 36" aria-hidden="true">
         <circle cx="18" cy="18" r="15" class="track" />
@@ -728,10 +744,11 @@
   .result p.muted {
     margin: 0 0 8px;
   }
+  /* Stacked, full width: "Następna paczka (N)" fits on one line on small phones. */
   .actions {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    grid-template-columns: 1fr;
+    gap: 8px;
     width: 100%;
     margin-top: 6px;
   }
@@ -755,6 +772,34 @@
     font-size: 0.75rem;
     font-weight: 700;
     line-height: 1.15;
+  }
+  /* Visually hidden, reachable by TalkBack and the keyboard. */
+  .sr-open {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .sr-open:focus-visible {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 8px 0 0;
+    padding: 8px 16px;
+    clip-path: none;
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-weight: 800;
+  }
+  .overlay:focus {
+    outline: none;
   }
   .skip {
     position: absolute;
