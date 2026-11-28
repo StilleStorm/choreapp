@@ -33,7 +33,10 @@ class Update {
         this.checked = false;
         return;
       }
-      notices.show('Nowa wersja aplikacji', `Wersja ${this.latest!.versionName} czeka. Dotknij, żeby pobrać.`, '/update');
+      // A child stays with the notice until tapped or closed (not 6 s); it also waits for any pack being opened.
+      notices.show('Nowa wersja aplikacji', `Wersja ${this.latest!.versionName} czeka. Dotknij, żeby pobrać.`, '/update', {
+        sticky: !session.isParent,
+      });
     } catch {
       this.checked = false;
     }
