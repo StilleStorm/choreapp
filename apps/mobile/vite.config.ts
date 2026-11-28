@@ -15,6 +15,11 @@ export default defineConfig({
   // for the test build app.choreapp.family.staging, without that package in it),
   // PushNotifications.register() crashes the app, so the web code must skip it.
   define: { __PUSH_ENABLED__: JSON.stringify(pushEnabled()) },
+  // Children's phones can run an Android System WebView that never updated
+  // (Chrome 8x-10x). Without this the CSS minifier turns plain top/right/
+  // bottom/left into `inset` (Chrome 87+) and the like, and full-screen layers
+  // such as the sticker pack lose their size there.
+  build: { cssTarget: ['chrome80'] },
   plugins: [
     sveltekit({
       compilerOptions: {

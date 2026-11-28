@@ -418,9 +418,18 @@
 </div>
 
 <style>
+  /*
+   * Old Android WebViews (a never-updated phone can be on Chrome 85-107) drop
+   * svh, container units (cqw), aspect-ratio and inset. The pack then
+   * collapsed to almost nothing. So sizes here use px/vw/vh and calc() with
+   * plain longhands; newer units only come in through @supports.
+   */
   .overlay {
     position: fixed;
-    inset: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
     z-index: 100;
     display: flex;
     flex-direction: column;
@@ -469,13 +478,20 @@
     visibility: hidden;
   }
   .pack {
+    /* Pack height and width (art is 382 x 720); the title scales with --pw. */
+    --ph: min(56vh, 460px);
+    --pw: calc(var(--ph) * 382 / 720);
     position: relative;
-    height: min(56svh, 460px);
-    aspect-ratio: 382 / 720;
-    container-type: inline-size;
+    width: var(--pw);
+    height: var(--ph);
     touch-action: none;
     cursor: grab;
     outline: none;
+  }
+  @supports (height: 1svh) {
+    .pack {
+      --ph: min(56svh, 460px);
+    }
   }
   .pack img {
     position: absolute;
@@ -500,16 +516,31 @@
     color: var(--ink);
     line-height: 0.95;
     text-align: center;
-    -webkit-text-stroke: 0.8cqw #fff;
-    paint-order: stroke fill;
+    /* White outline. A text stroke needs paint-order on HTML text (Chrome
+       123, same as light-dark()), or it eats the letters; older: shadows. */
+    text-shadow:
+      0 0 2px #fff,
+      1px 1px 0 #fff,
+      -1px -1px 0 #fff,
+      1px -1px 0 #fff,
+      -1px 1px 0 #fff;
     white-space: nowrap;
   }
   .t1 {
-    font-size: 8.6cqw;
+    font-size: calc(var(--pw) * 0.086);
   }
   .t2 {
-    font-size: 4.1cqw;
-    -webkit-text-stroke-width: 0.5cqw;
+    font-size: calc(var(--pw) * 0.041);
+  }
+  @supports (color: light-dark(#000, #fff)) {
+    .title {
+      text-shadow: none;
+      -webkit-text-stroke: calc(var(--pw) * 0.008) #fff;
+      paint-order: stroke fill;
+    }
+    .t2 {
+      -webkit-text-stroke-width: calc(var(--pw) * 0.005);
+    }
   }
   .tear {
     position: absolute;
@@ -530,7 +561,7 @@
     position: absolute;
     left: 8%;
     width: 9%;
-    aspect-ratio: 1;
+    height: calc(var(--pw) * 0.09);
     margin-top: -4.5%;
     border-radius: 50%;
     background: rgb(255 255 255 / 85%);
@@ -543,7 +574,7 @@
     position: absolute;
     left: 50%;
     width: 120%;
-    aspect-ratio: 2;
+    height: calc(var(--pw) * 0.6);
     margin: -30% 0 0 -60%;
     border-radius: 50%;
     background: radial-gradient(closest-side, #fff 0%, rgb(255 250 220 / 80%) 35%, transparent 100%);
@@ -564,7 +595,10 @@
   }
   .holo i {
     position: absolute;
-    inset: -20% -60%;
+    top: -20%;
+    right: -60%;
+    bottom: -20%;
+    left: -60%;
     background: linear-gradient(
       105deg,
       transparent 30%,
@@ -577,7 +611,10 @@
   }
   .aura {
     position: absolute;
-    inset: -14% -30%;
+    top: -14%;
+    right: -30%;
+    bottom: -14%;
+    left: -30%;
     border-radius: 50%;
     background: radial-gradient(closest-side, rgb(255 230 250 / 80%), rgb(190 150 255 / 45%) 45%, rgb(120 200 255 / 20%) 70%, transparent);
     opacity: 0.6;
@@ -585,7 +622,7 @@
   .sticker {
     position: relative;
     width: min(58vw, 230px);
-    aspect-ratio: 1;
+    height: min(58vw, 230px);
     opacity: 0;
     z-index: 1;
     backface-visibility: visible;
@@ -600,7 +637,7 @@
   .fx {
     position: relative;
     width: min(130vw, 560px);
-    aspect-ratio: 1;
+    height: min(130vw, 560px);
     display: grid;
     place-items: center;
     pointer-events: none;
@@ -649,7 +686,10 @@
   }
   .flash.white {
     position: fixed;
-    inset: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
     background: #fff;
     z-index: 5;
     animation: flash 0.9s ease-out both;
@@ -673,7 +713,10 @@
   }
   .shower {
     position: fixed;
-    inset: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
     z-index: 4;
     pointer-events: none;
     overflow: hidden;
@@ -703,16 +746,22 @@
     justify-content: flex-end;
     z-index: 6;
   }
+  /* Fixed colours, not the theme's: always light text on a dark pill. */
   .hint {
     margin: 0 0 56px;
+    padding: 8px 16px;
+    border-radius: 16px;
+    background: rgb(0 0 0 / 55%);
     color: #fff;
     text-align: center;
-    font-weight: 700;
-    opacity: 0.9;
+    font-weight: 800;
+    line-height: 1.3;
+    text-shadow: 0 1px 3px rgb(0 0 0 / 90%);
   }
   .hint small {
-    font-weight: 500;
-    opacity: 0.8;
+    color: #fff;
+    font-size: 0.9em;
+    font-weight: 600;
   }
   .result {
     width: 100%;
