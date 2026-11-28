@@ -9,8 +9,10 @@
   <button
     class="notice"
     onclick={() => {
+      // Read the link first: once dismissed, `n` is gone.
+      const href = n.href;
       notices.dismiss();
-      void goto(n.href);
+      void goto(href);
     }}
   >
     <span class="bell"><Icon name="bell" size={20} /></span>
