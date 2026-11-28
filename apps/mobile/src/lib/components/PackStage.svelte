@@ -419,7 +419,7 @@
 
 <style>
   /*
-   * Old Android WebViews (a never-updated phone can be on Chrome 85-107) drop
+   * Old Android WebViews (a never-updated phone can be on Chrome 88-107) drop
    * svh, container units (cqw), aspect-ratio and inset. The pack then
    * collapsed to almost nothing. So sizes here use px/vw/vh and calc() with
    * plain longhands; newer units only come in through @supports.

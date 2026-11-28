@@ -16,10 +16,13 @@ export default defineConfig({
   // PushNotifications.register() crashes the app, so the web code must skip it.
   define: { __PUSH_ENABLED__: JSON.stringify(pushEnabled()) },
   // Children's phones can run an Android System WebView that never updated
-  // (Chrome 8x-10x). Without this the CSS minifier turns plain top/right/
-  // bottom/left into `inset` (Chrome 87+) and the like, and full-screen layers
-  // such as the sticker pack lose their size there.
-  build: { cssTarget: ['chrome80'] },
+  // (Chrome 8x-10x). Chrome 88 is the floor (capacitor.config.ts refuses
+  // older): Svelte's scoped CSS and app.css use :where()/:is(). `target` keeps
+  // the JS syntax at that level; `cssTarget` stays lower so the CSS minifier
+  // does not turn plain top/right/bottom/left into `inset` (Chrome 87+) and
+  // the like, which made full-screen layers such as the sticker pack lose
+  // their size.
+  build: { target: 'chrome88', cssTarget: ['chrome80'] },
   plugins: [
     sveltekit({
       compilerOptions: {

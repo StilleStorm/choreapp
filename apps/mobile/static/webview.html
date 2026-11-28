@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Zadania</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #fff6ea; color: #5b3416; font-family: system-ui, sans-serif; }
+  body { display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; box-sizing: border-box; }
+  p { font-size: 20px; line-height: 1.4; max-width: 420px; margin: 0 0 20px; }
+  button { font: inherit; font-size: 18px; padding: 12px 24px; border: 2px solid #4a2a14; border-radius: 22px; background: #fa901d; color: #fff; }
+  .other { display: none; }
+</style>
+</head>
+<body>
+<div>
+  <!-- Capacitor shows this page (server.errorPath) when the Android System WebView
+       is older than android.minWebViewVersion, and also when a page fails to load.
+       No links out: children use the app. -->
+  <p class="old">Zaktualizuj Android System WebView w Sklepie Google Play, żeby uruchomić aplikację</p>
+  <div class="other">
+    <p>Nie udało się otworzyć aplikacji.</p>
+    <button type="button" onclick="location.replace('/')">Spróbuj ponownie</button>
+  </div>
+</div>
+<script>
+  // Same page for any load error: if the WebView is new enough, it was not the
+  // WebView, so offer a retry instead of the update hint.
+  var m = /Chrome\/(\d+)/.exec(navigator.userAgent);
+  if (m && +m[1] >= 88) {
+    document.querySelector('.old').style.display = 'none';
+    document.querySelector('.other').style.display = 'block';
+  }
+</script>
+</body>
+</html>

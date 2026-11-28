@@ -6,6 +6,28 @@
 		<link rel="icon" href="/favicon.svg" />
 		<link rel="stylesheet" href="/fonts/fonts.css" />
 		<meta name="text-scale" content="scale" />
+		<script>
+			// Old Android System WebViews (Chrome 88-92) lack these; children's phones may never update it.
+			(function () {
+				var c = window.crypto;
+				if (c && c.getRandomValues && !c.randomUUID) {
+					// RFC 4122 version 4 UUID.
+					c.randomUUID = function () {
+						var b = c.getRandomValues(new Uint8Array(16)), h = [], i;
+						b[6] = (b[6] & 0x0f) | 0x40;
+						b[8] = (b[8] & 0x3f) | 0x80;
+						for (i = 0; i < 16; i++) h.push((b[i] + 0x100).toString(16).slice(1));
+						return h.slice(0, 4).join('') + '-' + h.slice(4, 6).join('') + '-' + h.slice(6, 8).join('') + '-' + h.slice(8, 10).join('') + '-' + h.slice(10).join('');
+					};
+				}
+				if (!Object.hasOwn) {
+					Object.hasOwn = function (o, k) {
+						if (o == null) throw new TypeError('Cannot convert undefined or null to object');
+						return Object.prototype.hasOwnProperty.call(Object(o), k);
+					};
+				}
+			})();
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

@@ -7,6 +7,13 @@ const config: CapacitorConfig = {
   android: {
     // Plain HTTP API only for local development builds.
     allowMixedContent: false,
+    // The web build targets Chrome 88 (vite.config.ts). Older Android System
+    // WebViews get server.errorPath instead of a broken app.
+    minWebViewVersion: 88,
+  },
+  server: {
+    // Static page in static/; no links out (children use the app).
+    errorPath: 'webview.html',
   },
   plugins: {
     PushNotifications: {

@@ -52,6 +52,7 @@
     margin: auto auto 0;
     width: 100%;
     max-width: 640px;
+    max-height: 92vh;
     max-height: 92dvh;
     background: transparent;
     color: var(--text);
@@ -66,6 +67,7 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
+    max-height: 92vh;
     max-height: 92dvh;
     overflow-y: auto;
     animation: up 0.2s ease-out;
